@@ -73,6 +73,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D10 | **When the bottom screen is off, only the ⏻ button turns it back on.** Touching elsewhere on the black screen does nothing | Oct 23, 2026 |
 | D11 | **Fix match is a small ✎ button next to ⏻** in the bottom-right corner of the Movie screen, not a full-width field. It hides while the bottom screen is off | Oct 23, 2026 |
 | D12 | **Every video screen gets the same corner** (Movie, episode Playing, Episode ending): ✎ Fix match and ⏻ bottom screen off. While off, only ⏻ shows, and on episodes the top screen switches to the single-screen layout | Oct 23, 2026 |
+| D13 | **Series flow.** Opening a series shows its art and details on top and **season cards** (each with its own artwork) below. Focusing or opening a season shows that season's art and description on top; opening it shows **episode cards**, and focusing one shows that episode's still and description on top. Opening an episode plays it on **the same screen as movies**. Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment. B goes back a level | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -207,7 +208,8 @@ Every image is fetched through an API, in the size its screen needs, and stored 
 | Top screen: title over the art | **Logo** (transparent PNG) | TMDB logos → fanart.tv clearlogo | `w500` | Language: the app's language, then English. Falls back to the title in text |
 | Bottom screen: cards | **Poster**, 2:3 | TMDB posters → AniList `coverImage.extraLarge` (anime) → fanart.tv | TMDB `w342` (a card is ≈ 260 px wide on the 1240 px panel) | Decoded at card size (battery rule) |
 | Top screen: poster mix | Poster, 2:3 | Same as cards | `w342` | Reuses the card images; no extra downloads |
-| Series: episode list, Up next | **Still**, 16:9 | TMDB episode stills | `w300` (list), `w780` (Up next) | Missing stills fall back to the show's backdrop |
+| Series: episode cards, focused episode, Up next | **Still**, 16:9 | TMDB episode stills | `w300` (cards), `w780` (top screen, Up next) | Missing stills fall back to the show's backdrop |
+| Series: season cards and season view | **Season poster**, 2:3 | TMDB season posters → show poster | `w342` (cards), `w500` (top screen) | Seasons without their own poster use the show's |
 | Others tab (unmatched videos) | Frame from the video | Extracted on the device | 960 × 540 | No network |
 
 Rules:

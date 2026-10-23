@@ -334,6 +334,150 @@ p { margin: 0; }
     return '<div title="Fix match: pick the right title, or set the TMDB ID" style="position:absolute;right:12.6cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;font:700 3.4cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute)">✎</div>' + power;
   }
   function offScreen() { return '<div class="s-fill" style="background:#000"></div>' + corner(true); }
+
+  // ---------- one player screen for movies and episodes (D8, D13) ----------
+  // m: { frame, wide, poster, title, meta, desc, credit, pos, left, pct }
+  function playerTop(m) {
+    if (!mv.paused) return '<div class="s-fill" style="background:' + m.frame + '"></div>';
+    return '<div class="backdrop" style="background:' + m.wide + '"></div>' +
+      '<div class="s-fill" style="display:grid;grid-template-columns:' + (m.poster ? '20cqw ' : '') + '1fr;gap:4cqw;padding:5cqw">' +
+        (m.poster ? '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + m.poster + '"></div>' : '') +
+        '<div class="s-col" style="gap:1.3cqw;min-width:0;justify-content:center;max-width:52cqw">' +
+          '<div class="s-title" style="font-size:6cqw">' + m.title + '</div>' +
+          '<div class="s-mute" style="font-size:1.45cqw">' + m.meta + '</div>' +
+          '<div style="font-size:1.55cqw;line-height:1.4;color:#d6d8dc">' + m.desc + '</div>' +
+          (m.credit ? '<div class="s-mute" style="font-size:1.3cqw">' + m.credit + '</div>' : '') +
+        '</div>' +
+      '</div>';
+  }
+  function playerBottom(m) {
+    if (mv.off) return offScreen();
+    var sub = SUBS[mv.sub], d = mv.delay;
+    return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
+      '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:' + m.pct + '%"></b></div>' +
+        '<div class="s-row" style="justify-content:space-between;font:600 2.6cqw/1 var(--f-mono)"><span>' + m.pos + '</span><span class="s-mute">' + m.left + '</span></div></div>' +
+      '<div class="b-btn pri focus" data-act="toggle" style="cursor:pointer"><span>' + (mv.paused ? '▶  Resume' : '❚❚  Pause') + '</span>' + key("A") + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
+        '<div class="b-btn"><span>Play from start</span></div>' +
+        '<div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
+        '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · 5.1</span></div>' +
+        '<div class="b-btn" data-act="sub" style="flex-direction:column;align-items:flex-start;gap:1cqw;cursor:pointer' + (sub.find ? ';border-color:var(--scr-acc)' : '') + '"><span class="b-tiny">Subtitles</span><span>' + sub.label + '</span></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center' + (sub.on ? '' : ';opacity:.35') + '">' +
+        '<div class="b-btn" data-act="dminus" style="cursor:pointer;justify-content:center;min-width:16cqw">− 50 ms</div>' +
+        '<div style="text-align:center"><div class="b-tiny">Subtitle timing</div><div style="font:700 3.4cqw/1.3 var(--f-mono)">' + (d > 0 ? "+" : "") + d + ' ms</div></div>' +
+        '<div class="b-btn" data-act="dplus" style="cursor:pointer;justify-content:center;min-width:16cqw">+ 50 ms</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["B", "Back"]]) + '</div>' + corner(false) +
+    '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
+  }
+  var MOVIE = { frame: frame("int"), wide: wide("int"), poster: art(T.int), title: "Interstellar", meta: "2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7",
+    desc: "Explorers travel through a wormhole looking for a new home for humanity.", credit: "Directed by Christopher Nolan · Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+    pos: "1:12:04", left: "−1:36:56", pct: 43 };
+  // Opening any movie from Browsing fills this screen with that title.
+  function movieFrom(it) { return { frame: it.a === "int" ? frame("int") : wide(it.a), wide: wide(it.a), poster: art(it), title: it.t, meta: it.m, desc: it.d, credit: "",
+    pos: it.p ? "0:48:10" : "0:00:00", left: it.p ? "−1:12:30" : "", pct: it.p || 0 }; }
+
+  // ---------- Breaking Bad: seasons and episodes (stand-in art: crops of the show's art; the app uses TMDB season posters and episode stills) ----------
+  var SEASONS = [
+    { n: 1, y: "2008", eps: 7,  hue: 0,   d: "Walter White, newly diagnosed with cancer, starts cooking meth with his former student Jesse Pinkman." },
+    { n: 2, y: "2009", eps: 13, hue: 30,  d: "Walt and Jesse try to build a business of their own while Walt's lies at home get harder to keep." },
+    { n: 3, y: "2010", eps: 13, hue: 160, d: "Walt goes to work for Gus Fring as cartel cousins arrive in Albuquerque looking for revenge." },
+    { n: 4, y: "2011", eps: 13, hue: 200, d: "Trapped in Gus's superlab, Walt looks for a way out before Gus decides he no longer needs him." },
+    { n: 5, y: "2012–2013", eps: 16, hue: 300, d: "Walt builds an empire of his own while Hank closes in on the truth." }
+  ];
+  var S2EPS = [
+    ["Seven Thirty-Seven", "Walt and Jesse realise how dangerous Tuco is and look for a way out.", "w"],
+    ["Grilled", "Tuco holds Walt and Jesse at a remote desert house as Hank closes in.", "w"],
+    ["Bit by a Dead Bee", "Walt and Jesse make up stories to explain where they have been.", "w"],
+    ["Down", "Walt's family keeps its distance, and Jesse loses his home.", "w"],
+    ["Breakage", "Walt and Jesse set up their own distribution, and Jesse hires dealers.", 60],
+    ["Peekaboo", "Jesse goes to collect a debt and finds more than he expected.", 0],
+    ["Negro y Azul", "Rumours about Jesse spread, and Hank struggles with a new post in El Paso.", "m"],
+    ["Better Call Saul", "When Badger is arrested, Walt and Jesse hire a shady lawyer, Saul Goodman.", 0],
+    ["4 Days Out", "Walt and Jesse take the RV into the desert for a long cook that goes wrong.", 0],
+    ["Over", "Walt throws a party to celebrate good news about his health.", 0],
+    ["Mandala", "Saul introduces Walt to a careful new distributor.", 0],
+    ["Phoenix", "Walt misses an important family moment while he finishes a deal.", 0],
+    ["ABQ", "Walt faces the fallout as disaster strikes over Albuquerque.", 0]
+  ];
+  function episodes(si) {
+    var S0 = SEASONS[si], list = [];
+    for (var i = 0; i < S0.eps; i++) {
+      var e = si === 1 ? S2EPS[i] : ["Episode " + (i + 1), "Episode summary comes from TMDB.", si === 0 ? "w" : 0];
+      list.push({ n: i + 1, t: e[0], d: e[1], st: e[2] });
+    }
+    return list;
+  }
+  function seasonArt(si) { return 'background:' + art(T.bb) + ';filter:hue-rotate(' + SEASONS[si].hue + 'deg) saturate(1.1)'; }
+  function stillArt(si, i) { return 'background:url(art-local/wide/bb.jpg) ' + ((i * 37) % 100) + '% ' + ((i * 53) % 100) + '%/165% auto no-repeat, #111;filter:hue-rotate(' + SEASONS[si].hue + 'deg)'; }
+  var sv = { lvl: "seasons", sf: -1, season: 1, ef: -1 };
+
+  function detailText(title, meta, desc, extra) {
+    return '<div class="s-fill" style="background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.82) 30%,rgba(0,0,0,.4) 50%,rgba(0,0,0,0) 72%)"></div>' +
+      '<div style="position:absolute;left:5cqw;top:0;bottom:0;width:40cqw;display:flex;flex-direction:column;justify-content:center;gap:1.4cqw;text-shadow:0 .15cqw .6cqw rgba(0,0,0,.8)">' +
+        '<div class="s-title" style="font-size:6cqw">' + title + '</div>' +
+        '<div class="s-mute" style="font-size:1.6cqw">' + meta + '</div>' +
+        '<div style="font-size:1.6cqw;line-height:1.45;color:#d6d8dc">' + desc + '</div>' + (extra || '') +
+      '</div>';
+  }
+  function seriesTop() {
+    if (sv.lvl === "seasons" && sv.sf < 0)
+      return '<div class="s-fill" style="background:' + wide("bb") + '"></div>' + detailText("Breaking Bad", "2008–2013 · Crime, Drama · 5 seasons · 62 episodes", T.bb.d, '<div style="font-size:1.4cqw">Next up: <b>S2 · E5 Breakage</b>, 28 min left</div>');
+    if (sv.lvl === "seasons" || sv.ef < 0) {
+      var si = sv.lvl === "seasons" ? sv.sf : sv.season, S0 = SEASONS[si];
+      return '<div class="s-fill" style="background:' + wide("bb") + ';filter:hue-rotate(' + S0.hue + 'deg)"></div>' +
+        '<div style="position:absolute;right:5cqw;top:5cqw;bottom:5cqw;aspect-ratio:2/3;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);' + seasonArt(si) + '"></div>' +
+        detailText("Season " + S0.n, "Breaking Bad · " + S0.y + " · " + S0.eps + " episodes", S0.d);
+    }
+    var e = episodes(sv.season)[sv.ef];
+    return '<div class="s-fill" style="' + stillArt(sv.season, sv.ef) + '"></div>' +
+      detailText(e.t, "Season " + SEASONS[sv.season].n + ", Episode " + e.n + " · 47 min", e.d,
+        typeof e.st === "number" && e.st ? '<div class="s-row" style="gap:1.2cqw;font-size:1.4cqw"><div class="pbar" style="width:16cqw;height:.55cqw"><b style="width:' + e.st + '%"></b></div><span>28 min left</span></div>' : (e.st === "m" ? '<div class="s-mute" style="font-size:1.4cqw">Not on the SD card</div>' : ''));
+  }
+  function scrollGrid(cards, cols, rowH, focus) {
+    var row = focus < 0 ? 0 : Math.floor(focus / cols), shift = Math.max(0, row - 1) * rowH;
+    return '<div style="position:absolute;left:0;right:0;top:12cqw;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 88%,transparent);mask-image:linear-gradient(180deg,#000 88%,transparent)">' +
+      '<div style="position:absolute;left:5cqw;right:5cqw;top:1.4cqw;display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:2.2cqw;transform:translateY(' + (-shift) + 'cqw)">' + cards + '</div></div>';
+  }
+  function seriesBottom() {
+    var head = '<div style="position:absolute;left:5cqw;right:5cqw;top:4.5cqw;display:flex;align-items:center;justify-content:space-between">' +
+      '<div class="b-h">' + (sv.lvl === "seasons" ? "Breaking Bad" : "Season " + SEASONS[sv.season].n) + '</div>' +
+      '<div class="b-legend" style="margin:0">' + (sv.lvl === "seasons" ? '<span>' + key("A") + 'Open</span>' : '<span>' + key("A") + 'Play</span>') + '<span>' + key("B") + 'Back</span></div></div>';
+    if (sv.lvl === "seasons") {
+      var cards = SEASONS.map(function (S0, i) {
+        return '<div data-sc="' + i + '" style="cursor:pointer;position:relative;aspect-ratio:2/3;border-radius:1.2cqw;overflow:hidden' + (i === sv.sf ? ';outline:.7cqw solid var(--scr-acc);outline-offset:.6cqw' : '') + '">' +
+          '<div style="position:absolute;inset:0;' + seasonArt(i) + '"></div>' +
+          '<div style="position:absolute;left:0;right:0;bottom:0;padding:5cqw 1.6cqw 1.4cqw;background:linear-gradient(0deg,rgba(0,0,0,.9),rgba(0,0,0,0))"><div style="font:700 2.8cqw/1.1 var(--f-display);font-stretch:85%">Season ' + S0.n + '</div><div style="font:600 2cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + S0.eps + ' episodes</div></div></div>';
+      }).join('');
+      return head + scrollGrid(cards, 4, 19.6 * 1.5 + 2.2, sv.sf);
+    }
+    var eps = episodes(sv.season);
+    var cards = eps.map(function (e, i) {
+      var miss = e.st === "m";
+      return '<div data-ec="' + i + '" style="cursor:pointer;' + (miss ? 'opacity:.4' : '') + '">' +
+        '<div style="position:relative;aspect-ratio:16/9;border-radius:1.2cqw;overflow:hidden' + (i === sv.ef ? ';outline:.7cqw solid var(--scr-acc);outline-offset:.6cqw' : '') + '">' +
+          '<div style="position:absolute;inset:0;' + stillArt(sv.season, i) + '"></div>' +
+          '<span style="position:absolute;left:1.2cqw;top:1.2cqw;font:700 2.2cqw/1 var(--f-mono);background:rgba(0,0,0,.65);padding:.8cqw 1.2cqw;border-radius:.8cqw">' + e.n + '</span>' +
+          (e.st === "w" ? '<span style="position:absolute;right:1.2cqw;top:1.2cqw;font:700 2.2cqw/1 var(--f-body);background:var(--scr-acc);color:#1a1204;padding:.8cqw 1.2cqw;border-radius:.8cqw">✓</span>' : '') +
+          (typeof e.st === "number" && e.st ? '<div class="pbar" style="position:absolute;left:1.2cqw;right:1.2cqw;bottom:1cqw;height:.8cqw"><b style="width:' + e.st + '%"></b></div>' : '') +
+        '</div>' +
+        '<div style="font:700 2.6cqw/1.25 var(--f-body);margin-top:1cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.t + '</div>' +
+        '<div style="font:600 2cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + (miss ? "Not on card" : "47 min") + '</div></div>';
+    }).join('');
+    return head + scrollGrid(cards, 2, 43.9 * 9 / 16 + 9 + 2.2, sv.ef);
+  }
+  var EPISODE = null;
+  function episodePlayer(si, i) {
+    var e = episodes(si)[i];
+    return { frame: i === 4 && si === 1 ? frame("bb") : 'url(art-local/wide/bb.jpg) center/cover no-repeat, #000', wide: wide("bb"), poster: "", title: e.t,
+      meta: "Breaking Bad · Season " + SEASONS[si].n + ", Episode " + e.n + " · 47 min", desc: e.d, credit: "",
+      pos: typeof e.st === "number" && e.st ? "18:42" : "0:00", left: typeof e.st === "number" && e.st ? "−28:28" : "−47:00", pct: typeof e.st === "number" ? e.st : 0 };
+  }
+  EPISODE = episodePlayer(1, 4);
   var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
   var COLS = 4;
 
@@ -418,119 +562,36 @@ p { margin: 0; }
     },
     {
       id: "movie", label: "Movie",
-      top: function () {
-        // Playing: the film only. Paused: the title's art and details, still with no progress bar or controls.
-        if (!mv.paused) return '<div class="s-fill" style="background:' + frame("int") + '"></div>';
-        return '<div class="backdrop" style="background:' + wide("int") + '"></div>' +
-          '<div class="s-fill" style="display:grid;grid-template-columns:20cqw 1fr;gap:4cqw;padding:5cqw">' +
-            '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + art(T.int) + '"></div>' +
-          '<div class="s-col" style="gap:1.3cqw;min-width:0;justify-content:center">' +
-            '<div class="s-title" style="font-size:6.2cqw;letter-spacing:.06em;text-transform:uppercase">Interstellar</div>' +
-            '<div class="s-mute" style="font-size:1.45cqw">2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7</div>' +
-            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">Explorers travel through a wormhole looking for a new home for humanity.</div>' +
-            '<div class="s-mute" style="font-size:1.3cqw;max-width:44cqw">Directed by Christopher Nolan · Matthew McConaughey, Anne Hathaway, Jessica Chastain</div>' +
-            '</div>' +
-          '</div>';
-      },
-      bottom: function () {
-        if (mv.off) return offScreen();
-        var power = corner(false);
-        var sub = SUBS[mv.sub], d = mv.delay;
-        return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
-          '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:43%"></b></div>' +
-            '<div class="s-row" style="justify-content:space-between;font:600 2.6cqw/1 var(--f-mono)"><span>1:12:04</span><span class="s-mute">−1:36:56</span></div></div>' +
-          '<div class="b-btn pri focus" data-act="toggle" style="cursor:pointer"><span>' + (mv.paused ? '▶  Resume' : '❚❚  Pause') + '</span>' + key("A") + '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
-            '<div class="b-btn"><span>Play from start</span></div>' +
-            '<div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div>' +
-          '</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
-            '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · 5.1</span></div>' +
-            '<div class="b-btn" data-act="sub" style="flex-direction:column;align-items:flex-start;gap:1cqw;cursor:pointer' + (sub.find ? ';border-color:var(--scr-acc)' : '') + '"><span class="b-tiny">Subtitles</span><span>' + sub.label + '</span></div>' +
-          '</div>' +
-          '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center' + (sub.on ? '' : ';opacity:.35') + '">' +
-            '<div class="b-btn" data-act="dminus" style="cursor:pointer;justify-content:center;min-width:16cqw">− 50 ms</div>' +
-            '<div style="text-align:center"><div class="b-tiny">Subtitle timing</div><div style="font:700 3.4cqw/1.3 var(--f-mono)">' + (d > 0 ? "+" : "") + d + ' ms</div></div>' +
-            '<div class="b-btn" data-act="dplus" style="cursor:pointer;justify-content:center;min-width:16cqw">+ 50 ms</div>' +
-          '</div>' +
-        '</div>' +
-        '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["B", "Back"]]) + '</div>' + power;
-      },
+      top: function () { return playerTop(MOVIE); },
+      bottom: function () { return playerBottom(MOVIE); },
       notes: {
         what: "Opening a movie plays it straight away, from where you stopped. This one screen is both playing and paused; tap Pause / Resume on the bottom screen to see both top screens. Tap Subtitles to cycle its states, the timing buttons to shift subtitles, and ⏻ to turn the bottom screen off and on.",
         top: ["Playing: the film only <b>(decided)</b>", "Paused: the title's art and details, like Browsing; never a progress bar or anything else over the picture <b>(decided)</b>"],
         bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "Fix match is a small ✎ button next to ⏻, not a full-width field; it hides while the screen is off <b>(decided)</b>"],
-        q: ["Should the Series and Episode screens get the same ✎ and ⏻ corner buttons?"]
+        q: ["While the bottom screen is off, should a movie show controls over the picture (like episodes do), or stay clean?"]
       }
     },
     {
-      id: "series", label: "Series selected",
-      top: function () {
-        return '<div class="backdrop" style="background:' + wide("bb") + '"></div>' +
-          '<div class="s-fill s-col" style="padding:6cqw 5cqw;gap:1.3cqw">' +
-            '<div class="s-title" style="font-size:6.4cqw">Breaking Bad</div>' +
-            '<div class="s-mute" style="font-size:1.45cqw">2008–2013 · Crime, Drama · Ended · 62 episodes</div>' +
-            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">A high-school chemistry teacher with cancer partners with a former student to make and sell meth.</div>' +
-            '<div class="s-row" style="gap:3cqw;margin-top:auto;font-size:1.4cqw">' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Season 2</div><div><b>13</b> episodes</div></div>' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">On card</div><div><b>12</b></div></div>' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Missing</div><div><b>1</b></div></div>' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Watched</div><div><b>4</b> of 13</div></div>' +
-            '</div>' +
-          '</div>';
-      },
-      bottom: function () {
-        var eps = [
-          ["3", "Bit by a Dead Bee", "✓", ""],
-          ["4", "Down", "✓", ""],
-          ["5", "Breakage", "28m left", "cur"],
-          ["6", "Peekaboo", "47m", ""],
-          ["7", "Negro y Azul", "Not on card", "miss"],
-          ["8", "Better Call Saul", "47m", ""]
-        ];
-        return '<div class="b-pad" style="gap:2.2cqw">' +
-          '<div class="b-chips">' + ["S1", "S2", "S3", "S4", "S5"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
-          '<div class="s-col" style="gap:.6cqw">' + eps.map(function (e) { return '<div class="ep ' + e[3] + '"><span class="n">' + e[0] + '</span><span>' + e[1] + '</span><span class="r">' + e[2] + '</span></div>'; }).join('') + '</div>' +
-          legend([["A", "Play"], ["Y", "Watched"], ["L1", "Season"]]) +
-        '</div>';
-      },
+      id: "series", label: "Series",
+      top: function () { return seriesTop(); },
+      bottom: function () { return seriesBottom(); },
       notes: {
-        what: "A show is selected. The bottom screen holds the season buttons and the episode list.",
-        top: ["Show backdrop, logo, plot", "Season summary: episodes on the card, missing, watched"],
-        bottom: ["Season chips, then episodes: playable, current one highlighted, missing ones greyed", "The list opens scrolled to the next unwatched episode"],
-        ctrl: "D-pad moves in the episode list. L1/R1 change season. A plays, Y toggles watched.",
-        q: ["Do missing episodes stay in the list (greyed) or collapse into one line?", "Should the top screen show the focused episode's still and plot instead of the show's?"]
+        what: "Opening a series or an anime series. Try it: tap a season card to focus it (the top screen shows that season), tap it again or press A to open it; then tap an episode to see it on top, and tap it again or press A to play it. B or Esc goes back a level.",
+        top: ["First: the series' art and details <b>(decided)</b>", "Season card focused or opened: that season's art and description <b>(decided)</b>", "Episode card focused: that episode's still and description <b>(decided)</b>"],
+        bottom: ["Season cards with each season's artwork, like the series cards in Browsing <b>(decided)</b>", "Opening a season shows its episodes as cards; watched ones ticked, the current one with a progress bar, missing ones greyed <b>(decided)</b>", "Opening an episode plays it on the same screen as movies <b>(decided)</b>", "Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment <b>(decided)</b>"],
+        q: ["Should the series open straight on the season you're in (here Season 2), or always on the season cards?", "A series with one season: skip the season cards and go straight to episodes?", "Episode cards 2 across (shown) or 3?"]
       }
     },
     {
-      id: "play", label: "Playing",
-      top: function () {
-        return '<div class="s-fill" style="background:' + frame("bb") + '"></div>' +
-          '<div style="position:absolute;left:0;right:0;bottom:5cqw;text-align:center;font:700 2.2cqw/1.25 var(--f-body);color:#fff;text-shadow:0 0 .4cqw #000,0 0 .4cqw #000">[ machinery humming ]</div>';
-      },
-      bottom: function () {
-        return '<div class="b-pad" style="gap:2.6cqw;bottom:13cqw">' +
-          '<div class="s-row" style="justify-content:space-between;gap:2cqw"><div><div class="b-tiny">Breaking Bad · S02E05</div><div class="b-h">Breakage</div></div><div class="b-tiny" style="text-align:right">21:10<br>bat 74%</div></div>' +
-          '<div class="s-col" style="gap:1.4cqw"><div style="position:relative" class="pbar"><b style="width:39.7%"></b></div>' +
-            '<div class="s-row" style="justify-content:space-between;font:600 2.8cqw/1 var(--f-mono)"><span>18:42</span><span class="s-mute">−28:28</span></div></div>' +
-          '<div class="s-row" style="justify-content:space-between;gap:2cqw">' +
-            '<div class="b-btn" style="flex:1;justify-content:center">⟲ 10</div>' +
-            '<div class="b-btn pri" style="flex:1.3;justify-content:center;font-size:4.4cqw">❚❚</div>' +
-            '<div class="b-btn" style="flex:1;justify-content:center">10 ⟳</div>' +
-            '<div class="b-btn" style="flex:1;justify-content:center">Next ›</div>' +
-          '</div>' +
-          '<div class="b-chips"><span class="b-chip">Audio EN 5.1</span><span class="b-chip">Subs EN</span><span class="b-chip">Delay 0 ms</span><span class="b-chip">1×</span><span class="b-chip">Fit</span></div>' +
-        '</div>' +
-        '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["X", "Tracks"]]) + '</div>' + corner(false) +
-        '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
-      },
+      id: "play", label: "Episode playing",
+      top: function () { return playerTop(EPISODE); },
+      bottom: function () { return playerBottom(EPISODE); },
       notes: {
-        what: "A video is playing. Nothing covers the film; every control lives on the bottom screen.",
-        top: ["Full-screen video and subtitles only", "No clock, no progress bar, no overlay"],
-        bottom: ["Title, seek bar, ±10 s, play/pause, next episode", "Audio, subtitles, delay, speed and aspect as chips", "Redraws once a second; dims after 10 s untouched", "Corner buttons: ✎ Fix match and ⏻ bottom screen off, as on every video screen <b>(decided)</b>"],
-        ctrl: "A play/pause. L2/R2 skip 10 s. L1/R1 previous/next episode. X opens tracks. Touching the bottom screen never takes the controller away from the video.",
+        what: "An episode playing: exactly the same screen as a movie. Tap Pause / Resume to see the paused top screen with the episode's art and description.",
+        top: ["Playing: the episode only; paused: its art and description <b>(decided)</b>"],
+        bottom: ["Same layout as the Movie screen: progress, Resume / Pause, Play from start, Mark watched, Audio, Subtitles, timing, ✎ and ⏻ <b>(decided)</b>", "Redraws once a second; dims after 10 s untouched"],
         dim: true,
-        q: ["How dark is \"dimmed\": a black layer at 80%, or the panel almost off?", "Keep the episode list here too, or only the transport controls?", "Show the clock and battery, or keep the bottom screen emptier to save power?"]
+        q: ["L1 / R1 for previous / next episode, or a Next episode button on the screen?", "How dark is \"dimmed\": a black layer at 80%, or the panel almost off?"]
       }
     },
     {
@@ -642,8 +703,8 @@ p { margin: 0; }
   var KEYS = {
     browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)", DPAD: "Move through the cards; the top screen shows the focused title (decided)", L3: "Same as D-pad (proposed)", A: "Open the focused title; a movie starts playing straight away, from where you stopped (decided)", B: "Leave the cards; the top screen goes back to the poster mix (proposed)" },
     movie:  { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to browsing", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Subtitles 50 ms earlier (proposed)", R1: "Subtitles 50 ms later (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
-    series: { DPAD: "Up/down the episode list", L3: "Same as D-pad", A: "Play the episode", B: "Back to browsing", X: "Audio and subtitles", Y: "Mark episode watched", L1: "Previous season", R1: "Next season", L2: "Page up the list", R2: "Page down the list", SELECT: "Fix match" },
-    play:   { A: "Play / pause", B: "Stop and go back (asks first)", X: "Audio and subtitle tracks", Y: "Wake the bottom screen", DPAD: "Move between bottom-screen controls", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Push right/left to scrub; click = chapter list", L3: "Click with R3: bottom screen off / on", START: "Playback settings (speed, aspect, delay)", SELECT: "Show the info overlay on top" },
+    series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)", L1: "Previous season (proposed)", R1: "Next season (proposed)" },
+    play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to the episodes", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Previous episode (proposed)", R1: "Next episode (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
     ending: { A: "Play next episode now", B: "Cancel the countdown", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
     stats:  { DPAD: "Scroll the history list", L1: "Previous period", R1: "Next period", Y: "Export CSV", B: "Back" },
     single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
@@ -697,6 +758,35 @@ p { margin: 0; }
     if (!c) return;
     strip.style.transform = "translateX(" + (bottom.clientWidth / 2 - (c.offsetLeft + c.offsetWidth / 2)) + "px)";
   }
+  function redrawCur() {
+    var st = S.filter(function (x) { return x.id === cur; })[0];
+    top.innerHTML = st.top(); bottom.innerHTML = st.bottom(); if (cur === "browse") centerTabs();
+  }
+  // A on the Series screen: open the focused season, or play the focused episode
+  function seriesA() {
+    if (sv.lvl === "seasons") { if (sv.sf < 0) sv.sf = 1; sv.season = sv.sf; sv.lvl = "episodes"; sv.ef = -1; redrawCur(); return; }
+    if (sv.ef < 0) return;
+    if (episodes(sv.season)[sv.ef].st === "m") return; // not on the card: nothing to play
+    EPISODE = episodePlayer(sv.season, sv.ef); mv.paused = false; mv.off = false; show("play");
+  }
+  function seriesB() {
+    if (sv.lvl === "episodes") { sv.lvl = "seasons"; sv.sf = sv.season; sv.ef = -1; redrawCur(); return; }
+    if (sv.sf >= 0) { sv.sf = -1; redrawCur(); return; }
+    show("browse");
+  }
+  function seriesMove(dx, dy) {
+    var cols = sv.lvl === "seasons" ? 4 : 2, n = sv.lvl === "seasons" ? SEASONS.length : episodes(sv.season).length;
+    var f = sv.lvl === "seasons" ? sv.sf : sv.ef;
+    f = f < 0 ? 0 : f + dx + dy * cols; if (f < 0 || f >= n) return;
+    if (sv.lvl === "seasons") sv.sf = f; else sv.ef = f; redrawCur();
+  }
+  // A on a Browsing card: movies (and anime films) play straight away; Breaking Bad opens the Series screen
+  function browseA() {
+    if (focusIdx < 0) return;
+    var it = TABS[browseTab].items[focusIdx];
+    if (/Series|Anime series/.test(it.m)) { if (it.a === "bb") { sv = { lvl: "seasons", sf: -1, season: 1, ef: -1 }; show("series"); } return; }
+    MOVIE = movieFrom(it); mv.paused = false; mv.off = false; show("movie");
+  }
   function redrawBrowse() { top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
   function setTab(i) { browseTab = (i + TABS.length) % TABS.length; focusIdx = -1; redrawBrowse(); }
   function moveFocus(dx, dy) {
@@ -707,38 +797,59 @@ p { margin: 0; }
     if (i >= 0 && i < n) { focusIdx = i; redrawBrowse(); }
   }
   document.addEventListener("keydown", function (e) {
-    if (cur !== "browse" || document.getElementById("screens").hidden) return;
+    if (document.getElementById("screens").hidden) return;
     var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (m) { e.preventDefault(); moveFocus(m[0], m[1]); }
-    if (e.key === "Escape" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
+    if (cur === "browse") {
+      if (m) { e.preventDefault(); moveFocus(m[0], m[1]); }
+      if (e.key === "Enter") browseA();
+      if (e.key === "Escape" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
+    } else if (cur === "series") {
+      if (m) { e.preventDefault(); seriesMove(m[0], m[1]); }
+      if (e.key === "Enter") seriesA();
+      if (e.key === "Escape") seriesB();
+    }
   });
   window.addEventListener("resize", centerTabs);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
   bottom.addEventListener("click", function (e) {
-    if ((cur === "play" || cur === "ending" || cur === "single") && e.target.closest && e.target.closest("[data-act=power]")) {
+    if ((cur === "ending" || cur === "single") && e.target.closest && e.target.closest("[data-act=power]")) {
       show(cur === "single" ? "play" : "single");
       return;
     }
-    if (cur === "movie" && e.target.closest) {
+    if ((cur === "movie" || cur === "play") && e.target.closest) {
       var act = e.target.closest("[data-act]"); if (!act) return;
       var k = act.getAttribute("data-act");
       if (k === "toggle") mv.paused = !mv.paused;
       if (k === "sub") mv.sub = (mv.sub + 1) % SUBS.length;
       if (k === "dminus" && SUBS[mv.sub].on) mv.delay -= 50;
       if (k === "dplus" && SUBS[mv.sub].on) mv.delay += 50;
-      if (k === "power") mv.off = !mv.off;
-      top.innerHTML = S[1].top(); bottom.innerHTML = S[1].bottom();
+      if (k === "power") { if (cur === "play") { show("single"); return; } mv.off = !mv.off; }
+      redrawCur();
+      return;
+    }
+    if (cur === "series" && e.target.closest) {
+      var sc = e.target.closest("[data-sc]"), ec = e.target.closest("[data-ec]");
+      if (sc) { var i = +sc.getAttribute("data-sc"); if (sv.sf === i) seriesA(); else { sv.sf = i; redrawCur(); } }
+      if (ec) { var j = +ec.getAttribute("data-ec"); if (sv.ef === j) seriesA(); else { sv.ef = j; redrawCur(); } }
       return;
     }
     if (cur !== "browse" || !e.target.closest) return;
     var t = e.target.closest("[data-tab]"), c = e.target.closest("[data-card]");
     if (t) setTab(+t.getAttribute("data-tab"));
-    if (c) { focusIdx = +c.getAttribute("data-card"); redrawBrowse(); }
+    if (c) { var ci = +c.getAttribute("data-card"); if (ci === focusIdx) browseA(); else { focusIdx = ci; redrawBrowse(); } }
   });
   document.querySelector(".thor").addEventListener("click", function (e) {
     var k = e.target.closest ? e.target.closest(".ctl") : null;
-    if (!k || cur !== "browse") return;
+    if (!k) return;
     var c = k.getAttribute("data-k");
+    if (cur === "series") {
+      if (c === "A") seriesA();
+      if (c === "B") seriesB();
+      if (c === "DPAD" || c === "L3") seriesMove(1, 0);
+      return;
+    }
+    if (cur !== "browse") return;
+    if (c === "A") browseA();
     if (c === "L2") setTab(browseTab - 1);
     if (c === "R2") setTab(browseTab + 1);
     if (c === "DPAD" || c === "L3") moveFocus(1, 0);
