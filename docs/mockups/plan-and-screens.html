@@ -428,6 +428,7 @@ p { margin: 0; }
       bottom: function () {
         var power = '<div data-act="power" title="Bottom screen off / on" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;cursor:pointer;font:700 3.6cqw/1 var(--f-body);border:.35cqw solid ' + (mv.off ? '#1c1e22;color:#3a3d43' : 'var(--scr-line);color:var(--scr-mute)') + '">⏻</div>';
         if (mv.off) return '<div class="s-fill" style="background:#000"></div>' + power;
+        power = '<div title="Fix match: pick the right title, or set the TMDB ID" style="position:absolute;right:12.6cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;font:700 3.4cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute)">✎</div>' + power;
         var sub = SUBS[mv.sub], d = mv.delay;
         return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
           '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:43%"></b></div>' +
@@ -452,8 +453,8 @@ p { margin: 0; }
       notes: {
         what: "Opening a movie plays it straight away, from where you stopped. This one screen is both playing and paused; tap Pause / Resume on the bottom screen to see both top screens. Tap Subtitles to cycle its states, the timing buttons to shift subtitles, and ⏻ to turn the bottom screen off and on.",
         top: ["Playing: the film only <b>(decided)</b>", "Paused: the title's art and details, like Browsing; never a progress bar or anything else over the picture <b>(decided)</b>"],
-        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "Fix match removed from this screen <b>(decided)</b>"],
-        q: ["Where does Fix match live now?"]
+        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "Fix match is a small ✎ button next to ⏻, not a full-width field; it hides while the screen is off <b>(decided)</b>"],
+        q: ["Should the Series and Episode screens get the same ✎ and ⏻ corner buttons?"]
       }
     },
     {

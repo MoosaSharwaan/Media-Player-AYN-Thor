@@ -71,6 +71,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D8 | **Opening a movie plays it straight away**, from where you stopped. One Movie screen covers playing and paused. Top screen: the film only while playing; the title's art and details while paused; never a progress bar or controls over the picture. Bottom screen, in order: progress bar, Resume / Pause, Play from start and Mark watched (same style), Audio and Subtitles (choose a track, or Find subtitles when the file has none), subtitle timing −50 / +50 ms, and a small ⏻ button in the bottom-right corner that turns the bottom screen off and stays visible while it is off. Fix match is not on this screen. L2 / R2 skip back / forward 10 s | Oct 23, 2026 |
 | D9 | **Subtitle search moves to v1**, through the OpenSubtitles API (by file hash first, then title). The Movie screen's Subtitles block offers it when the file has none | Oct 23, 2026 |
 | D10 | **When the bottom screen is off, only the ⏻ button turns it back on.** Touching elsewhere on the black screen does nothing | Oct 23, 2026 |
+| D11 | **Fix match is a small ✎ button next to ⏻** in the bottom-right corner of the Movie screen, not a full-width field. It hides while the bottom screen is off | Oct 23, 2026 |
 
 **Questions the design must answer**
 
