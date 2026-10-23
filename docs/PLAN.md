@@ -86,6 +86,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D23 | **Episode ending screen accepted as shown**: credits keep playing on top; the bottom shows the Up next card with a 10 s countdown, Play now (A) and Cancel (B) | Oct 23, 2026 |
 | D24 | **Layout rules R2–R9 accepted** (see the [mockup page](mockups/plan-and-screens.html), Rules tab): pure black backgrounds; no animation and at most one redraw a second on the bottom screen during playback; the bottom screen dims after 10 s; everything also works with no bottom screen; touch targets ≥ 48 dp; the same physical text size on both screens; one accent colour for focus and the main action; a button legend along the bottom of the bottom screen | Oct 23, 2026 |
 | D25 | **Typing happens on the bottom screen with the app's own keyboard** (rule R10): search and Fix match draw a keyboard on the bottom screen, used by touch or D-pad and A. The system keyboard opens on the top screen only as a fallback for input the built-in one can't handle | Oct 23, 2026 |
+| D26 | **Rule R1 accepted: nothing is ever drawn over a playing video** except its subtitles. No clock, progress bar, buttons, pop-ups or notices from the app on the top screen, with the bottom screen on or off. Exception: the No bottom screen layout | Oct 23, 2026 |
 
 **Questions the design must answer**
 
