@@ -282,57 +282,46 @@ p { margin: 0; }
   function key(k) { return '<span class="key">' + k + '</span>'; }
   function legend(items) { return '<div class="b-legend">' + items.map(function (i) { return '<span>' + key(i[0]) + i[1] + '</span>'; }).join('') + '</div>'; }
 
-  // mk(title, hue, progress %, meta line, plot, resume note, art key). Art lives in art/posters and art/backdrops (CC BY, see art/CREDITS.md).
+  // mk(title, hue, progress %, meta line, plot, resume note, art key).
+  // Art: art-local/ holds posters you supplied for this private mockup (git-ignored); a missing file falls back to the colour.
   function mk(t, h, p, m, d, r, a) { return { t: t, h: h, p: p, m: m || "", d: d || "", r: r, a: a, g: "linear-gradient(160deg,hsl(" + h + ",42%,58%),hsl(" + h + ",48%,26%) 48%,hsl(" + h + ",55%,6%))" }; }
-  function art(it) { return it.a ? "#111 url(art/posters/" + it.a + ".jpg) center/cover no-repeat" : it.g; }
-  function bdrop(a) { return "#000 url(art/backdrops/" + a + ".jpg) center/cover no-repeat"; }
-  var I = {
-    bbb:  ["Big Buck Bunny", 90, "2008 · 10 min · Animation, Comedy · Blender Foundation", "A giant, gentle rabbit takes his revenge on the three rodents who bully him and his woodland friends.", "big-buck-bunny"],
-    ed:   ["Elephants Dream", 30, "2006 · 11 min · Animation, Sci-fi · Blender Foundation", "Proog leads young Emo through a vast, strange machine that only he seems to believe in.", "elephants-dream"],
-    sin:  ["Sintel", 20, "2010 · 15 min · Animation, Fantasy · Blender Foundation", "A lone girl searches the world for the baby dragon she raised and lost.", "sintel"],
-    tos:  ["Tears of Steel", 200, "2012 · 12 min · Sci-fi · Blender Foundation", "In a future Amsterdam, a group of scientists tries to stop a robot invasion by changing the past.", "tears-of-steel"],
-    cos:  ["Cosmos Laundromat", 270, "2015 · 12 min · Animation, Drama · Blender Institute", "On a desolate island, a sheep tired of life meets a salesman who offers him other lives to live.", "cosmos-laundromat"],
-    chg:  ["Charge", 15, "2022 · 4 min · Animation, Action · Blender Studio", "A short action film set in an energy-starved future.", "charge"],
-    cam:  ["Caminandes", 100, "2013–2016 · Series · 3 episodes · Animation, Comedy", "Koro the llama keeps trying to outsmart the obstacles of life in Patagonia.", "caminandes"]
-  };
-  function C(k, p, r) { var x = I[k]; return mk(x[0], x[1], p, x[2], x[3], r, x[4]); }
-  function F(k) { var x = I[k]; return mk(x[0], x[1], 0, x[2], x[3], undefined, x[4]); }
-  // Placeholders (no art key) are titles we have no openly licensed artwork for yet.
-  var A = {
-    fri: mk("Frieren", 190, 0, "2023 · Anime series · Fantasy, Adventure", "An elf mage who outlives her old party sets out to understand the humans she travelled with."),
-    aot: mk("Attack on Titan", 20, 0, "2013 · Anime series · Action, Drama · 4 seasons", "Humanity fights to survive behind walls against giant man-eating Titans."),
-    beb: mk("Cowboy Bebop", 50, 0, "1998 · Anime series · Sci-fi, Noir", "A crew of bounty hunters chases targets across the solar system in 2071."),
-    spi: mk("Spirited Away", 160, 0, "2001 · Anime film · 2 h 5 m · Fantasy", "A girl must work in a bathhouse for spirits to free her parents."),
-    yn:  mk("Your Name", 265, 0, "2016 · Anime film · 1 h 46 m · Romance, Fantasy", "Two teenagers who have never met begin waking up in each other's bodies."),
-    ds:  mk("Demon Slayer", 330, 0, "2019 · Anime series · Action, Fantasy", "A boy becomes a demon slayer to turn his sister human again."),
-    jjk: mk("Jujutsu Kaisen", 285, 0, "2020 · Anime series · Action", "A student swallows a cursed finger and joins the sorcerers who fight curses."),
-    vin: mk("Vinland Saga", 30, 0, "2019 · Anime series · Historical, Action", "A young Viking seeks revenge on the man who killed his father.")
+  function art(it) { return it.a ? "url(art-local/posters/" + it.a + ".jpg) center/cover no-repeat, " + it.g : it.g; }
+  function bdrop(a) { return "url(art-local/backdrops/" + a + ".jpg) center/cover no-repeat, #000"; }
+  function frame(a) { return "url(art-local/frames/" + a + ".jpg) center/cover no-repeat, #000"; }
+  var T = {
+    god:  mk("The Godfather", 30, 0, "1972 · 2 h 55 m · Crime, Drama", "The ageing head of a mafia family hands control of his empire to his reluctant youngest son.", 0, "god"),
+    par:  mk("Parasite", 140, 0, "2019 · 2 h 12 m · Thriller, Drama", "A poor family schemes its way into working for a wealthy household.", 0, "par"),
+    phm:  mk("Project Hail Mary", 200, 0, "2026 · Sci-fi, Adventure", "A science teacher wakes alone on a spaceship with no memory, on a mission to save Earth from a dimming sun.", 0, "phm"),
+    fc:   mk("Fight Club", 340, 0, "1999 · 2 h 19 m · Drama, Thriller", "An insomniac office worker and a soap maker start an underground fight club.", 0, "fc"),
+    tdk:  mk("The Dark Knight", 220, 0, "2008 · 2 h 32 m · Action, Crime", "Batman faces the Joker, a criminal who wants to plunge Gotham into anarchy.", 0, "tdk"),
+    lotr: mk("The Return of the King", 35, 0, "2003 · 3 h 21 m · Fantasy, Adventure", "Frodo and Sam near Mount Doom while Aragorn leads the last stand against Sauron.", 0, "lotr"),
+    pulp: mk("Pulp Fiction", 10, 0, "1994 · 2 h 34 m · Crime", "The lives of two hitmen, a boxer and a gangster's wife cross in Los Angeles.", 0, "pulp"),
+    int:  mk("Interstellar", 200, 0, "2014 · 2 h 49 m · Sci-fi, Drama", "Explorers travel through a wormhole looking for a new home for humanity.", 0, "int"),
+    house:mk("House", 210, 0, "2004–2012 · Series · Drama, Medical · 8 seasons", "A brilliant, difficult doctor leads a team that takes on the cases no one else can solve.", 0, "house"),
+    bl:   mk("The Blacklist", 0, 0, "2013–2023 · Series · Crime, Thriller · 10 seasons", "A wanted criminal surrenders to the FBI and offers to help catch the people on his list.", 0, "bl"),
+    bb:   mk("Breaking Bad", 95, 0, "2008–2013 · Series · Crime, Drama · 5 seasons", "A high-school chemistry teacher with cancer starts making meth to secure his family's future.", 0, "bb"),
+    grey: mk("Grey's Anatomy", 250, 0, "2005– · Series · Medical drama", "The personal and working lives of surgeons at a Seattle hospital.", 0, "grey"),
+    dex:  mk("Dexter", 0, 0, "2006–2013 · Series · Crime, Drama · 8 seasons", "A Miami police blood-spatter analyst lives a secret life hunting killers.", 0, "dex"),
+    mf:   mk("Modern Family", 45, 0, "2009–2020 · Series · Comedy · 11 seasons", "Three branches of one big family get through everyday life in Los Angeles.", 0, "mf"),
+    rm:   mk("Rick and Morty", 170, 0, "2013– · Series · Animation, Sci-fi comedy", "A reckless scientist drags his grandson on dangerous trips across the multiverse.", 0, "rm"),
+    ment: mk("The Mentalist", 40, 0, "2008–2015 · Series · Crime, Drama · 7 seasons", "A former fake psychic helps the California Bureau of Investigation solve murders.", 0, "ment"),
+    aot:  mk("Attack on Titan", 190, 0, "2013–2023 · Anime series · Action, Drama · 4 seasons", "Humanity fights to survive behind walls against giant man-eating Titans.", 0, "aot"),
+    fri:  mk("Frieren", 120, 0, "2023 · Anime series · Fantasy, Adventure", "An elf mage who outlives her old party sets out to understand the humans she travelled with.", 0, "fri"),
+    op:   mk("One Piece", 30, 0, "1999– · Anime series · Adventure", "Luffy and his crew sail the Grand Line in search of the legendary treasure.", 0, "op"),
+    bc:   mk("Black Clover", 280, 0, "2017–2021 · Anime series · Fantasy, Action", "Asta, born without magic in a world where everyone has it, sets out to become the Wizard King.", 0, "bc"),
+    beb:  mk("Cowboy Bebop", 15, 0, "1998 · Anime series · Sci-fi, Noir", "A crew of bounty hunters chases targets across the solar system in 2071.", 0, "beb"),
+    fma:  mk("Fullmetal Alchemist", 40, 0, "2003 · Anime series · Fantasy, Adventure", "Two brothers search for the Philosopher's Stone to restore their bodies after an alchemy ritual goes wrong.", 0, "fma"),
+    vio:  mk("Violet Evergarden", 205, 0, "2018 · Anime series · Drama, Fantasy", "A former child soldier becomes a letter writer and learns what the words she was given mean.", 0, "vio"),
+    hxh:  mk("Hunter x Hunter", 25, 0, "2011 · Anime series · Adventure, Action", "Gon sets out to become a Hunter and find the father who left him.", 0, "hxh")
   };
   function prog(it, p, r) { return mk(it.t, it.h, p, it.m, it.d, r, it.a); }
   var TABS = [
-    { n: "Continue watching", sub: "8 in progress", items: [C("cam", 45, "S01E02 Gran Dillama · 1 min left"), C("sin", 42, "8 min left"), C("tos", 70, "4 min left"), C("cos", 25, "9 min left"), C("ed", 30, "7 min left"),
-      prog(A.fri, 20, "Episode 12 · 19 min left"), prog(A.beb, 60, "Session 5 · 9 min left"), prog(A.aot, 35, "S04E03 · 15 min left")] },
-    { n: "Movies", sub: "8 movies", items: [F("sin"), F("tos"), F("bbb"), F("cos"), F("ed"), F("chg"),
-      mk("Nosferatu", 40, 0, "1922 · 1 h 34 m · Horror · Public domain", "A real-estate agent travels to Transylvania to sell a house to the mysterious Count Orlok."),
-      mk("Metropolis", 45, 0, "1927 · 2 h 33 m · Sci-fi · Silent", "In a vast future city, a rich man's son sides with the workers who run the machines below.")] },
-    { n: "Series", sub: "8 shows", items: [F("cam"),
-      mk("Severance", 210, 0, "2022 · Series · Sci-fi, Thriller · 2 seasons", "Office workers have their work memories surgically separated from their private lives."),
-      mk("The Bear", 14, 0, "2022 · Series · Comedy, Drama · 3 seasons", "A fine-dining chef comes home to Chicago to run his late brother's sandwich shop."),
-      mk("Shōgun", 2, 0, "2024 · Series · Drama, History · 1 season", "A shipwrecked English pilot is drawn into a deadly power struggle in feudal Japan."),
-      mk("The Last of Us", 120, 0, "2023 · Series · Drama, Sci-fi · 2 seasons", "A smuggler escorts a teenage girl across a broken, post-pandemic America."),
-      mk("Succession", 45, 0, "2018 · Series · Drama · 4 seasons", "The Roy family fights for control of a global media empire."),
-      mk("Dark", 250, 0, "2017 · Series · Sci-fi, Mystery · 3 seasons", "A child's disappearance exposes the time-travel secrets of four families in a German town."),
-      mk("Chernobyl", 75, 0, "2019 · Miniseries · Drama, History", "The 1986 nuclear disaster and the people who fought to contain it.")] },
-    { n: "Anime", sub: "8 titles", items: [A.fri, A.aot, A.beb, A.spi, A.yn, A.ds, A.jjk, A.vin] },
-    { n: "Others", sub: "8 entries", items: [
-      mk("Planet Earth II", 130, 0, "2016 · Documentary series · Nature", "Wildlife on islands, mountains, jungles and in cities, filmed up close."),
-      mk("Free Solo", 25, 0, "2018 · Documentary · 1 h 40 m", "Alex Honnold attempts to climb El Capitan without ropes."),
-      mk("Drive to Survive", 0, 0, "2019 · Docuseries · Sport", "Behind the scenes of the Formula 1 world championship."),
-      mk("Our Planet", 180, 0, "2019 · Documentary series · Nature", "How a changing climate affects the living world."),
-      mk("Apollo 11 footage", 220, 0, "Folder · 4 videos · NASA, public domain", "Launch, landing and splashdown film from the 1969 mission."),
-      mk("Concerts", 300, 0, "Folder · 5 videos · not matched on TMDB", "Videos from a folder that isn't a film or a show."),
-      mk("Home videos", 60, 0, "Folder · 9 videos · not matched on TMDB", "Your own videos. Shown with a frame from the video instead of a poster."),
-      mk("Test clips", 210, 0, "Folder · 12 videos · not matched on TMDB", "Codec test files kept for checking hardware decoding.")] }
+    { n: "Continue watching", sub: "8 in progress", items: [prog(T.bb, 60, "S02E05 Breakage · 28 min left"), prog(T.fri, 20, "Episode 12 · 19 min left"), prog(T.int, 43, "1 h 36 m left"),
+      prog(T.bl, 35, "S03E10 · 27 min left"), prog(T.op, 70, "Episode 1050 · 7 min left"), prog(T.dex, 55, "S04E12 · 23 min left"), prog(T.phm, 15, "2 h 10 m left"), prog(T.rm, 80, "S05E03 · 4 min left")] },
+    { n: "Movies", sub: "8 movies", items: [T.god, T.par, T.phm, T.fc, T.tdk, T.lotr, T.pulp, T.int] },
+    { n: "Series", sub: "8 shows", items: [T.house, T.bl, T.bb, T.grey, T.dex, T.mf, T.rm, T.ment] },
+    { n: "Anime", sub: "8 shows", items: [T.aot, T.fri, T.op, T.bc, T.beb, T.fma, T.vio, T.hxh] },
+    { n: "Others", sub: "Nothing here yet", items: [] }
   ];
   var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
   var COLS = 4;
@@ -340,6 +329,7 @@ p { margin: 0; }
   // Bottom screen: cards for every title in the tab, 4 across, scrolling so the focused row stays in view.
   function browseCards() {
     var items = TABS[browseTab].items, row = focusIdx < 0 ? 0 : Math.floor(focusIdx / COLS);
+    if (!items.length) return '<div style="position:absolute;left:5cqw;right:5cqw;top:15cqw;bottom:5cqw;display:grid;place-items:center;text-align:center;font-size:3.2cqw;line-height:1.4;color:var(--scr-mute)">Nothing in Others yet.</div>';
     var cardW = 19.6, gap = 2.2, rowH = cardW * 1.5 + gap, shift = Math.max(0, row - 1) * rowH;
     var cards = items.map(function (it, i) {
       return '<div class="poster' + (i === focusIdx ? ' sel' : '') + '" data-card="' + i + '" style="width:auto;border-radius:1.2cqw;padding:1.4cqw;cursor:pointer;background:' + art(it) + (i === focusIdx ? ';outline-width:.7cqw;outline-offset:.6cqw' : '') + '">' +
@@ -375,6 +365,9 @@ p { margin: 0; }
         // Display only: a poster mix of everything in the current tab. No focus, no selection, no touch.
         if (focusIdx >= 0) return browseDetail();
         var t = TABS[browseTab], n = t.items.length, rows = "";
+        if (!n) return '<div class="s-fill" style="background:radial-gradient(90% 80% at 50% 40%,#16181c,#000 70%)"></div>' +
+          '<div style="position:absolute;left:4.5cqw;bottom:4cqw" class="s-col"><div class="s-eyebrow">' + t.sub + '</div><div class="s-title" style="font-size:6cqw;margin-top:.6cqw">' + t.n + '</div>' +
+          '<div class="s-mute" style="font-size:1.6cqw;margin-top:1cqw;max-width:50cqw">Videos that aren\'t films, series or anime land here: concerts, home videos, clips.</div></div>';
         for (var r = 0; r < 3; r++) {
           var tiles = "";
           for (var c = 0; c < 9; c++) {
@@ -415,29 +408,29 @@ p { margin: 0; }
     {
       id: "movie", label: "Movie selected",
       top: function () {
-        return '<div class="backdrop" style="background:' + bdrop("sintel") + '"></div>' +
+        return '<div class="backdrop" style="background:' + bdrop("int") + '"></div>' +
           '<div class="s-fill" style="display:grid;grid-template-columns:20cqw 1fr;gap:4cqw;padding:5cqw">' +
-            '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + art({ a: "sintel" }) + '"></div>' +
+            '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + art(T.int) + '"></div>' +
           '<div class="s-col" style="gap:1.3cqw;min-width:0;justify-content:center">' +
             '<div class="s-eyebrow">Movie</div>' +
-            '<div class="s-title" style="font-size:6.2cqw;letter-spacing:.06em;text-transform:uppercase">Sintel</div>' +
-            '<div class="s-mute" style="font-size:1.45cqw">2010 · 14 m 48 s · Animation, Fantasy · CC BY 3.0</div>' +
-            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">A lone girl searches the world for the baby dragon she raised and lost.</div>' +
-            '<div class="s-mute" style="font-size:1.3cqw;max-width:44cqw">Directed by Colin Levy · Blender Foundation, Project Durian</div>' +
+            '<div class="s-title" style="font-size:6.2cqw;letter-spacing:.06em;text-transform:uppercase">Interstellar</div>' +
+            '<div class="s-mute" style="font-size:1.45cqw">2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7</div>' +
+            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">Explorers travel through a wormhole looking for a new home for humanity.</div>' +
+            '<div class="s-mute" style="font-size:1.3cqw;max-width:44cqw">Directed by Christopher Nolan · Matthew McConaughey, Anne Hathaway, Jessica Chastain</div>' +
             '<div class="s-row" style="gap:.8cqw;margin-top:1.2cqw;font:600 1.15cqw/1 var(--f-mono);color:var(--scr-mute)">' +
-              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">1080p H.264</span>' +
-              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">AAC stereo</span>' +
-              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">External SRT subtitles</span>' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">2160p HEVC 10-bit</span>' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">E-AC3 5.1</span>' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">2 subtitle tracks</span>' +
             '</div>' +
             '</div>' +
           '</div>';
       },
       bottom: function () {
         return '<div class="b-pad">' +
-          '<div class="b-btn pri focus"><span>▶  Resume from 6:12</span>' + key("A") + '</div>' +
+          '<div class="b-btn pri focus"><span>▶  Resume from 1:12:04</span>' + key("A") + '</div>' +
           '<div class="b-btn"><span>Play from start</span></div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
-            '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · Stereo</span></div>' +
+            '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · 5.1</span></div>' +
             '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Subtitles</span><span>English · SRT</span></div>' +
           '</div>' +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw"><div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div><div class="b-btn"><span>Fix match</span></div></div>' +
@@ -455,28 +448,31 @@ p { margin: 0; }
     {
       id: "series", label: "Series selected",
       top: function () {
-        return '<div class="backdrop" style="background:' + bdrop("caminandes") + '"></div>' +
+        return '<div class="backdrop" style="background:' + bdrop("bb") + '"></div>' +
           '<div class="s-fill s-col" style="padding:6cqw 5cqw;gap:1.3cqw">' +
-            '<div class="s-eyebrow">Series · Blender Institute</div>' +
-            '<div class="s-title" style="font-size:6.4cqw">Caminandes</div>' +
-            '<div class="s-mute" style="font-size:1.45cqw">2013–2016 · Animation, Comedy · 3 episodes · CC BY 3.0</div>' +
-            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">Koro the llama keeps trying to outsmart the obstacles of life in Patagonia.</div>' +
+            '<div class="s-eyebrow">Series · AMC</div>' +
+            '<div class="s-title" style="font-size:6.4cqw">Breaking Bad</div>' +
+            '<div class="s-mute" style="font-size:1.45cqw">2008–2013 · Crime, Drama · Ended · 62 episodes</div>' +
+            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">A high-school chemistry teacher with cancer partners with a former student to make and sell meth.</div>' +
             '<div class="s-row" style="gap:3cqw;margin-top:auto;font-size:1.4cqw">' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Season 1</div><div><b>3</b> episodes</div></div>' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">On card</div><div><b>2</b></div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Season 2</div><div><b>13</b> episodes</div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">On card</div><div><b>12</b></div></div>' +
               '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Missing</div><div><b>1</b></div></div>' +
-              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Watched</div><div><b>1</b> of 3</div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Watched</div><div><b>4</b> of 13</div></div>' +
             '</div>' +
           '</div>';
       },
       bottom: function () {
         var eps = [
-          ["1", "Llama Drama", "✓", ""],
-          ["2", "Gran Dillama", "1m left", "cur"],
-          ["3", "Llamigos", "Not on card", "miss"]
+          ["3", "Bit by a Dead Bee", "✓", ""],
+          ["4", "Down", "✓", ""],
+          ["5", "Breakage", "28m left", "cur"],
+          ["6", "Peekaboo", "47m", ""],
+          ["7", "Negro y Azul", "Not on card", "miss"],
+          ["8", "Better Call Saul", "47m", ""]
         ];
         return '<div class="b-pad" style="gap:2.2cqw">' +
-          '<div class="b-chips">' + ["Season 1"].map(function (s, i) { return '<span class="b-chip' + (i === 0 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
+          '<div class="b-chips">' + ["S1", "S2", "S3", "S4", "S5"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
           '<div class="s-col" style="gap:.6cqw">' + eps.map(function (e) { return '<div class="ep ' + e[3] + '"><span class="n">' + e[0] + '</span><span>' + e[1] + '</span><span class="r">' + e[2] + '</span></div>'; }).join('') + '</div>' +
           legend([["A", "Play"], ["Y", "Watched"], ["L1", "Season"]]) +
         '</div>';
@@ -492,21 +488,21 @@ p { margin: 0; }
     {
       id: "play", label: "Playing",
       top: function () {
-        return '<div class="s-fill" style="background:' + bdrop("caminandes") + '"></div>' +
-          '<div style="position:absolute;left:0;right:0;bottom:5cqw;text-align:center;font:700 2.2cqw/1.25 var(--f-body);color:#fff;text-shadow:0 0 .4cqw #000,0 0 .4cqw #000">[ wind blowing across the plain ]</div>';
+        return '<div class="s-fill" style="background:' + frame("bb") + '"></div>' +
+          '<div style="position:absolute;left:0;right:0;bottom:5cqw;text-align:center;font:700 2.2cqw/1.25 var(--f-body);color:#fff;text-shadow:0 0 .4cqw #000,0 0 .4cqw #000">[ machinery humming ]</div>';
       },
       bottom: function () {
         return '<div class="b-pad" style="gap:2.6cqw">' +
-          '<div class="s-row" style="justify-content:space-between;gap:2cqw"><div><div class="b-tiny">Caminandes · S01E01</div><div class="b-h">Llama Drama</div></div><div class="b-tiny" style="text-align:right">21:10<br>bat 74%</div></div>' +
-          '<div class="s-col" style="gap:1.4cqw"><div style="position:relative" class="pbar"><b style="width:57.8%"></b></div>' +
-            '<div class="s-row" style="justify-content:space-between;font:600 2.8cqw/1 var(--f-mono)"><span>0:52</span><span class="s-mute">−0:38</span></div></div>' +
+          '<div class="s-row" style="justify-content:space-between;gap:2cqw"><div><div class="b-tiny">Breaking Bad · S02E05</div><div class="b-h">Breakage</div></div><div class="b-tiny" style="text-align:right">21:10<br>bat 74%</div></div>' +
+          '<div class="s-col" style="gap:1.4cqw"><div style="position:relative" class="pbar"><b style="width:39.7%"></b></div>' +
+            '<div class="s-row" style="justify-content:space-between;font:600 2.8cqw/1 var(--f-mono)"><span>18:42</span><span class="s-mute">−28:28</span></div></div>' +
           '<div class="s-row" style="justify-content:space-between;gap:2cqw">' +
             '<div class="b-btn" style="flex:1;justify-content:center">⟲ 10</div>' +
             '<div class="b-btn pri" style="flex:1.3;justify-content:center;font-size:4.4cqw">❚❚</div>' +
             '<div class="b-btn" style="flex:1;justify-content:center">10 ⟳</div>' +
             '<div class="b-btn" style="flex:1;justify-content:center">Next ›</div>' +
           '</div>' +
-          '<div class="b-chips"><span class="b-chip">Audio Stereo</span><span class="b-chip">Subs SDH</span><span class="b-chip">Delay 0 ms</span><span class="b-chip">1×</span><span class="b-chip">Fit</span></div>' +
+          '<div class="b-chips"><span class="b-chip">Audio EN 5.1</span><span class="b-chip">Subs EN</span><span class="b-chip">Delay 0 ms</span><span class="b-chip">1×</span><span class="b-chip">Fit</span></div>' +
           legend([["R2", "+10s"], ["L2", "−10s"], ["X", "Tracks"]]) +
         '</div>' +
         '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
@@ -523,18 +519,18 @@ p { margin: 0; }
     {
       id: "ending", label: "Episode ending",
       top: function () {
-        var c = ["Directed by", "Pablo Vazquez", "", "Produced by", "Blender Institute", "", "Licence", "Creative Commons Attribution"];
+        var c = ["Created by", "Vince Gilligan", "", "Starring", "Bryan Cranston", "Aaron Paul", "", "Music by", "Dave Porter"];
         return '<div class="s-fill" style="background:#000"></div>' +
           '<div class="s-fill s-col" style="align-items:center;justify-content:center;gap:.5cqw;font-size:1.6cqw;color:#cfd2d6">' +
-            c.map(function (l) { return l ? '<div style="' + (/by|Licence/.test(l) ? 'color:#7d828a;font-size:1.2cqw;letter-spacing:.1em;text-transform:uppercase' : '') + '">' + l + '</div>' : '<div style="height:1.4cqw"></div>'; }).join('') +
+            c.map(function (l) { return l ? '<div style="' + (/by|Starring/.test(l) ? 'color:#7d828a;font-size:1.2cqw;letter-spacing:.1em;text-transform:uppercase' : '') + '">' + l + '</div>' : '<div style="height:1.4cqw"></div>'; }).join('') +
           '</div>';
       },
       bottom: function () {
         return '<div class="b-pad">' +
           '<div class="b-tiny">Up next</div>' +
           '<div class="s-row" style="gap:3cqw;align-items:stretch">' +
-            '<div style="width:42cqw;aspect-ratio:16/9;border-radius:2cqw;background:' + bdrop("caminandes") + '"></div>' +
-            '<div class="s-col" style="gap:1.2cqw;justify-content:center"><div class="b-tiny" style="color:var(--scr-acc)">S01E02 · 2 min</div><div class="b-h">Gran Dillama</div><div class="b-small s-mute">Koro tries again to reach the grass on the other side of the fence.</div></div>' +
+            '<div style="width:42cqw;aspect-ratio:16/9;border-radius:2cqw;background:' + frame("bb") + '"></div>' +
+            '<div class="s-col" style="gap:1.2cqw;justify-content:center"><div class="b-tiny" style="color:var(--scr-acc)">S02E06 · 47 min</div><div class="b-h">Peekaboo</div><div class="b-small s-mute">Jesse goes to collect a debt and finds more than he expected.</div></div>' +
           '</div>' +
           '<div class="s-row" style="gap:3cqw">' +
             '<svg viewBox="0 0 40 40" style="width:12cqw;flex:none" aria-label="7 seconds left"><circle cx="20" cy="20" r="17" fill="none" stroke="#24272c" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#f2b33d" stroke-width="4" stroke-dasharray="74.8 106.8" transform="rotate(-90 20 20)" stroke-linecap="round"/><text x="20" y="25" text-anchor="middle" fill="#f1f2f4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600">7</text></svg>' +
@@ -561,7 +557,7 @@ p { margin: 0; }
                  '<text x="' + (x + bw / 2) + '" y="' + (H) + '" font-size="2.6" text-anchor="middle" fill="#8d929b" font-family="JetBrains Mono, monospace">W' + (36 + i) + '</text>';
         }).join('');
         var grid = [0, 4, 8, 12].map(function (g) { var y = H - 4 - g / max * (H - 8); return '<line x1="6" x2="98" y1="' + y + '" y2="' + y + '" stroke="#1d2024" stroke-width=".3"/><text x="4.6" y="' + (y + .9) + '" font-size="2.5" text-anchor="end" fill="#8d929b" font-family="JetBrains Mono, monospace">' + g + 'h</text>'; }).join('');
-        var shows = [["Caminandes", 92], ["Sintel", 61], ["Tears of Steel", 44], ["Cosmos Laundromat", 27]];
+        var shows = [["Breaking Bad", 92], ["Frieren", 61], ["Dexter", 44], ["The Blacklist", 27]];
         return '<div class="s-fill" style="padding:4cqw 5cqw;display:grid;grid-template-columns:1.25fr 1fr;gap:4cqw">' +
           '<div class="s-col" style="gap:1.4cqw;min-width:0">' +
             '<div class="s-eyebrow">October</div>' +
@@ -576,12 +572,12 @@ p { margin: 0; }
             '<div class="s-eyebrow" style="color:var(--scr-mute)">Top shows · hours</div>' +
             shows.map(function (s) { return '<div style="font-size:1.4cqw"><div class="s-row" style="justify-content:space-between"><span>' + s[0] + '</span><span class="s-mute" style="font-family:var(--f-mono)">' + (s[1] / 10).toFixed(1) + '</span></div><div class="pbar" style="margin-top:.5cqw"><b style="width:' + s[1] + '%"></b></div></div>'; }).join('') +
             '<div class="s-eyebrow" style="color:var(--scr-mute);margin-top:1cqw">Genres</div>' +
-            '<div style="font-size:1.3cqw;line-height:1.7">Animation 58% · Sci-fi 21% · Comedy 14% · Fantasy 7%</div>' +
+            '<div style="font-size:1.3cqw;line-height:1.7">Crime 41% · Anime 28% · Drama 19% · Sci-fi 12%</div>' +
           '</div>' +
         '</div>';
       },
       bottom: function () {
-        var h = [["Today 21:10", "Caminandes S01E02", "1m"], ["Today 21:07", "Caminandes S01E01", "2m"], ["Yesterday", "Tears of Steel", "8m"], ["Oct 21", "Sintel", "6m"]];
+        var h = [["Today 21:10", "Breaking Bad S02E05", "19m"], ["Today 20:22", "Breaking Bad S02E04", "47m"], ["Yesterday", "Frieren E11", "24m"], ["Oct 21", "Interstellar", "1h 13m"]];
         return '<div class="b-pad" style="gap:2.4cqw">' +
           '<div class="b-chips">' + ["Week", "Month", "Year", "All time"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
           '<div class="b-tiny">History</div>' +
@@ -600,14 +596,14 @@ p { margin: 0; }
     {
       id: "single", label: "Bottom screen off",
       top: function () {
-        return '<div class="s-fill" style="background:' + bdrop("big-buck-bunny") + '"></div>' +
+        return '<div class="s-fill" style="background:' + frame("int") + '"></div>' +
           '<div class="s-fill" style="background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))"></div>' +
-          '<div style="position:absolute;left:4cqw;top:3cqw;font-size:1.5cqw"><span class="s-mute">Movie</span> <b>Big Buck Bunny</b></div>' +
+          '<div style="position:absolute;left:4cqw;top:3cqw;font-size:1.5cqw"><span class="s-mute">Movie</span> <b>Interstellar</b></div>' +
           '<div style="position:absolute;right:4cqw;top:3cqw;font:600 1.2cqw/1 var(--f-mono);color:var(--scr-mute)">X Tracks · B Back</div>' +
           '<div style="position:absolute;left:4cqw;right:4cqw;bottom:3.4cqw" class="s-col">' +
-            '<div class="pbar" style="height:.55cqw"><b style="width:41%"></b></div>' +
-            '<div class="s-row" style="justify-content:space-between;margin-top:1cqw;font:600 1.3cqw/1 var(--f-mono)"><span>4:05</span>' +
-              '<span class="s-row" style="gap:3cqw;font-size:2cqw;color:#fff">⟲10 &nbsp; ❚❚ &nbsp; 10⟳ &nbsp; ›</span><span class="s-mute">−5:51</span></div>' +
+            '<div class="pbar" style="height:.55cqw"><b style="width:43%"></b></div>' +
+            '<div class="s-row" style="justify-content:space-between;margin-top:1cqw;font:600 1.3cqw/1 var(--f-mono)"><span>1:12:04</span>' +
+              '<span class="s-row" style="gap:3cqw;font-size:2cqw;color:#fff">⟲10 &nbsp; ❚❚ &nbsp; 10⟳ &nbsp; ›</span><span class="s-mute">−1:36:56</span></div>' +
           '</div>';
       },
       bottom: function () {
@@ -688,6 +684,7 @@ p { margin: 0; }
   function setTab(i) { browseTab = (i + TABS.length) % TABS.length; focusIdx = -1; redrawBrowse(); }
   function moveFocus(dx, dy) {
     var n = TABS[browseTab].items.length;
+    if (!n) return;
     if (focusIdx < 0) { focusIdx = 0; redrawBrowse(); return; }
     var i = focusIdx + dx + dy * COLS;
     if (i >= 0 && i < n) { focusIdx = i; redrawBrowse(); }
