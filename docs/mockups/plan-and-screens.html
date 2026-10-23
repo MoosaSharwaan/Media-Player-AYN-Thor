@@ -653,52 +653,6 @@ p { margin: 0; }
       }
     },
     {
-      id: "stats", label: "Stats",
-      top: function () {
-        var wk = [6.5, 8.0, 4.2, 9.1, 7.4, 10.3, 5.8, 9.6], max = 12, W = 100, H = 46, bw = 8.4;
-        var bars = wk.map(function (v, i) {
-          var h = v / max * (H - 8), x = 8 + i * 11.4;
-          return '<rect x="' + x + '" y="' + (H - 4 - h) + '" width="' + bw + '" height="' + h + '" rx="1" fill="' + (i === 7 ? '#f2b33d' : '#3a3e45') + '"/>' +
-                 '<text x="' + (x + bw / 2) + '" y="' + (H) + '" font-size="2.6" text-anchor="middle" fill="#8d929b" font-family="JetBrains Mono, monospace">W' + (36 + i) + '</text>';
-        }).join('');
-        var grid = [0, 4, 8, 12].map(function (g) { var y = H - 4 - g / max * (H - 8); return '<line x1="6" x2="98" y1="' + y + '" y2="' + y + '" stroke="#1d2024" stroke-width=".3"/><text x="4.6" y="' + (y + .9) + '" font-size="2.5" text-anchor="end" fill="#8d929b" font-family="JetBrains Mono, monospace">' + g + 'h</text>'; }).join('');
-        var shows = [["Breaking Bad", 92], ["Frieren", 61], ["Dexter", 44], ["The Blacklist", 27]];
-        return '<div class="s-fill" style="padding:4cqw 5cqw;display:grid;grid-template-columns:1.25fr 1fr;gap:4cqw">' +
-          '<div class="s-col" style="gap:1.4cqw;min-width:0">' +
-            '<div class="s-eyebrow">October</div>' +
-            '<div class="s-row" style="gap:3.4cqw">' +
-              '<div><div class="s-title" style="font-size:4.2cqw">41h 12m</div><div class="s-mute" style="font-size:1.2cqw">watched</div></div>' +
-              '<div><div class="s-title" style="font-size:4.2cqw">63</div><div class="s-mute" style="font-size:1.2cqw">episodes finished</div></div>' +
-              '<div><div class="s-title" style="font-size:4.2cqw">12</div><div class="s-mute" style="font-size:1.2cqw">day streak</div></div>' +
-            '</div>' +
-            '<svg viewBox="0 0 100 ' + H + '" style="width:100%;margin-top:auto" aria-label="Hours watched per week">' + grid + bars + '</svg>' +
-          '</div>' +
-          '<div class="s-col" style="gap:1.4cqw;min-width:0">' +
-            '<div class="s-eyebrow" style="color:var(--scr-mute)">Top shows · hours</div>' +
-            shows.map(function (s) { return '<div style="font-size:1.4cqw"><div class="s-row" style="justify-content:space-between"><span>' + s[0] + '</span><span class="s-mute" style="font-family:var(--f-mono)">' + (s[1] / 10).toFixed(1) + '</span></div><div class="pbar" style="margin-top:.5cqw"><b style="width:' + s[1] + '%"></b></div></div>'; }).join('') +
-            '<div class="s-eyebrow" style="color:var(--scr-mute);margin-top:1cqw">Genres</div>' +
-            '<div style="font-size:1.3cqw;line-height:1.7">Crime 41% · Anime 28% · Drama 19% · Sci-fi 12%</div>' +
-          '</div>' +
-        '</div>';
-      },
-      bottom: function () {
-        var h = [["Today 21:10", "Breaking Bad S02E05", "19m"], ["Today 20:22", "Breaking Bad S02E04", "47m"], ["Yesterday", "Frieren E11", "24m"], ["Oct 21", "Interstellar", "1h 13m"]];
-        return '<div class="b-pad" style="gap:2.4cqw">' +
-          '<div class="b-chips">' + ["Week", "Month", "Year", "All time"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
-          '<div class="b-tiny">History</div>' +
-          '<div class="s-col" style="gap:.4cqw">' + h.map(function (r) { return '<div class="ep" style="grid-template-columns:22cqw 1fr auto"><span class="r">' + r[0] + '</span><span>' + r[1] + '</span><span class="r">' + r[2] + '</span></div>'; }).join('') + '</div>' +
-          legend([["L1", "Period"], ["Y", "Export CSV"], ["B", "Back"]]) +
-        '</div>';
-      },
-      notes: {
-        what: "Watching stats (v2). Charts on the top screen, period and history on the bottom.",
-        top: ["Totals, hours per week, top shows, genres", "All worked out from watch sessions on the device"],
-        bottom: ["Period picker; history list newest first", "Export CSV"],
-        ctrl: "L1/R1 change period. D-pad scrolls history. Y exports.",
-        q: ["Which three numbers matter most at the top?", "Is a streak motivating or annoying?"]
-      }
-    },
-    {
       id: "single", label: "No bottom screen",
       top: function () {
         return '<div class="s-fill" style="background:' + frame("int") + '"></div>' +
@@ -732,7 +686,6 @@ p { margin: 0; }
     series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)" },
     play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to this season's episode cards (decided)", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, aspect, audio delay)" },
     ending: { A: "Play next episode now (decided)", B: "Cancel the countdown and keep watching the credits (decided)", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
-    stats:  { DPAD: "Scroll the history list", L1: "Previous period", R1: "Next period", Y: "Export CSV", B: "Back" },
     single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
   };
   var LABEL = { DPAD: "✛ D-pad", L3: "L3 stick", R3: "R3 stick", SELECT: "▢ Select", START: "▷ Start", HOME: "⌂ Home", BACK: "↺ Back" };
@@ -891,7 +844,6 @@ p { margin: 0; }
     if ((cur === "play" || cur === "movie") && c === "A") { mv.paused = !mv.paused; redrawCur(); return; }
     if (cur === "ending" && c === "A") { show("play"); return; }
     if (cur === "ending" && c === "B") { show("play"); return; }
-    if (cur === "stats" && c === "B") { show("browse"); return; }
     if (cur === "series") {
       if (c === "A") seriesA();
       if (c === "B") seriesB();
@@ -922,8 +874,8 @@ p { margin: 0; }
     ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1],
     ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles"],
     ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1],
-    ["v2", "Comfort & stats", "Subtitle search, stats, backup, frontends, TV"],
-    ["G3", "Gate 3", "No battery regression; stats match a hand count", 1],
+    ["v2", "Comfort", "Backup, frontends, TV output, sleep timer"],
+    ["G3", "Gate 3", "No battery regression", 1],
     ["v3", "Extras", "Skip intro, Trakt, themes, PiP"]
   ];
   document.getElementById("gates").innerHTML = gates.map(function (g) { return '<div class="' + (g[3] ? 'g' : '') + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small></div>'; }).join('');
@@ -968,8 +920,8 @@ p { margin: 0; }
     { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
       ["Watch sessions recorded; saves on pause, stop and once a minute", "v1"],
       ["Continue watching row", "v1"],
-      ["Stats screen: totals, per show, genres, streaks, history", "v2"],
-      ["Export CSV; backup and restore in one file", "v2"],
+      ["Stats screen and CSV export: not needed for now", "Later"],
+      ["Backup and restore in one file", "v2"],
       ["Trakt two-way sync (optional)", "v3"] ] },
     { t: "Frontends", s: "Open from RetroHrai!, Cocoon or ES-DE.", steps: [
       ["Accept \"open this video\" from other apps", "v2"],

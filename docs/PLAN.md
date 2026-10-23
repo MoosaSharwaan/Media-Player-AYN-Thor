@@ -16,7 +16,7 @@ It fills a gap the current options leave. Kodi has a great library but uses one 
 - Identify movies and episodes from their filenames and show posters, backdrops and plots automatically.
 - Video on the top screen; episodes, controls and subtitles on the bottom screen.
 - Resume, watched status, auto-play next episode and a Continue watching row.
-- Watching stats kept on the device.
+- Watch history kept on the device (a stats screen is for later, D27).
 - Battery use at or below VLC's on the same file.
 - Fully usable with the Thor's buttons, without touching the screen.
 
@@ -87,6 +87,8 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D24 | **Layout rules R2–R9 accepted** (see the [mockup page](mockups/plan-and-screens.html), Rules tab): pure black backgrounds; no animation and at most one redraw a second on the bottom screen during playback; the bottom screen dims after 10 s; everything also works with no bottom screen; touch targets ≥ 48 dp; the same physical text size on both screens; one accent colour for focus and the main action; a button legend along the bottom of the bottom screen | Oct 23, 2026 |
 | D25 | **Typing happens on the bottom screen with the app's own keyboard** (rule R10): search and Fix match draw a keyboard on the bottom screen, used by touch or D-pad and A. The system keyboard opens on the top screen only as a fallback for input the built-in one can't handle | Oct 23, 2026 |
 | D26 | **Rule R1 accepted: nothing is ever drawn over a playing video** except its subtitles. No clock, progress bar, buttons, pop-ups or notices from the app on the top screen, with the bottom screen on or off. Exception: the No bottom screen layout | Oct 23, 2026 |
+| D27 | **No stats screen for now.** Watching stats and CSV export move to Later. The app still records watch sessions (cheap, and needed for resume and Continue watching), so stats can be added later without losing history | Oct 23, 2026 |
+| D28 | **Playback engine: Media3 ExoPlayer** with the FFmpeg audio add-on. libVLC stays the fallback if odd files become a problem | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -308,7 +310,7 @@ The work runs in four versions. Each one ends at a gate, and the next starts onl
 | --- | --- | --- |
 | **v0: two-screen test app + mockups** | A small probe app: video on the top screen, controls on the bottom screen, display and decoder report, refresh-mode test, bottom-screen dimming test, launch-from-bottom test. Layout mockups for the questions above | **Gate 1:** both screens work on the Thor with buttons and touch; the probe questions below are answered; a layout is chosen |
 | **v1: usable player** | Library scan, filename matching, artwork, series, resume and watched, Continue watching, auto-play next, local subtitles, subtitle search (OpenSubtitles), all v1 baseline rows | **Gate 2:** battery test passes against VLC; 95% of the filename test set matches |
-| **v2: comfort and stats** | Stats and export, backup, launch from frontends, sleep timer, background audio, night mode, TV output, full ASS | **Gate 3:** no battery regression; stats match a hand count |
+| **v2: comfort** | Backup, launch from frontends, sleep timer, background audio, night mode, TV output, full ASS | **Gate 3:** no battery regression |
 | **v3: extras** | Skip intro, Trakt, themes, picture-in-picture | — |
 
 v0 comes first because the two-screen behaviour on the Thor is the biggest unknown. **(research)** Other Thor apps already prove the approach, so v0 now mostly *measures* things. If the gate after v1 fails on battery, it gets fixed before any v2 feature is added. Each build round ends with a short list of things for you to try on the device.
@@ -373,7 +375,7 @@ Most of the app can be tested before the Thor arrives. Only final dual-screen tu
 **Open decisions**
 
 - [ ] App name (Thor Media Player is a placeholder).
-- [ ] Playback engine: Media3 ExoPlayer with the FFmpeg audio add-on (recommended: lower battery, better Android integration), or libVLC (plays more odd files, heavier).
+- [x] Playback engine: **Media3 ExoPlayer with the FFmpeg audio add-on** (decided, D28). libVLC stays the fallback if odd files become a problem. (Was: ExoPlayer, or libVLC, which plays more odd files, heavier).
 - [ ] Library layout: loose files only, or encourage Show/Season folders as well.
 - [ ] Create a TMDB API key now; OpenSubtitles account before v1.
 - [ ] Trakt sync: wanted, or skip.

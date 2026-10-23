@@ -57,8 +57,8 @@ These are what make the app better than the baseline. Each one is done only when
 | Local subtitles | Loads .srt, .ass and .vtt files next to the video automatically, matched by name and language | v1 |
 | Launch from frontends | RetroHrai!, Cocoon or ES-DE can open the app, or a specific file in it. **If launched on the bottom screen, the player moves itself to the top screen (research)** | v2 |
 | Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video. Reached from the Movie screen's Subtitles block when the file has none (D9) | v1 (moved up from v2) |
-| Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list | v2 |
-| Stats export | Export stats and watch history as CSV | v2 |
+| Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list. Not needed for now (D27); watch sessions are still recorded so it can be added later | Later |
+| Stats export | Export stats and watch history as CSV | Later |
 | Backup | Export and import settings, matches and watch history in one file | v2 |
 | Skip intro | Set the intro start and end once per show; a Skip button appears in later episodes | v3 |
 | Trakt sync | Optional two-way sync of watched status | v3 |
