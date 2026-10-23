@@ -79,6 +79,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D16 | **Episode cards are 3 across** | Oct 23, 2026 |
 | D17 | **Previous and next episode are buttons on the bottom screen** (‹ Prev and Next ›, either side of Resume / Pause), not L1 / R1 | Oct 23, 2026 |
 | D18 | **Bottom screen off behaves the same for movies and episodes: the top screen stays clean.** Only the film, nothing over it; the buttons still work (A pause, L2 / R2 skip), and pausing shows the title's art as usual. Controls over the video are only for when there is no bottom screen at all (a phone, a missing second display) | Oct 23, 2026 |
+| D19 | **Keep the "No bottom screen" layout** for devices with one screen (a phone, or a Thor whose second display isn't detected): controls fade in over the video on any button and fade out after a few seconds; menus slide in over the video | Oct 23, 2026 |
 
 **Questions the design must answer**
 
