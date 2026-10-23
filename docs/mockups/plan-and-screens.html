@@ -327,6 +327,13 @@ p { margin: 0; }
   // Movie screen state (mockup only)
   var mv = { paused: true, sub: 0, delay: 0, off: false };
   var SUBS = [{ label: "English · SRT ▾", on: true }, { label: "Off ▾", on: false }, { label: "None in file · Find subtitles", on: false, find: true }];
+  // Corner buttons on every video screen: ✎ Fix match and ⏻ bottom screen off/on. While off, only ⏻ shows.
+  function corner(off) {
+    var power = '<div data-act="power" title="Bottom screen off / on" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;cursor:pointer;font:700 3.6cqw/1 var(--f-body);border:.35cqw solid ' + (off ? '#1c1e22;color:#3a3d43' : 'var(--scr-line);color:var(--scr-mute)') + '">⏻</div>';
+    if (off) return power;
+    return '<div title="Fix match: pick the right title, or set the TMDB ID" style="position:absolute;right:12.6cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;font:700 3.4cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute)">✎</div>' + power;
+  }
+  function offScreen() { return '<div class="s-fill" style="background:#000"></div>' + corner(true); }
   var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
   var COLS = 4;
 
@@ -426,9 +433,8 @@ p { margin: 0; }
           '</div>';
       },
       bottom: function () {
-        var power = '<div data-act="power" title="Bottom screen off / on" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;cursor:pointer;font:700 3.6cqw/1 var(--f-body);border:.35cqw solid ' + (mv.off ? '#1c1e22;color:#3a3d43' : 'var(--scr-line);color:var(--scr-mute)') + '">⏻</div>';
-        if (mv.off) return '<div class="s-fill" style="background:#000"></div>' + power;
-        power = '<div title="Fix match: pick the right title, or set the TMDB ID" style="position:absolute;right:12.6cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;font:700 3.4cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute)">✎</div>' + power;
+        if (mv.off) return offScreen();
+        var power = corner(false);
         var sub = SUBS[mv.sub], d = mv.delay;
         return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
           '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:43%"></b></div>' +
@@ -503,7 +509,7 @@ p { margin: 0; }
           '<div style="position:absolute;left:0;right:0;bottom:5cqw;text-align:center;font:700 2.2cqw/1.25 var(--f-body);color:#fff;text-shadow:0 0 .4cqw #000,0 0 .4cqw #000">[ machinery humming ]</div>';
       },
       bottom: function () {
-        return '<div class="b-pad" style="gap:2.6cqw">' +
+        return '<div class="b-pad" style="gap:2.6cqw;bottom:13cqw">' +
           '<div class="s-row" style="justify-content:space-between;gap:2cqw"><div><div class="b-tiny">Breaking Bad · S02E05</div><div class="b-h">Breakage</div></div><div class="b-tiny" style="text-align:right">21:10<br>bat 74%</div></div>' +
           '<div class="s-col" style="gap:1.4cqw"><div style="position:relative" class="pbar"><b style="width:39.7%"></b></div>' +
             '<div class="s-row" style="justify-content:space-between;font:600 2.8cqw/1 var(--f-mono)"><span>18:42</span><span class="s-mute">−28:28</span></div></div>' +
@@ -514,14 +520,14 @@ p { margin: 0; }
             '<div class="b-btn" style="flex:1;justify-content:center">Next ›</div>' +
           '</div>' +
           '<div class="b-chips"><span class="b-chip">Audio EN 5.1</span><span class="b-chip">Subs EN</span><span class="b-chip">Delay 0 ms</span><span class="b-chip">1×</span><span class="b-chip">Fit</span></div>' +
-          legend([["R2", "+10s"], ["L2", "−10s"], ["X", "Tracks"]]) +
         '</div>' +
+        '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["X", "Tracks"]]) + '</div>' + corner(false) +
         '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
       },
       notes: {
         what: "A video is playing. Nothing covers the film; every control lives on the bottom screen.",
         top: ["Full-screen video and subtitles only", "No clock, no progress bar, no overlay"],
-        bottom: ["Title, seek bar, ±10 s, play/pause, next episode", "Audio, subtitles, delay, speed and aspect as chips", "Redraws once a second; dims after 10 s untouched"],
+        bottom: ["Title, seek bar, ±10 s, play/pause, next episode", "Audio, subtitles, delay, speed and aspect as chips", "Redraws once a second; dims after 10 s untouched", "Corner buttons: ✎ Fix match and ⏻ bottom screen off, as on every video screen <b>(decided)</b>"],
         ctrl: "A play/pause. L2/R2 skip 10 s. L1/R1 previous/next episode. X opens tracks. Touching the bottom screen never takes the controller away from the video.",
         dim: true,
         q: ["How dark is \"dimmed\": a black layer at 80%, or the panel almost off?", "Keep the episode list here too, or only the transport controls?", "Show the clock and battery, or keep the bottom screen emptier to save power?"]
@@ -548,12 +554,12 @@ p { margin: 0; }
             '<div class="b-btn pri" style="flex:1"><span>Play now</span>' + key("A") + '</div>' +
             '<div class="b-btn" style="flex:1"><span>Cancel</span>' + key("B") + '</div>' +
           '</div>' +
-        '</div>';
+        '</div>' + corner(false);
       },
       notes: {
         what: "The credits have started. The film keeps playing on top while the bottom screen counts down to the next episode.",
         top: ["Credits keep playing untouched"],
-        bottom: ["Up next card: still, title, length, one-line plot", "10 s countdown; Play now or Cancel"],
+        bottom: ["Up next card: still, title, length, one-line plot", "10 s countdown; Play now or Cancel", "Corner buttons: ✎ Fix match and ⏻ <b>(decided)</b>"],
         ctrl: "A plays now. B cancels and lets the credits run. One button either way.",
         q: ["When does the countdown start: at the credits marker, or 30 s before the end?", "After Cancel, what happens when the episode ends: back to the episode list?"]
       }
@@ -618,12 +624,12 @@ p { margin: 0; }
           '</div>';
       },
       bottom: function () {
-        return '<div class="s-fill" style="display:grid;place-items:center"><div style="font:600 2.4cqw/1 var(--f-mono);color:#141518;letter-spacing:.1em">OFF</div></div>';
+        return offScreen();
       },
       notes: {
         what: "The single-screen layout: the bottom screen is pure black (OLED pixels off) and the controls appear over the video, like any phone player.",
         top: ["Controls fade in over the video on any button and fade out after 3 s", "Menus and episode list open as a side sheet over the video"],
-        bottom: ["Pure black. Our own Bottom screen off action, because AYN's hold-the-AYN-button can't be detected", "Also used when the bottom display disappears"],
+        bottom: ["Pure black, with only ⏻ left in the corner; only ⏻ turns it back on <b>(decided)</b>. Tap it on the page to go back to Playing", "Our own off action, because AYN's hold-the-AYN-button can't be detected", "Also used when the bottom display disappears"],
         ctrl: "Same buttons as Playing. A combo (to decide) turns the bottom screen back on.",
         q: ["Which combo turns the bottom screen off and on?", "Where does the episode list go: side sheet on the right, or bottom sheet?", "Should the app start in this mode when launched docked to a TV?"]
       }
@@ -709,6 +715,10 @@ p { margin: 0; }
   window.addEventListener("resize", centerTabs);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
   bottom.addEventListener("click", function (e) {
+    if ((cur === "play" || cur === "ending" || cur === "single") && e.target.closest && e.target.closest("[data-act=power]")) {
+      show(cur === "single" ? "play" : "single");
+      return;
+    }
     if (cur === "movie" && e.target.closest) {
       var act = e.target.closest("[data-act]"); if (!act) return;
       var k = act.getAttribute("data-act");

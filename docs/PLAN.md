@@ -72,6 +72,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D9 | **Subtitle search moves to v1**, through the OpenSubtitles API (by file hash first, then title). The Movie screen's Subtitles block offers it when the file has none | Oct 23, 2026 |
 | D10 | **When the bottom screen is off, only the ⏻ button turns it back on.** Touching elsewhere on the black screen does nothing | Oct 23, 2026 |
 | D11 | **Fix match is a small ✎ button next to ⏻** in the bottom-right corner of the Movie screen, not a full-width field. It hides while the bottom screen is off | Oct 23, 2026 |
+| D12 | **Every video screen gets the same corner** (Movie, episode Playing, Episode ending): ✎ Fix match and ⏻ bottom screen off. While off, only ⏻ shows, and on episodes the top screen switches to the single-screen layout | Oct 23, 2026 |
 
 **Questions the design must answer**
 
