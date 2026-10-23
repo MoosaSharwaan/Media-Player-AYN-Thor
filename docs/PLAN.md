@@ -74,6 +74,10 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D11 | **Fix match is a small ✎ button next to ⏻** in the bottom-right corner of the Movie screen, not a full-width field. It hides while the bottom screen is off | Oct 23, 2026 |
 | D12 | **Every video screen gets the same corner** (Movie, episode Playing, Episode ending): ✎ Fix match and ⏻ bottom screen off. While off, only ⏻ shows, and on episodes the top screen switches to the single-screen layout | Oct 23, 2026 |
 | D13 | **Series flow.** Opening a series shows its art and details on top and **season cards** (each with its own artwork) below. Focusing or opening a season shows that season's art and description on top; opening it shows **episode cards**, and focusing one shows that episode's still and description on top. Opening an episode plays it on **the same screen as movies**. Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment. B goes back a level | Oct 23, 2026 |
+| D14 | **Continuing a series plays the episode straight away** (from Continue watching), the same as a movie. Back then leads to that season's episode cards, then the seasons, then the series | Oct 23, 2026 |
+| D15 | **A show with only one season skips the season cards** and opens on its episodes | Oct 23, 2026 |
+| D16 | **Episode cards are 3 across** | Oct 23, 2026 |
+| D17 | **Previous and next episode are buttons on the bottom screen** (‹ Prev and Next ›, either side of Resume / Pause), not L1 / R1 | Oct 23, 2026 |
 
 **Questions the design must answer**
 

@@ -356,7 +356,10 @@ p { margin: 0; }
     return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
       '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:' + m.pct + '%"></b></div>' +
         '<div class="s-row" style="justify-content:space-between;font:600 2.6cqw/1 var(--f-mono)"><span>' + m.pos + '</span><span class="s-mute">' + m.left + '</span></div></div>' +
+      (m.ep ? '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw">' +
+        '<div class="b-btn" data-act="prev" title="Previous episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.first ? ';opacity:.35' : '') + '">‹ Prev</div>' : '') +
       '<div class="b-btn pri focus" data-act="toggle" style="cursor:pointer"><span>' + (mv.paused ? '▶  Resume' : '❚❚  Pause') + '</span>' + key("A") + '</div>' +
+      (m.ep ? '<div class="b-btn" data-act="next" title="Next episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.last ? ';opacity:.35' : '') + '">Next ›</div></div>' : '') +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
         '<div class="b-btn"><span>Play from start</span></div>' +
         '<div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div>' +
@@ -465,17 +468,18 @@ p { margin: 0; }
           (e.st === "w" ? '<span style="position:absolute;right:1.2cqw;top:1.2cqw;font:700 2.2cqw/1 var(--f-body);background:var(--scr-acc);color:#1a1204;padding:.8cqw 1.2cqw;border-radius:.8cqw">✓</span>' : '') +
           (typeof e.st === "number" && e.st ? '<div class="pbar" style="position:absolute;left:1.2cqw;right:1.2cqw;bottom:1cqw;height:.8cqw"><b style="width:' + e.st + '%"></b></div>' : '') +
         '</div>' +
-        '<div style="font:700 2.6cqw/1.25 var(--f-body);margin-top:1cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.t + '</div>' +
-        '<div style="font:600 2cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + (miss ? "Not on card" : "47 min") + '</div></div>';
+        '<div style="font:700 2.3cqw/1.25 var(--f-body);margin-top:1cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.t + '</div>' +
+        '<div style="font:600 1.9cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + (miss ? "Not on card" : "47 min") + '</div></div>';
     }).join('');
-    return head + scrollGrid(cards, 2, 43.9 * 9 / 16 + 9 + 2.2, sv.ef);
+    return head + scrollGrid(cards, 3, 28.5 * 9 / 16 + 8 + 2.2, sv.ef);
   }
   var EPISODE = null;
   function episodePlayer(si, i) {
     var e = episodes(si)[i];
     return { frame: i === 4 && si === 1 ? frame("bb") : 'url(art-local/wide/bb.jpg) center/cover no-repeat, #000', wide: wide("bb"), poster: "", title: e.t,
       meta: "Breaking Bad · Season " + SEASONS[si].n + ", Episode " + e.n + " · 47 min", desc: e.d, credit: "",
-      pos: typeof e.st === "number" && e.st ? "18:42" : "0:00", left: typeof e.st === "number" && e.st ? "−28:28" : "−47:00", pct: typeof e.st === "number" ? e.st : 0 };
+      pos: typeof e.st === "number" && e.st ? "18:42" : "0:00", left: typeof e.st === "number" && e.st ? "−28:28" : "−47:00", pct: typeof e.st === "number" ? e.st : 0,
+      ep: { si: si, i: i, first: i === 0, last: i === episodes(si).length - 1 } };
   }
   EPISODE = episodePlayer(1, 4);
   var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
@@ -578,8 +582,8 @@ p { margin: 0; }
       notes: {
         what: "Opening a series or an anime series. Try it: tap a season card to focus it (the top screen shows that season), tap it again or press A to open it; then tap an episode to see it on top, and tap it again or press A to play it. B or Esc goes back a level.",
         top: ["First: the series' art and details <b>(decided)</b>", "Season card focused or opened: that season's art and description <b>(decided)</b>", "Episode card focused: that episode's still and description <b>(decided)</b>"],
-        bottom: ["Season cards with each season's artwork, like the series cards in Browsing <b>(decided)</b>", "Opening a season shows its episodes as cards; watched ones ticked, the current one with a progress bar, missing ones greyed <b>(decided)</b>", "Opening an episode plays it on the same screen as movies <b>(decided)</b>", "Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment <b>(decided)</b>"],
-        q: ["Should the series open straight on the season you're in (here Season 2), or always on the season cards?", "A series with one season: skip the season cards and go straight to episodes?", "Episode cards 2 across (shown) or 3?"]
+        bottom: ["Season cards with each season's artwork, like the series cards in Browsing <b>(decided)</b>", "Opening a season shows its episodes as cards; watched ones ticked, the current one with a progress bar, missing ones greyed <b>(decided)</b>", "Opening an episode plays it on the same screen as movies <b>(decided)</b>", "Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment <b>(decided)</b>", "Episode cards 3 across <b>(decided)</b>", "A show with one season skips the season cards and opens on its episodes <b>(decided)</b>"],
+        q: ["Opening a show from the Series or Anime tab (not Continue watching): series details first, as now?"]
       }
     },
     {
@@ -589,9 +593,9 @@ p { margin: 0; }
       notes: {
         what: "An episode playing: exactly the same screen as a movie. Tap Pause / Resume to see the paused top screen with the episode's art and description.",
         top: ["Playing: the episode only; paused: its art and description <b>(decided)</b>"],
-        bottom: ["Same layout as the Movie screen: progress, Resume / Pause, Play from start, Mark watched, Audio, Subtitles, timing, ✎ and ⏻ <b>(decided)</b>", "Redraws once a second; dims after 10 s untouched"],
+        bottom: ["Same layout as the Movie screen: progress, Resume / Pause, Play from start, Mark watched, Audio, Subtitles, timing, ✎ and ⏻ <b>(decided)</b>", "Plus ‹ Prev and Next › episode buttons on either side of Resume; no L1 / R1 for this <b>(decided)</b>", "Continuing a series (from Continue watching) lands here directly; B goes to that season's episode cards <b>(decided)</b>", "Redraws once a second; dims after 10 s untouched"],
         dim: true,
-        q: ["L1 / R1 for previous / next episode, or a Next episode button on the screen?", "How dark is \"dimmed\": a black layer at 80%, or the panel almost off?"]
+        q: ["How dark is \"dimmed\": a black layer at 80%, or the panel almost off?"]
       }
     },
     {
@@ -703,8 +707,8 @@ p { margin: 0; }
   var KEYS = {
     browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)", DPAD: "Move through the cards; the top screen shows the focused title (decided)", L3: "Same as D-pad (proposed)", A: "Open the focused title; a movie starts playing straight away, from where you stopped (decided)", B: "Leave the cards; the top screen goes back to the poster mix (proposed)" },
     movie:  { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to browsing", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Subtitles 50 ms earlier (proposed)", R1: "Subtitles 50 ms later (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
-    series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)", L1: "Previous season (proposed)", R1: "Next season (proposed)" },
-    play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to the episodes", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Previous episode (proposed)", R1: "Next episode (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
+    series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)" },
+    play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to this season's episode cards (decided)", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, aspect, audio delay)" },
     ending: { A: "Play next episode now", B: "Cancel the countdown", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
     stats:  { DPAD: "Scroll the history list", L1: "Previous period", R1: "Next period", Y: "Export CSV", B: "Back" },
     single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
@@ -770,12 +774,12 @@ p { margin: 0; }
     EPISODE = episodePlayer(sv.season, sv.ef); mv.paused = false; mv.off = false; show("play");
   }
   function seriesB() {
-    if (sv.lvl === "episodes") { sv.lvl = "seasons"; sv.sf = sv.season; sv.ef = -1; redrawCur(); return; }
+    if (sv.lvl === "episodes" && SEASONS.length > 1) { sv.lvl = "seasons"; sv.sf = sv.season; sv.ef = -1; redrawCur(); return; }
     if (sv.sf >= 0) { sv.sf = -1; redrawCur(); return; }
     show("browse");
   }
   function seriesMove(dx, dy) {
-    var cols = sv.lvl === "seasons" ? 4 : 2, n = sv.lvl === "seasons" ? SEASONS.length : episodes(sv.season).length;
+    var cols = sv.lvl === "seasons" ? 4 : 3, n = sv.lvl === "seasons" ? SEASONS.length : episodes(sv.season).length;
     var f = sv.lvl === "seasons" ? sv.sf : sv.ef;
     f = f < 0 ? 0 : f + dx + dy * cols; if (f < 0 || f >= n) return;
     if (sv.lvl === "seasons") sv.sf = f; else sv.ef = f; redrawCur();
@@ -784,7 +788,16 @@ p { margin: 0; }
   function browseA() {
     if (focusIdx < 0) return;
     var it = TABS[browseTab].items[focusIdx];
-    if (/Series|Anime series/.test(it.m)) { if (it.a === "bb") { sv = { lvl: "seasons", sf: -1, season: 1, ef: -1 }; show("series"); } return; }
+    if (/Series|Anime series/.test(it.m)) {
+      // Continuing a series: play the episode you're on straight away; Back leads to its season's episode cards
+      if (it.r) {
+        EPISODE = it.a === "bb" ? episodePlayer(1, 4) : { frame: wide(it.a), wide: wide(it.a), poster: "", title: it.t, meta: it.r, desc: it.d, credit: "", pos: "12:30", left: it.r.split(" · ").pop().replace(" left", ""), pct: it.p, ep: null };
+        if (it.a === "bb") sv = { lvl: "episodes", sf: 1, season: 1, ef: 4 };
+        mv.paused = false; mv.off = false; show("play"); return;
+      }
+      if (it.a === "bb") { sv = { lvl: SEASONS.length === 1 ? "episodes" : "seasons", sf: -1, season: SEASONS.length === 1 ? 0 : 1, ef: -1 }; show("series"); }
+      return;
+    }
     MOVIE = movieFrom(it); mv.paused = false; mv.off = false; show("movie");
   }
   function redrawBrowse() { top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
@@ -801,13 +814,14 @@ p { margin: 0; }
     var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (cur === "browse") {
       if (m) { e.preventDefault(); moveFocus(m[0], m[1]); }
-      if (e.key === "Enter") browseA();
+      if (e.key === "Enter") { e.preventDefault(); browseA(); }
       if (e.key === "Escape" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
     } else if (cur === "series") {
       if (m) { e.preventDefault(); seriesMove(m[0], m[1]); }
-      if (e.key === "Enter") seriesA();
+      if (e.key === "Enter") { e.preventDefault(); seriesA(); }
       if (e.key === "Escape") seriesB();
-    }
+    } else if (cur === "play" && e.key === "Escape") { if (EPISODE && EPISODE.ep) { sv.lvl = "episodes"; show("series"); } else show("browse"); }
+    else if (cur === "movie" && e.key === "Escape") show("browse");
   });
   window.addEventListener("resize", centerTabs);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
@@ -824,6 +838,11 @@ p { margin: 0; }
       if (k === "dminus" && SUBS[mv.sub].on) mv.delay -= 50;
       if (k === "dplus" && SUBS[mv.sub].on) mv.delay += 50;
       if (k === "power") { if (cur === "play") { show("single"); return; } mv.off = !mv.off; }
+      if ((k === "prev" || k === "next") && EPISODE && EPISODE.ep) {
+        var list = episodes(EPISODE.ep.si), j = EPISODE.ep.i, step = k === "next" ? 1 : -1;
+        do { j += step; } while (j >= 0 && j < list.length && list[j].st === "m"); // skip episodes not on the card
+        if (j >= 0 && j < list.length) { EPISODE = episodePlayer(EPISODE.ep.si, j); sv = { lvl: "episodes", sf: EPISODE.ep.si, season: EPISODE.ep.si, ef: j }; }
+      }
       redrawCur();
       return;
     }
@@ -842,6 +861,8 @@ p { margin: 0; }
     var k = e.target.closest ? e.target.closest(".ctl") : null;
     if (!k) return;
     var c = k.getAttribute("data-k");
+    if (cur === "play" && c === "B") { if (EPISODE && EPISODE.ep) { sv.lvl = "episodes"; show("series"); } else show("browse"); return; }
+    if (cur === "movie" && c === "B") { show("browse"); return; }
     if (cur === "series") {
       if (c === "A") seriesA();
       if (c === "B") seriesB();
