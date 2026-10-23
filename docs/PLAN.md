@@ -80,6 +80,10 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D17 | **Previous and next episode are buttons on the bottom screen** (‹ Prev and Next ›, either side of Resume / Pause), not L1 / R1 | Oct 23, 2026 |
 | D18 | **Bottom screen off behaves the same for movies and episodes: the top screen stays clean.** Only the film, nothing over it; the buttons still work (A pause, L2 / R2 skip), and pausing shows the title's art as usual. Controls over the video are only for when there is no bottom screen at all (a phone, a missing second display) | Oct 23, 2026 |
 | D19 | **Keep the "No bottom screen" layout** for devices with one screen (a phone, or a Thor whose second display isn't detected): controls fade in over the video on any button and fade out after a few seconds; menus slide in over the video | Oct 23, 2026 |
+| D20 | **A always goes one step forward, B always one step back**, on every screen (open, play, confirm / leave, close, stop) | Oct 23, 2026 |
+| D21 | **Anime works exactly like series** (series details → seasons → episodes → play). An anime with one episode, or an anime film, plays like a movie | Oct 23, 2026 |
+| D22 | **Everything in Others plays like a movie**: opening it plays it straight away, from where you stopped | Oct 23, 2026 |
+| D23 | **Episode ending screen accepted as shown**: credits keep playing on top; the bottom shows the Up next card with a 10 s countdown, Play now (A) and Cancel (B) | Oct 23, 2026 |
 
 **Questions the design must answer**
 
