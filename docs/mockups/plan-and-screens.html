@@ -452,8 +452,8 @@ p { margin: 0; }
       notes: {
         what: "Opening a movie plays it straight away, from where you stopped. This one screen is both playing and paused; tap Pause / Resume on the bottom screen to see both top screens. Tap Subtitles to cycle its states, the timing buttons to shift subtitles, and ⏻ to turn the bottom screen off and on.",
         top: ["Playing: the film only <b>(decided)</b>", "Paused: the title's art and details, like Browsing; never a progress bar or anything else over the picture <b>(decided)</b>"],
-        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off <b>(decided)</b>", "Fix match removed from this screen <b>(decided)</b>"],
-        q: ["Where does Fix match live now: a long-press on the card in Browsing?", "Subtitle search is planned for v2. Move it to v1 since this screen depends on it?", "When the bottom screen is off, is ⏻ the only way back on, or does any touch wake it?"]
+        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "Fix match removed from this screen <b>(decided)</b>"],
+        q: ["Where does Fix match live now?"]
       }
     },
     {
@@ -791,7 +791,7 @@ p { margin: 0; }
     { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
       ["Load .srt, .ass, .vtt next to the video automatically", "v1"],
       ["Basic styling: size, colour, outline, position", "v1"],
-      ["OpenSubtitles search by file hash; save next to the video", "v2"],
+      ["OpenSubtitles search by file hash; save next to the video", "v1"],
       ["Full ASS styling (libass renderer)", "v2"] ] },
     { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
       ["Watch sessions recorded; saves on pause, stop and once a minute", "v1"],

@@ -15,8 +15,8 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 | Version | What it adds | Status |
 | --- | --- | --- |
 | v0 | Two-screen test app that measures the Thor; layout mockups | Next |
-| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles | Planned |
-| v2 | Subtitle search, watching stats, backup, launch from frontends, TV output | Planned |
+| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles, subtitle search | Planned |
+| v2 | Watching stats, backup, launch from frontends, TV output | Planned |
 | v3 | Skip intro, Trakt sync, themes, picture-in-picture | Planned |
 
 ## Documents

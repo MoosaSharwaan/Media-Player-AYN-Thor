@@ -69,6 +69,8 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D6 | **Browsing, cards:** under the tabs, cards for every title in the selected tab. Moving through them makes the top screen switch from the poster mix to the focused title's poster, details and plot (and where you stopped, in Continue watching) | Oct 23, 2026 |
 | D7 | **Artwork comes from proper sources through their APIs, at the right size.** Wide 16:9 backdrops for the top screen (never a crop of a poster), posters sized for the bottom-screen cards. The mockup's poster crops are a stand-in only. See *Artwork sources and sizes* below | Oct 23, 2026 |
 | D8 | **Opening a movie plays it straight away**, from where you stopped. One Movie screen covers playing and paused. Top screen: the film only while playing; the title's art and details while paused; never a progress bar or controls over the picture. Bottom screen, in order: progress bar, Resume / Pause, Play from start and Mark watched (same style), Audio and Subtitles (choose a track, or Find subtitles when the file has none), subtitle timing −50 / +50 ms, and a small ⏻ button in the bottom-right corner that turns the bottom screen off and stays visible while it is off. Fix match is not on this screen. L2 / R2 skip back / forward 10 s | Oct 23, 2026 |
+| D9 | **Subtitle search moves to v1**, through the OpenSubtitles API (by file hash first, then title). The Movie screen's Subtitles block offers it when the file has none | Oct 23, 2026 |
+| D10 | **When the bottom screen is off, only the ⏻ button turns it back on.** Touching elsewhere on the black screen does nothing | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -272,7 +274,7 @@ The app targets the Thor Max first and runs on any Android 10+ phone, with the d
 **Accounts and keys (all free)**
 
 - TMDB API key, for artwork and info. The app must credit TMDB in its About screen.
-- OpenSubtitles account and API key, for subtitle search (v2). The free tier has a daily download limit.
+- OpenSubtitles account and API key, for subtitle search (v1). The free tier has a daily download limit.
 - Trakt account, optional (v3).
 
 **Build machine**
@@ -288,8 +290,8 @@ The work runs in four versions. Each one ends at a gate, and the next starts onl
 | Version | Contents | Gate to pass |
 | --- | --- | --- |
 | **v0: two-screen test app + mockups** | A small probe app: video on the top screen, controls on the bottom screen, display and decoder report, refresh-mode test, bottom-screen dimming test, launch-from-bottom test. Layout mockups for the questions above | **Gate 1:** both screens work on the Thor with buttons and touch; the probe questions below are answered; a layout is chosen |
-| **v1: usable player** | Library scan, filename matching, artwork, series, resume and watched, Continue watching, auto-play next, local subtitles, all v1 baseline rows | **Gate 2:** battery test passes against VLC; 95% of the filename test set matches |
-| **v2: comfort and stats** | Subtitle search, stats and export, backup, launch from frontends, sleep timer, background audio, night mode, TV output, full ASS | **Gate 3:** no battery regression; stats match a hand count |
+| **v1: usable player** | Library scan, filename matching, artwork, series, resume and watched, Continue watching, auto-play next, local subtitles, subtitle search (OpenSubtitles), all v1 baseline rows | **Gate 2:** battery test passes against VLC; 95% of the filename test set matches |
+| **v2: comfort and stats** | Stats and export, backup, launch from frontends, sleep timer, background audio, night mode, TV output, full ASS | **Gate 3:** no battery regression; stats match a hand count |
 | **v3: extras** | Skip intro, Trakt, themes, picture-in-picture | — |
 
 v0 comes first because the two-screen behaviour on the Thor is the biggest unknown. **(research)** Other Thor apps already prove the approach, so v0 now mostly *measures* things. If the gate after v1 fails on battery, it gets fixed before any v2 feature is added. Each build round ends with a short list of things for you to try on the device.
@@ -356,7 +358,7 @@ Most of the app can be tested before the Thor arrives. Only final dual-screen tu
 - [ ] App name (Thor Media Player is a placeholder).
 - [ ] Playback engine: Media3 ExoPlayer with the FFmpeg audio add-on (recommended: lower battery, better Android integration), or libVLC (plays more odd files, heavier).
 - [ ] Library layout: loose files only, or encourage Show/Season folders as well.
-- [ ] Create a TMDB API key now; OpenSubtitles account before v2.
+- [ ] Create a TMDB API key now; OpenSubtitles account before v1.
 - [ ] Trakt sync: wanted, or skip.
 - [ ] Install Android Studio on your PC before v0 starts.
 - [ ] Screen layouts: design several options as mockups, compare them on the Thor, pick one (v0).
