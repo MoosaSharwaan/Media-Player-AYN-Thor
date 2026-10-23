@@ -1,0 +1,665 @@
+<title>Thor Player Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky tab bar; Screens = device drawn to physical scale + notes; Plan = category lanes with version tags; Rules = constraints vs draft rules. */
+:root {
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --ink: #15181d;
+  --muted: #5a6371;
+  --line: #d3d8e0;
+  --accent: #a8670f;
+  --accent-soft: #f6e7cc;
+  --ok: #2f7a4b;
+  --warn: #9a5b00;
+  --shell: #23262b;
+  --shell-hi: #34383f;
+  /* Screen tokens: the app itself is true black in every theme */
+  --scr-bg: #000000;
+  --scr-ink: #f1f2f4;
+  --scr-mute: #8d929b;
+  --scr-dim: #4a4e55;
+  --scr-line: #24272c;
+  --scr-acc: #f2b33d;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0f12; --surface: #15191e; --ink: #e7e9ed; --muted: #98a1ae; --line: #272c34;
+    --accent: #f2b33d; --accent-soft: #3a2c12; --ok: #6cc28e; --warn: #f0b04a;
+    --shell: #1d2025; --shell-hi: #2c3037; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0f12; --surface: #15191e; --ink: #e7e9ed; --muted: #98a1ae; --line: #272c34;
+  --accent: #f2b33d; --accent-soft: #3a2c12; --ok: #6cc28e; --warn: #f0b04a;
+  --shell: #1d2025; --shell-hi: #2c3037; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.masthead { padding-block: 28px 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-stretch: 78%; font-weight: 780; font-size: clamp(30px, 5vw, 46px); line-height: 1.02; margin: 6px 0 8px; text-wrap: balance; letter-spacing: -.01em; }
+.lede { max-width: 66ch; color: var(--muted); margin: 0; }
+
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-top: 18px; }
+nav.tabs .wrap { display: flex; gap: 4px; padding-block: 0; overflow-x: auto; }
+nav.tabs button { font: 600 15px/1 var(--f-body); color: var(--muted); background: none; border: 0; padding: 14px 14px 13px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, .chip:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { padding-block: 26px 64px; }
+section.view { display: grid; gap: 22px; }
+h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 720; font-size: 26px; line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-stretch: 90%; font-weight: 680; font-size: 18px; margin: 0; }
+p { margin: 0; }
+
+/* ---------- state picker ---------- */
+.states { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 600 13.5px/1 var(--f-body); padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip .k { font-family: var(--f-mono); font-size: 11px; opacity: .6; margin-right: 6px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 920px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.device-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+/* ---------- the Thor, drawn to scale (top 6" 16:9, bottom 3.92" 1240×1080 → 56.5% of top width) ---------- */
+.thor { min-width: 540px; width: 100%; display: grid; gap: 0; }
+.lid, .deck { background: linear-gradient(180deg, var(--shell-hi), var(--shell)); border-radius: 22px; padding: 4.2% 5% 4.2%; }
+.lid { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+.hinge { height: 14px; margin: 0 9%; background: linear-gradient(180deg, #111316, #2a2d33 60%, #15171a); border-radius: 0 0 8px 8px; }
+.deck { border-top-left-radius: 10px; border-top-right-radius: 10px; display: grid; grid-template-columns: 1fr 56.5% 1fr; align-items: center; padding-top: 3.6%; padding-bottom: 5%; }
+.screen { position: relative; overflow: hidden; background: var(--scr-bg); color: var(--scr-ink); container-type: inline-size; border-radius: 4px; box-shadow: 0 0 0 2px #050607, 0 0 0 3px #3a3e45; font-family: var(--f-body); }
+.screen.top { aspect-ratio: 1920 / 1080; }
+.screen.bottom { aspect-ratio: 1240 / 1080; }
+.scrlabel { position: absolute; left: 0; top: -1px; transform: translateY(-100%); font: 600 10px/1 var(--f-mono); letter-spacing: .08em; color: #8a909a; padding-bottom: 6px; text-transform: uppercase; }
+.lid .screen-holder, .deck .screen-holder { position: relative; }
+.pad { display: grid; place-items: center; }
+.dpad { width: 44%; aspect-ratio: 1; position: relative; }
+.dpad::before, .dpad::after { content: ""; position: absolute; background: #121417; border-radius: 4px; }
+.dpad::before { left: 34%; right: 34%; top: 0; bottom: 0; }
+.dpad::after { top: 34%; bottom: 34%; left: 0; right: 0; }
+.abxy { width: 50%; aspect-ratio: 1; position: relative; }
+.abxy i { position: absolute; width: 33%; aspect-ratio: 1; border-radius: 50%; background: #121417; display: grid; place-items: center; font: 700 9px/1 var(--f-mono); color: #7d838c; font-style: normal; }
+.abxy i:nth-child(1) { left: 33.5%; top: 0; } .abxy i:nth-child(2) { right: 0; top: 33.5%; }
+.abxy i:nth-child(3) { left: 33.5%; bottom: 0; } .abxy i:nth-child(4) { left: 0; top: 33.5%; }
+.chin { grid-column: 2; justify-self: center; margin-top: 10px; width: 16%; height: 7px; border-radius: 4px; background: #121417; }
+.scale-note { font: 12px/1.4 var(--f-mono); color: var(--muted); margin-top: 10px; }
+
+/* ---------- on-screen UI (sizes in cqw so they scale with each panel) ---------- */
+.s-fill { position: absolute; inset: 0; }
+.s-col { display: flex; flex-direction: column; }
+.s-row { display: flex; align-items: center; }
+.s-mute { color: var(--scr-mute); }
+.s-acc { color: var(--scr-acc); }
+.s-eyebrow { font: 600 1.25cqw/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--scr-acc); }
+.s-title { font-family: var(--f-display); font-weight: 780; font-stretch: 80%; line-height: .95; letter-spacing: -.01em; }
+.backdrop { position: absolute; inset: 0; }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #000 0%, rgba(0,0,0,.86) 34%, rgba(0,0,0,.25) 70%, rgba(0,0,0,.55) 100%), linear-gradient(0deg, #000 0%, rgba(0,0,0,0) 45%); }
+.poster { flex: none; aspect-ratio: 2 / 3; border-radius: .6cqw; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: .7cqw; }
+.poster span { font: 700 1.05cqw/1.1 var(--f-display); font-stretch: 85%; color: #fff; text-shadow: 0 1px 4px #000; }
+.poster.sel { outline: .35cqw solid var(--scr-acc); outline-offset: .3cqw; }
+.pbar { height: .45cqw; border-radius: 1cqw; background: var(--scr-line); overflow: hidden; }
+.pbar b { display: block; height: 100%; background: var(--scr-acc); }
+
+/* bottom-screen specific (bottom panel is ~56% as wide, so cqw values are ~1.8× larger for the same physical size) */
+.b-pad { position: absolute; inset: 4.5cqw 5cqw; display: flex; flex-direction: column; gap: 3cqw; }
+.b-h { font: 700 4.6cqw/1.1 var(--f-display); font-stretch: 85%; }
+.b-small { font-size: 3cqw; line-height: 1.25; }
+.b-tiny { font: 600 2.4cqw/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--scr-mute); }
+.b-btn { border-radius: 2cqw; padding: 2.4cqw 3cqw; font: 700 3.6cqw/1.1 var(--f-body); background: #15171b; color: var(--scr-ink); border: .35cqw solid var(--scr-line); display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
+.b-btn.pri { background: var(--scr-acc); color: #1a1204; border-color: var(--scr-acc); }
+.b-btn.focus { border-color: var(--scr-acc); }
+.key { font: 700 2.4cqw/1 var(--f-mono); border: .3cqw solid currentColor; border-radius: 50%; width: 4.4cqw; height: 4.4cqw; display: inline-grid; place-items: center; opacity: .8; flex: none; }
+.b-chips { display: flex; flex-wrap: wrap; gap: 1.6cqw; }
+.b-chip { font: 700 3cqw/1 var(--f-body); padding: 1.8cqw 2.6cqw; border-radius: 6cqw; border: .35cqw solid var(--scr-line); color: var(--scr-ink); }
+.b-chip.on { background: var(--scr-ink); color: #000; border-color: var(--scr-ink); }
+.b-legend { margin-top: auto; display: flex; gap: 3.4cqw; flex-wrap: wrap; font: 600 2.5cqw/1 var(--f-mono); color: var(--scr-mute); }
+.b-legend span { display: inline-flex; align-items: center; gap: 1.2cqw; }
+.b-legend .key { width: 3.8cqw; height: 3.8cqw; font-size: 2.1cqw; }
+.ep { display: grid; grid-template-columns: 5cqw 1fr auto; gap: 2cqw; align-items: center; padding: 1.6cqw 2cqw; border-radius: 1.6cqw; font-size: 3.1cqw; }
+.ep.cur { background: #16181c; box-shadow: inset 0 0 0 .35cqw var(--scr-acc); }
+.ep.miss { color: var(--scr-dim); }
+.ep .n { font: 600 2.8cqw/1 var(--f-mono); color: var(--scr-mute); }
+.ep .r { font: 600 2.5cqw/1 var(--f-mono); color: var(--scr-mute); }
+.ep.miss .n, .ep.miss .r { color: var(--scr-dim); }
+.dimmer { position: absolute; inset: 0; background: rgba(0,0,0,.82); pointer-events: none; transition: opacity .3s; }
+
+/* ---------- notes panel ---------- */
+.notes { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.notes .what { color: var(--muted); }
+.notes dl { margin: 0; display: grid; gap: 12px; }
+.notes dt { font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.notes dd { margin: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.qbox { border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 8px; }
+.qbox h4 { margin: 0; font: 700 13px/1.2 var(--f-body); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+.btn { font: 600 13.5px/1 var(--f-body); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; justify-self: start; }
+
+/* ---------- plan ---------- */
+.gates { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.gates > div { flex: 1 1 140px; padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; }
+.gates > div:last-child { border-right: 0; }
+.gates .g { background: var(--accent-soft); flex: 0 1 120px; }
+.gates b { display: block; font-family: var(--f-display); font-stretch: 85%; font-size: 18px; }
+.gates small { color: var(--muted); font-size: 13px; line-height: 1.35; display: block; margin-top: 2px; }
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+@media (max-width: 420px) { .cats { grid-template-columns: minmax(0, 1fr); } }
+.cat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.cat p.sub { color: var(--muted); font-size: 14px; }
+.cat ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s; }
+.cat li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: baseline; font-size: 14.5px; }
+.cat li::before { counter-increment: s; content: counter(s); font: 600 12px/1 var(--f-mono); color: var(--muted); }
+.v { font: 600 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; }
+.v.v0 { background: var(--accent-soft); border-color: transparent; }
+.v.v1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
+
+/* ---------- rules ---------- */
+.rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .rules { grid-template-columns: minmax(0, 1fr); } }
+.rlist { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 4px; min-width: 0; }
+.rule { display: grid; grid-template-columns: 46px 1fr; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.rule:first-of-type { border-top: 0; }
+.rule .id { font: 600 12px/1.6 var(--f-mono); color: var(--muted); }
+.rule b { display: block; }
+.rule small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.pill { display: inline-block; font: 600 10.5px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; margin-top: 6px; }
+.pill.fixed { color: var(--ok); border: 1px solid currentColor; }
+.pill.prop { color: var(--warn); border: 1px solid currentColor; }
+.openq { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; }
+.openq ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="masthead wrap">
+  <div class="eyebrow">Thor Media Player · working draft · Oct 23, 2026</div>
+  <h1>Both screens, every state, and the plan behind them</h1>
+  <p class="lede">The first mockup option for each screen state, drawn to the Thor's real proportions, with the build plan by category and the draft display and layout rules we still have to agree. Nothing here is decided yet.</p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist">
+    <button role="tab" id="tab-screens" aria-controls="screens" aria-selected="true">Screens</button>
+    <button role="tab" id="tab-plan" aria-controls="plan" aria-selected="false">Plan by category</button>
+    <button role="tab" id="tab-rules" aria-controls="rules" aria-selected="false">Display &amp; layout rules</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <!-- ================= SCREENS ================= -->
+  <section class="view" id="screens" role="tabpanel" aria-labelledby="tab-screens">
+    <div class="states" id="statePicker" aria-label="Screen state"></div>
+    <div class="stage">
+      <div>
+        <div class="device-scroll">
+          <div class="thor" aria-label="AYN Thor mockup">
+            <div class="lid"><div class="screen-holder"><div class="scrlabel">Top · 6″ · 1920×1080</div><div class="screen top" id="topScreen"></div></div></div>
+            <div class="hinge"></div>
+            <div class="deck">
+              <div class="pad"><div class="dpad"></div></div>
+              <div class="screen-holder"><div class="screen bottom" id="bottomScreen"></div></div>
+              <div class="pad"><div class="abxy"><i>X</i><i>A</i><i>B</i><i>Y</i></div></div>
+              <div class="chin" title="AYN button"></div>
+            </div>
+          </div>
+        </div>
+        <p class="scale-note">Drawn to physical scale: the bottom panel is 56.5% as wide as the top. Text of the same physical size takes up about 1.8× more of the bottom panel's width.</p>
+      </div>
+      <aside class="notes" id="notes" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- ================= PLAN ================= -->
+  <section class="view" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+    <div><h2>Versions and gates</h2><p class="lede" style="margin-top:6px">Each version ends at a gate. The next one starts only when the gate passes.</p></div>
+    <div class="gates" id="gates"></div>
+    <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <!-- ================= RULES ================= -->
+  <section class="view" id="rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
+    <div><h2>Display and layout rules</h2><p class="lede" style="margin-top:6px">On the left: limits that come from the hardware and research, which we can't change. On the right: draft rules for us to accept, change or drop, one by one.</p></div>
+    <div class="rules">
+      <div class="rlist" id="fixedRules"><h3>Fixed by the Thor</h3></div>
+      <div class="rlist" id="draftRules"><h3>Draft rules to decide</h3></div>
+    </div>
+    <div class="openq"><h3>Open layout questions</h3><ul id="openQs"></ul></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  // ---------- shared mock content ----------
+  var P = {
+    bb:  { t: "Breaking Bad",       g: "linear-gradient(160deg,#7a8a3a,#2d4a22 45%,#0b1408)" },
+    dune:{ t: "Dune: Part Two",     g: "linear-gradient(160deg,#e0a35c,#a0642a 40%,#2a1505)" },
+    sev: { t: "Severance",          g: "linear-gradient(160deg,#6d93b8,#1f3b57 50%,#060d16)" },
+    bear:{ t: "The Bear",           g: "linear-gradient(160deg,#b0543a,#5a2a1e 50%,#140806)" },
+    arr: { t: "Arrival",            g: "linear-gradient(160deg,#9aa7ad,#3e4a52 50%,#0b0f12)" },
+    sho: { t: "Shōgun",             g: "linear-gradient(160deg,#c4483e,#5c1d1d 50%,#120404)" },
+    br:  { t: "Blade Runner 2049",  g: "linear-gradient(160deg,#ff9a3d,#7a3f12 45%,#150a03)" }
+  };
+  function poster(p, w, sel) { return '<div class="poster' + (sel ? ' sel' : '') + '" style="width:' + w + 'cqw;background:' + p.g + '"><span>' + p.t + '</span></div>'; }
+  function key(k) { return '<span class="key">' + k + '</span>'; }
+  function legend(items) { return '<div class="b-legend">' + items.map(function (i) { return '<span>' + key(i[0]) + i[1] + '</span>'; }).join('') + '</div>'; }
+
+  var desert = "radial-gradient(120% 80% at 70% 30%,#f2c57a 0%,#d98b3e 30%,#7a3d16 60%,#1f0d05 100%)";
+  var greenBd = "radial-gradient(100% 90% at 75% 35%,#9bb35a 0%,#4f6b2a 35%,#1d2a10 70%,#050803 100%)";
+
+  // ---------- states ----------
+  var S = [
+    {
+      id: "browse", label: "Browsing",
+      top: function () {
+        return '<div class="backdrop" style="background:' + greenBd + '"></div>' +
+          '<div class="s-fill s-col" style="padding:5cqw 5cqw 4cqw;gap:1.2cqw">' +
+            '<div class="s-eyebrow">Continue watching · S02E05</div>' +
+            '<div class="s-title" style="font-size:6.4cqw">Breaking Bad</div>' +
+            '<div class="s-mute" style="font-size:1.45cqw">2008 · Crime, Drama · TV-MA · 5 seasons · ★ 9.5</div>' +
+            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">A chemistry teacher diagnosed with cancer turns to making methamphetamine to secure his family\'s future.</div>' +
+            '<div class="s-row" style="gap:1cqw;margin-top:.4cqw;font-size:1.3cqw"><div class="pbar" style="width:14cqw"><b style="width:60%"></b></div><span class="s-mute">28 min left in Breakage</span></div>' +
+            '<div class="s-row" style="gap:1.6cqw;margin-top:auto;align-items:flex-end">' +
+              poster(P.bb, 10.5, true) + poster(P.dune, 8.6) + poster(P.sev, 8.6) + poster(P.bear, 8.6) + poster(P.arr, 8.6) + poster(P.sho, 8.6) + poster(P.br, 8.6) +
+            '</div>' +
+          '</div>';
+      },
+      bottom: function () {
+        var f = ["Continue watching", "Movies", "Series", "Unwatched", "Recently added"];
+        return '<div class="b-pad">' +
+          '<div class="s-row" style="justify-content:space-between"><div class="b-tiny">Library</div><div class="b-tiny">212 files · 38 shows · 96 movies</div></div>' +
+          '<div class="b-chips">' + f.map(function (x, i) { return '<span class="b-chip' + (i === 0 ? ' on' : '') + '">' + x + '</span>'; }).join('') + '</div>' +
+          '<div class="b-btn"><span>Search titles</span><span class="b-tiny" style="text-transform:none;letter-spacing:0">types on top screen</span></div>' +
+          '<div class="b-btn"><span>Sort: Last watched</span><span class="s-mute">▾</span></div>' +
+          '<div class="b-btn"><span>Folders</span><span class="s-mute">SD card › Videos</span></div>' +
+          legend([["A", "Open"], ["Y", "Watched"], ["X", "Filters"]]) +
+        '</div>';
+      },
+      notes: {
+        what: "The home view. You scroll titles on the top screen; the bottom screen narrows down what's shown.",
+        top: ["Poster row along the bottom; the selected title fills the top with backdrop, year, genre and plot", "Continue watching is the first row on open"],
+        bottom: ["Filters as touch chips, plus search, sort and the folder browser", "Library counts so you can see a scan finished"],
+        ctrl: "D-pad moves along the poster row (top). L1/R1 switch filter. A opens, Y marks watched.",
+        q: ["Poster row, grid or list on the top screen? How many titles visible?", "Is the bottom screen touch-first here, or do filters also need D-pad focus?", "Does search open a keyboard on the top screen over the posters?"]
+      }
+    },
+    {
+      id: "movie", label: "Movie selected",
+      top: function () {
+        return '<div class="backdrop" style="background:' + desert + '"></div>' +
+          '<div class="s-fill s-col" style="padding:6cqw 5cqw;gap:1.3cqw">' +
+            '<div class="s-eyebrow">Movie</div>' +
+            '<div class="s-title" style="font-size:6.2cqw;letter-spacing:.06em;text-transform:uppercase">Dune: Part Two</div>' +
+            '<div class="s-mute" style="font-size:1.45cqw">2024 · 2 h 46 m · ★ 8.2 · PG-13 · Sci-fi, Adventure</div>' +
+            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.</div>' +
+            '<div class="s-mute" style="font-size:1.3cqw;max-width:44cqw">Directed by Denis Villeneuve · Timothée Chalamet, Zendaya, Rebecca Ferguson</div>' +
+            '<div class="s-row" style="gap:.8cqw;margin-top:auto;font:600 1.15cqw/1 var(--f-mono);color:var(--scr-mute)">' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">2160p HEVC 10-bit</span>' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">E-AC3 5.1</span>' +
+              '<span style="border:1px solid var(--scr-line);padding:.6cqw .9cqw;border-radius:.5cqw">2 subtitle tracks</span>' +
+            '</div>' +
+          '</div>';
+      },
+      bottom: function () {
+        return '<div class="b-pad">' +
+          '<div class="b-btn pri focus"><span>▶  Resume from 1:12:04</span>' + key("A") + '</div>' +
+          '<div class="b-btn"><span>Play from start</span></div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
+            '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · 5.1</span></div>' +
+            '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Subtitles</span><span>English · SRT</span></div>' +
+          '</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw"><div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div><div class="b-btn"><span>Fix match</span></div></div>' +
+          legend([["A", "Play"], ["X", "Audio & subs"], ["B", "Back"]]) +
+        '</div>';
+      },
+      notes: {
+        what: "A film is selected. The top screen sells it; the bottom screen is where you act.",
+        top: ["Backdrop, logo or title, plot, cast, runtime", "File facts (resolution, codec, audio) so you know what you're about to play"],
+        bottom: ["Resume or Play from start; Resume has focus", "Audio and subtitle choice before playing; Mark watched; Fix match"],
+        ctrl: "A plays (Resume). X opens audio and subtitles. Y marks watched. B goes back.",
+        q: ["Show the file facts on the top screen, or hide them behind an info button?", "Is Fix match on this screen or in a long-press menu?"]
+      }
+    },
+    {
+      id: "series", label: "Series selected",
+      top: function () {
+        return '<div class="backdrop" style="background:' + greenBd + '"></div>' +
+          '<div class="s-fill s-col" style="padding:6cqw 5cqw;gap:1.3cqw">' +
+            '<div class="s-eyebrow">Series · AMC</div>' +
+            '<div class="s-title" style="font-size:6.4cqw">Breaking Bad</div>' +
+            '<div class="s-mute" style="font-size:1.45cqw">2008–2013 · Crime, Drama · Ended · 62 episodes</div>' +
+            '<div style="font-size:1.55cqw;max-width:44cqw;line-height:1.35;color:#d6d8dc">Walter White, a high-school chemistry teacher, partners with former student Jesse Pinkman to cook and sell meth.</div>' +
+            '<div class="s-row" style="gap:3cqw;margin-top:auto;font-size:1.4cqw">' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Season 2</div><div><b>13</b> episodes</div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">On card</div><div><b>11</b></div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Missing</div><div><b>2</b></div></div>' +
+              '<div><div class="s-eyebrow" style="color:var(--scr-mute)">Watched</div><div><b>4</b> of 13</div></div>' +
+            '</div>' +
+          '</div>';
+      },
+      bottom: function () {
+        var eps = [
+          ["3", "Bit by a Dead Bee", "✓", ""],
+          ["4", "Down", "✓", ""],
+          ["5", "Breakage", "28m left", "cur"],
+          ["6", "Peekaboo", "47m", ""],
+          ["7", "Negro y Azul", "Not on card", "miss"],
+          ["8", "Better Call Saul", "47m", ""]
+        ];
+        return '<div class="b-pad" style="gap:2.2cqw">' +
+          '<div class="b-chips">' + ["S1", "S2", "S3", "S4", "S5"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
+          '<div class="s-col" style="gap:.6cqw">' + eps.map(function (e) { return '<div class="ep ' + e[3] + '"><span class="n">' + e[0] + '</span><span>' + e[1] + '</span><span class="r">' + e[2] + '</span></div>'; }).join('') + '</div>' +
+          legend([["A", "Play"], ["Y", "Watched"], ["L1", "Season"]]) +
+        '</div>';
+      },
+      notes: {
+        what: "A show is selected. The bottom screen holds the season buttons and the episode list.",
+        top: ["Show backdrop, logo, plot", "Season summary: episodes on the card, missing, watched"],
+        bottom: ["Season chips, then episodes: playable, current one highlighted, missing ones greyed", "The list opens scrolled to the next unwatched episode"],
+        ctrl: "D-pad moves in the episode list. L1/R1 change season. A plays, Y toggles watched.",
+        q: ["Do missing episodes stay in the list (greyed) or collapse into one line?", "Should the top screen show the focused episode's still and plot instead of the show's?"]
+      }
+    },
+    {
+      id: "play", label: "Playing",
+      top: function () {
+        return '<div class="s-fill" style="background:' + desert + '"></div>' +
+          '<div class="s-fill" style="background:linear-gradient(0deg,rgba(0,0,0,.35),rgba(0,0,0,0) 30%)"></div>' +
+          '<div style="position:absolute;left:0;right:0;bottom:5cqw;text-align:center;font:700 2.2cqw/1.25 var(--f-body);color:#fff;text-shadow:0 0 .4cqw #000,0 0 .4cqw #000">I am not in danger, Skyler.<br>I am the danger.</div>';
+      },
+      bottom: function () {
+        return '<div class="b-pad" style="gap:2.6cqw">' +
+          '<div class="s-row" style="justify-content:space-between;gap:2cqw"><div><div class="b-tiny">Breaking Bad · S02E05</div><div class="b-h">Breakage</div></div><div class="b-tiny" style="text-align:right">21:10<br>bat 74%</div></div>' +
+          '<div class="s-col" style="gap:1.4cqw"><div style="position:relative" class="pbar"><b style="width:39.7%"></b></div>' +
+            '<div class="s-row" style="justify-content:space-between;font:600 2.8cqw/1 var(--f-mono)"><span>18:42</span><span class="s-mute">−28:28</span></div></div>' +
+          '<div class="s-row" style="justify-content:space-between;gap:2cqw">' +
+            '<div class="b-btn" style="flex:1;justify-content:center">⟲ 10</div>' +
+            '<div class="b-btn pri" style="flex:1.3;justify-content:center;font-size:4.4cqw">❚❚</div>' +
+            '<div class="b-btn" style="flex:1;justify-content:center">10 ⟳</div>' +
+            '<div class="b-btn" style="flex:1;justify-content:center">Next ›</div>' +
+          '</div>' +
+          '<div class="b-chips"><span class="b-chip">Audio EN 5.1</span><span class="b-chip">Subs EN</span><span class="b-chip">Delay 0 ms</span><span class="b-chip">1×</span><span class="b-chip">Fit</span></div>' +
+          legend([["R2", "+10s"], ["L2", "−10s"], ["X", "Tracks"]]) +
+        '</div>' +
+        '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
+      },
+      notes: {
+        what: "A video is playing. Nothing covers the film; every control lives on the bottom screen.",
+        top: ["Full-screen video and subtitles only", "No clock, no progress bar, no overlay"],
+        bottom: ["Title, seek bar, ±10 s, play/pause, next episode", "Audio, subtitles, delay, speed and aspect as chips", "Redraws once a second; dims after 10 s untouched"],
+        ctrl: "A play/pause. L2/R2 skip 10 s. L1/R1 previous/next episode. X opens tracks. Touching the bottom screen never takes the controller away from the video.",
+        dim: true,
+        q: ["How dark is \"dimmed\": a black layer at 80%, or the panel almost off?", "Keep the episode list here too, or only the transport controls?", "Show the clock and battery, or keep the bottom screen emptier to save power?"]
+      }
+    },
+    {
+      id: "ending", label: "Episode ending",
+      top: function () {
+        var c = ["Directed by", "Bryan Cranston", "", "Written by", "Moira Walley-Beckett", "", "Director of Photography", "Michael Slovis"];
+        return '<div class="s-fill" style="background:#000"></div>' +
+          '<div class="s-fill s-col" style="align-items:center;justify-content:center;gap:.5cqw;font-size:1.6cqw;color:#cfd2d6">' +
+            c.map(function (l) { return l ? '<div style="' + (/by|Photography/.test(l) ? 'color:#7d828a;font-size:1.2cqw;letter-spacing:.1em;text-transform:uppercase' : '') + '">' + l + '</div>' : '<div style="height:1.4cqw"></div>'; }).join('') +
+          '</div>';
+      },
+      bottom: function () {
+        return '<div class="b-pad">' +
+          '<div class="b-tiny">Up next</div>' +
+          '<div class="s-row" style="gap:3cqw;align-items:stretch">' +
+            '<div style="width:42cqw;aspect-ratio:16/9;border-radius:2cqw;background:' + greenBd + '"></div>' +
+            '<div class="s-col" style="gap:1.2cqw;justify-content:center"><div class="b-tiny" style="color:var(--scr-acc)">S02E06 · 47 min</div><div class="b-h">Peekaboo</div><div class="b-small s-mute">Jesse collects a debt; Walt\'s lie unravels.</div></div>' +
+          '</div>' +
+          '<div class="s-row" style="gap:3cqw">' +
+            '<svg viewBox="0 0 40 40" style="width:12cqw;flex:none" aria-label="7 seconds left"><circle cx="20" cy="20" r="17" fill="none" stroke="#24272c" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#f2b33d" stroke-width="4" stroke-dasharray="74.8 106.8" transform="rotate(-90 20 20)" stroke-linecap="round"/><text x="20" y="25" text-anchor="middle" fill="#f1f2f4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600">7</text></svg>' +
+            '<div class="b-btn pri" style="flex:1"><span>Play now</span>' + key("A") + '</div>' +
+            '<div class="b-btn" style="flex:1"><span>Cancel</span>' + key("B") + '</div>' +
+          '</div>' +
+        '</div>';
+      },
+      notes: {
+        what: "The credits have started. The film keeps playing on top while the bottom screen counts down to the next episode.",
+        top: ["Credits keep playing untouched"],
+        bottom: ["Up next card: still, title, length, one-line plot", "10 s countdown; Play now or Cancel"],
+        ctrl: "A plays now. B cancels and lets the credits run. One button either way.",
+        q: ["When does the countdown start: at the credits marker, or 30 s before the end?", "After Cancel, what happens when the episode ends: back to the episode list?"]
+      }
+    },
+    {
+      id: "stats", label: "Stats",
+      top: function () {
+        var wk = [6.5, 8.0, 4.2, 9.1, 7.4, 10.3, 5.8, 9.6], max = 12, W = 100, H = 46, bw = 8.4;
+        var bars = wk.map(function (v, i) {
+          var h = v / max * (H - 8), x = 8 + i * 11.4;
+          return '<rect x="' + x + '" y="' + (H - 4 - h) + '" width="' + bw + '" height="' + h + '" rx="1" fill="' + (i === 7 ? '#f2b33d' : '#3a3e45') + '"/>' +
+                 '<text x="' + (x + bw / 2) + '" y="' + (H) + '" font-size="2.6" text-anchor="middle" fill="#8d929b" font-family="JetBrains Mono, monospace">W' + (36 + i) + '</text>';
+        }).join('');
+        var grid = [0, 4, 8, 12].map(function (g) { var y = H - 4 - g / max * (H - 8); return '<line x1="6" x2="98" y1="' + y + '" y2="' + y + '" stroke="#1d2024" stroke-width=".3"/><text x="4.6" y="' + (y + .9) + '" font-size="2.5" text-anchor="end" fill="#8d929b" font-family="JetBrains Mono, monospace">' + g + 'h</text>'; }).join('');
+        var shows = [["Breaking Bad", 92], ["Severance", 61], ["Shōgun", 44], ["The Bear", 27]];
+        return '<div class="s-fill" style="padding:4cqw 5cqw;display:grid;grid-template-columns:1.25fr 1fr;gap:4cqw">' +
+          '<div class="s-col" style="gap:1.4cqw;min-width:0">' +
+            '<div class="s-eyebrow">October</div>' +
+            '<div class="s-row" style="gap:3.4cqw">' +
+              '<div><div class="s-title" style="font-size:4.2cqw">41h 12m</div><div class="s-mute" style="font-size:1.2cqw">watched</div></div>' +
+              '<div><div class="s-title" style="font-size:4.2cqw">63</div><div class="s-mute" style="font-size:1.2cqw">episodes finished</div></div>' +
+              '<div><div class="s-title" style="font-size:4.2cqw">12</div><div class="s-mute" style="font-size:1.2cqw">day streak</div></div>' +
+            '</div>' +
+            '<svg viewBox="0 0 100 ' + H + '" style="width:100%;margin-top:auto" aria-label="Hours watched per week">' + grid + bars + '</svg>' +
+          '</div>' +
+          '<div class="s-col" style="gap:1.4cqw;min-width:0">' +
+            '<div class="s-eyebrow" style="color:var(--scr-mute)">Top shows · hours</div>' +
+            shows.map(function (s) { return '<div style="font-size:1.4cqw"><div class="s-row" style="justify-content:space-between"><span>' + s[0] + '</span><span class="s-mute" style="font-family:var(--f-mono)">' + (s[1] / 10).toFixed(1) + '</span></div><div class="pbar" style="margin-top:.5cqw"><b style="width:' + s[1] + '%"></b></div></div>'; }).join('') +
+            '<div class="s-eyebrow" style="color:var(--scr-mute);margin-top:1cqw">Genres</div>' +
+            '<div style="font-size:1.3cqw;line-height:1.7">Drama 46% · Crime 22% · Sci-fi 18% · Comedy 14%</div>' +
+          '</div>' +
+        '</div>';
+      },
+      bottom: function () {
+        var h = [["Today 21:10", "Breaking Bad S02E05", "28m"], ["Today 20:22", "Breaking Bad S02E04", "47m"], ["Yesterday", "Severance S01E07", "41m"], ["Oct 21", "Dune: Part Two", "1h 12m"]];
+        return '<div class="b-pad" style="gap:2.4cqw">' +
+          '<div class="b-chips">' + ["Week", "Month", "Year", "All time"].map(function (s, i) { return '<span class="b-chip' + (i === 1 ? ' on' : '') + '">' + s + '</span>'; }).join('') + '</div>' +
+          '<div class="b-tiny">History</div>' +
+          '<div class="s-col" style="gap:.4cqw">' + h.map(function (r) { return '<div class="ep" style="grid-template-columns:22cqw 1fr auto"><span class="r">' + r[0] + '</span><span>' + r[1] + '</span><span class="r">' + r[2] + '</span></div>'; }).join('') + '</div>' +
+          legend([["L1", "Period"], ["Y", "Export CSV"], ["B", "Back"]]) +
+        '</div>';
+      },
+      notes: {
+        what: "Watching stats (v2). Charts on the top screen, period and history on the bottom.",
+        top: ["Totals, hours per week, top shows, genres", "All worked out from watch sessions on the device"],
+        bottom: ["Period picker; history list newest first", "Export CSV"],
+        ctrl: "L1/R1 change period. D-pad scrolls history. Y exports.",
+        q: ["Which three numbers matter most at the top?", "Is a streak motivating or annoying?"]
+      }
+    },
+    {
+      id: "single", label: "Bottom screen off",
+      top: function () {
+        return '<div class="s-fill" style="background:' + desert + '"></div>' +
+          '<div class="s-fill" style="background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))"></div>' +
+          '<div style="position:absolute;left:4cqw;top:3cqw;font-size:1.5cqw"><span class="s-mute">Breaking Bad · S02E05</span> <b>Breakage</b></div>' +
+          '<div style="position:absolute;right:4cqw;top:3cqw;font:600 1.2cqw/1 var(--f-mono);color:var(--scr-mute)">X Tracks · B Back</div>' +
+          '<div style="position:absolute;left:4cqw;right:4cqw;bottom:3.4cqw" class="s-col">' +
+            '<div class="pbar" style="height:.55cqw"><b style="width:39.7%"></b></div>' +
+            '<div class="s-row" style="justify-content:space-between;margin-top:1cqw;font:600 1.3cqw/1 var(--f-mono)"><span>18:42</span>' +
+              '<span class="s-row" style="gap:3cqw;font-size:2cqw;color:#fff">⟲10 &nbsp; ❚❚ &nbsp; 10⟳ &nbsp; ›</span><span class="s-mute">−28:28</span></div>' +
+          '</div>';
+      },
+      bottom: function () {
+        return '<div class="s-fill" style="display:grid;place-items:center"><div style="font:600 2.4cqw/1 var(--f-mono);color:#141518;letter-spacing:.1em">OFF</div></div>';
+      },
+      notes: {
+        what: "The single-screen layout: the bottom screen is pure black (OLED pixels off) and the controls appear over the video, like any phone player.",
+        top: ["Controls fade in over the video on any button and fade out after 3 s", "Menus and episode list open as a side sheet over the video"],
+        bottom: ["Pure black. Our own Bottom screen off action, because AYN's hold-the-AYN-button can't be detected", "Also used when the bottom display disappears"],
+        ctrl: "Same buttons as Playing. A combo (to decide) turns the bottom screen back on.",
+        q: ["Which combo turns the bottom screen off and on?", "Where does the episode list go: side sheet on the right, or bottom sheet?", "Should the app start in this mode when launched docked to a TV?"]
+      }
+    }
+  ];
+
+  var top = document.getElementById("topScreen"), bottom = document.getElementById("bottomScreen"), notes = document.getElementById("notes"), picker = document.getElementById("statePicker");
+
+  function li(a) { return '<ul>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
+  function show(id) {
+    var s = S.filter(function (x) { return x.id === id; })[0] || S[0];
+    top.innerHTML = s.top(); bottom.innerHTML = s.bottom();
+    var n = s.notes;
+    notes.innerHTML = '<h2>' + s.label + '</h2><p class="what">' + n.what + '</p>' +
+      '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Controller</dt><dd>' + n.ctrl + '</dd></div></dl>' +
+      (n.dim ? '<button class="btn" id="dimBtn" type="button" aria-pressed="false">Preview the dimmed bottom screen</button>' : '') +
+      '<div class="qbox"><h4>To decide for this state</h4>' + li(n.q) + '</div>';
+    Array.prototype.forEach.call(picker.children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === s.id ? "true" : "false"); });
+    var d = document.getElementById("dimBtn");
+    if (d) d.addEventListener("click", function () {
+      var on = d.getAttribute("aria-pressed") !== "true"; d.setAttribute("aria-pressed", on);
+      document.getElementById("dimmer").style.opacity = on ? 1 : 0;
+      d.textContent = on ? "Show the bottom screen awake" : "Preview the dimmed bottom screen";
+    });
+    try { localStorage.setItem("thor-state", s.id); } catch (e) {}
+  }
+  S.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.dataset.id = s.id;
+    b.innerHTML = '<span class="k">' + (i + 1) + '</span>' + s.label;
+    b.addEventListener("click", function () { show(s.id); });
+    picker.appendChild(b);
+  });
+  var start = "browse"; try { start = localStorage.getItem("thor-state") || "browse"; } catch (e) {}
+  show(start);
+
+  // ---------- plan ----------
+  var gates = [
+    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared"],
+    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles"],
+    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1],
+    ["v2", "Comfort & stats", "Subtitle search, stats, backup, frontends, TV"],
+    ["G3", "Gate 3", "No battery regression; stats match a hand count", 1],
+    ["v3", "Extras", "Skip intro, Trakt, themes, PiP"]
+  ];
+  document.getElementById("gates").innerHTML = gates.map(function (g) { return '<div class="' + (g[3] ? 'g' : '') + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small></div>'; }).join('');
+
+  var cats = [
+    { t: "Two-screen foundation", s: "Prove and measure the Thor before building screens.", steps: [
+      ["Find the bottom panel by name and flags; skip virtual and TV displays", "v0"],
+      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0"],
+      ["Video in a SurfaceView on the top screen", "v0"],
+      ["Single-screen fallback when the bottom display disappears", "v0"],
+      ["Move to the top screen if launched on the bottom", "v0"],
+      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0"],
+      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0"] ] },
+    { t: "Layout & design", s: "Decide how both screens look before any screen is built.", steps: [
+      ["Mockup options for every state (this page is option 1)", "v0"],
+      ["Agree the display and layout rules", "v0"],
+      ["Choose a layout per state on the real Thor", "v0"],
+      ["Final button map, including bottom-screen-off combo", "v0"],
+      ["Themes: true-black default plus accent colours", "v3"] ] },
+    { t: "Library & matching", s: "From a folder of files to posters and seasons.", steps: [
+      ["Pick the SD card folder once (folder picker)", "v1"],
+      ["Scan, then rescan only changed folders", "v1"],
+      ["Filename parser, tested on 100 real names", "v1"],
+      ["Match on TMDB; download posters, backdrops, logos", "v1"],
+      ["Group Show › Season › Episode; list missing episodes", "v1"],
+      ["Fix a match by hand; survives rescans", "v1"],
+      ["Folder browser; search, sort, filter", "v1"] ] },
+    { t: "Playback", s: "Everything that happens once you press Play.", steps: [
+      ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1"],
+      ["Notices for software decoding and unsupported audio", "v1"],
+      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1"],
+      ["Audio and subtitle tracks; delay in 50 ms steps", "v1"],
+      ["Resume; watched at 90%; auto-play next with countdown", "v1"],
+      ["Sleep timer, background audio, night mode, Bluetooth delay", "v2"],
+      ["Playlists and queue; TV output when docked", "v2"],
+      ["Picture-in-picture; skip intro", "v3"] ] },
+    { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
+      ["Load .srt, .ass, .vtt next to the video automatically", "v1"],
+      ["Basic styling: size, colour, outline, position", "v1"],
+      ["OpenSubtitles search by file hash; save next to the video", "v2"],
+      ["Full ASS styling (libass renderer)", "v2"] ] },
+    { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
+      ["Watch sessions recorded; saves on pause, stop and once a minute", "v1"],
+      ["Continue watching row", "v1"],
+      ["Stats screen: totals, per show, genres, streaks, history", "v2"],
+      ["Export CSV; backup and restore in one file", "v2"],
+      ["Trakt two-way sync (optional)", "v3"] ] },
+    { t: "Frontends", s: "Open from RetroHrai!, Cocoon or ES-DE.", steps: [
+      ["Accept \"open this video\" from other apps", "v2"],
+      ["Move to the top screen when opened on the bottom", "v2"],
+      ["Sample ES-DE custom system and Cocoon setup notes", "v2"] ] },
+    { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
+      ["True black everywhere; bottom screen redraws once a second", "v0"],
+      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0"],
+      ["No background work during playback", "v1"],
+      ["Battery test against VLC on the same firmware", "v1"],
+      ["After every Thor OTA: rerun the short checklist", "v1"] ] },
+    { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
+      ["Unit tests: parser, stats maths, overrides", "v1"],
+      ["Emulator with a simulated 1240×1080 second screen", "v0"],
+      ["Your phone: decoding, subtitles, Bluetooth controller", "v1"],
+      ["Thor: both screens, buttons, battery", "v0"] ] }
+  ];
+  document.getElementById("cats").innerHTML = cats.map(function (c) {
+    return '<article class="cat"><div><h3>' + c.t + '</h3><p class="sub">' + c.s + '</p></div><ol>' +
+      c.steps.map(function (s) { return '<li><span>' + s[0] + '</span><span class="v ' + s[1] + '">' + s[1] + '</span></li>'; }).join('') + '</ol></article>';
+  }).join('');
+
+  // ---------- rules ----------
+  var fixed = [
+    ["F1", "Top screen is display 0; bottom is a separate presentation display", "Top 1920×1080 (6″). Bottom 1240×1080 (3.92″), about 56% as wide."],
+    ["F2", "Both screens run at 60 Hz while both are on", "120 Hz on top only with the bottom screen off, or with tearing below."],
+    ["F3", "The controller follows the last-touched screen", "Unless the touched window can't take focus. Ours won't."],
+    ["F4", "AYN's \"bottom screen off\" is invisible to apps", "It's a black overlay; the display still reports as on."],
+    ["F5", "The keyboard is unreliable on the bottom screen", "All typing happens on the top screen."],
+    ["F6", "Black pixels are off on both OLED panels", "Black costs almost no power; bright white costs the most."],
+    ["F7", "A brightness override may dim both screens", "Seen on older firmware; v0 tests current firmware."]
+  ];
+  var draft = [
+    ["R1", "The video is always full-screen and nothing is drawn over it while the bottom screen is on", "Subtitles are the only exception."],
+    ["R2", "Every background is pure black #000", "Panels and cards use near-black only where they need to read as separate."],
+    ["R3", "During playback the bottom screen has no animation and redraws at most once a second", "Except right after a touch or button press."],
+    ["R4", "The bottom screen dims to a black layer after 10 s untouched", "Wakes on any touch or button. Never dims while a menu is open."],
+    ["R5", "Everything on the bottom screen also exists in the single-screen layout", "So the app works fully with the bottom screen off."],
+    ["R6", "Touch targets on the bottom screen are at least 48 dp (about 7.6 mm)", "The panel is small and touched with a thumb while holding the device."],
+    ["R7", "Text is the same physical size on both screens", "The bottom panel is denser (≈419 ppi vs ≈367 ppi on top), so the same size needs about 14% more pixels there."],
+    ["R8", "One accent colour marks focus and the main action; nothing else uses it", "Focus must be visible from across a room when docked."],
+    ["R9", "Every screen shows its button legend along the bottom edge of the bottom screen", "Only the 3 buttons that do something here."],
+    ["R10", "Typing, keyboards and long text live on the top screen", "Search, fix match, settings text fields."]
+  ];
+  function rule(r, pill) { return '<div class="rule"><span class="id">' + r[0] + '</span><div><b>' + r[1] + '</b><small>' + r[2] + '</small><span class="pill ' + pill + '">' + (pill === "fixed" ? "Fixed" : "Proposed") + '</span></div></div>'; }
+  document.getElementById("fixedRules").insertAdjacentHTML("beforeend", fixed.map(function (r) { return rule(r, "fixed"); }).join(''));
+  document.getElementById("draftRules").insertAdjacentHTML("beforeend", draft.map(function (r) { return rule(r, "prop"); }).join(''));
+  document.getElementById("openQs").innerHTML = [
+    "Does the video always play on the top screen, or can you choose?",
+    "What does the bottom screen show while browsing, and while playing?",
+    "Is the bottom screen touch-first, button-first, or both equally?",
+    "Poster row, grid or list for browsing, and how many titles on screen?",
+    "In single-screen mode, where do the menus and episode list go?",
+    "What does each button do on each screen? Which combo turns the bottom screen off?",
+    "When docked to a TV: video on the TV and controls on the bottom screen, or everything on the TV?"
+  ].map(function (q) { return '<li>' + q + '</li>'; }).join('');
+
+  // ---------- tabs ----------
+  var tabs = ["screens", "plan", "rules"];
+  function openTab(id) {
+    if (tabs.indexOf(id) < 0) id = "screens";
+    tabs.forEach(function (t) {
+      document.getElementById(t).hidden = t !== id;
+      document.getElementById("tab-" + t).setAttribute("aria-selected", t === id ? "true" : "false");
+    });
+    try { history.replaceState(null, "", "#" + id); } catch (e) {}
+  }
+  tabs.forEach(function (t) { document.getElementById("tab-" + t).addEventListener("click", function () { openTab(t); }); });
+  openTab((location.hash || "").slice(1));
+})();
+</script>

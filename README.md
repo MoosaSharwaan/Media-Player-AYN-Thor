@@ -25,6 +25,7 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 | --- | --- |
 | [docs/PLAN.md](docs/PLAN.md) | The plan: goals, how the Thor works, two-screen design, battery rules, architecture, data model, phases, testing, risks |
 | [docs/FEATURES.md](docs/FEATURES.md) | Every feature with its version and acceptance test |
+| [docs/mockups/plan-and-screens.html](docs/mockups/plan-and-screens.html) | Mockups of both screens in every state, the plan by category, and the draft display and layout rules ([live page](https://claude.ai/artifact/JKHKE3bY5DPKwPxaqQdjhr)) |
 | [docs/research/thor-dual-screen.md](docs/research/thor-dual-screen.md) | How the Thor's two screens work, how frontends launch apps, and how melonDS, Azahar, Loki, Wayfinder and ES-DE Companion drive both screens |
 | [docs/research/thor-platform-and-issues.md](docs/research/thor-platform-and-issues.md) | What AYN publishes, firmware history, and the issues other Thor developers hit, with what each means for us |
 
