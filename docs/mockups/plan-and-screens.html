@@ -998,25 +998,25 @@ p { margin: 0; }
     ["F2", "Both screens run at 60 Hz while both are on", "120 Hz on top only with the bottom screen off, or with tearing below."],
     ["F3", "The controller follows the last-touched screen", "Unless the touched window can't take focus. Ours won't."],
     ["F4", "AYN's \"bottom screen off\" is invisible to apps", "It's a black overlay; the display still reports as on."],
-    ["F5", "The keyboard is unreliable on the bottom screen", "All typing happens on the top screen."],
+    ["F5", "Android's keyboard is unreliable on the bottom screen", "So the app draws its own keyboard there (R10). AYN's firmware .293 can pin the system keyboard to the bottom screen, but apps can't rely on it."],
     ["F6", "Black pixels are off on both OLED panels", "Black costs almost no power; bright white costs the most."],
     ["F7", "A brightness override may dim both screens", "Seen on older firmware; v0 tests current firmware."],
     ["F8", "Controls: left stick over D-pad, ABXY over right stick; L1/L2 and R1/R2 on the back edge", "Face buttons are Nintendo-style (A right, B bottom); Thor Settings can swap the style. L2/R2 are analog."],
     ["F9", "Home and the AYN button belong to the system", "Home goes to the launcher; AYN opens AYN's menu (hold = its bottom-off). Back reaches the app."]
   ];
   var draft = [
-    ["R1", "The video is always full-screen and nothing is drawn over it while the bottom screen is on", "Subtitles are the only exception."],
-    ["R2", "Every background is pure black #000", "Panels and cards use near-black only where they need to read as separate."],
-    ["R3", "During playback the bottom screen has no animation and redraws at most once a second", "Except right after a touch or button press."],
-    ["R4", "The bottom screen dims to a black layer after 10 s untouched", "Wakes on any touch or button. Never dims while a menu is open."],
-    ["R5", "Everything on the bottom screen also exists in the single-screen layout", "So the app works fully with the bottom screen off."],
-    ["R6", "Touch targets on the bottom screen are at least 48 dp (about 7.6 mm)", "The panel is small and touched with a thumb while holding the device."],
-    ["R7", "Text is the same physical size on both screens", "The bottom panel is denser (≈419 ppi vs ≈367 ppi on top), so the same size needs about 14% more pixels there."],
-    ["R8", "One accent colour marks focus and the main action; nothing else uses it", "Focus must be visible from across a room when docked."],
-    ["R9", "Every screen shows its button legend along the bottom edge of the bottom screen", "Only the 3 buttons that do something here."],
-    ["R10", "Typing, keyboards and long text live on the top screen", "Now conflicts with R11: the keyboard is unreliable on the bottom screen (F5), but the top screen takes no input. Needs a decision.", "conf"],
+    ["R1", "The video is always full-screen and nothing is drawn over it", "While a video plays, the top screen shows only the picture and its subtitles: no clock, progress bar, buttons, pop-ups or notices from the app. Applies with the bottom screen on or off (D8, D18)."],
+    ["R2", "Every background is pure black #000", "Panels and cards use near-black only where they need to read as separate.", "dec"],
+    ["R3", "During playback the bottom screen has no animation and redraws at most once a second", "Except right after a touch or button press.", "dec"],
+    ["R4", "The bottom screen dims to a black layer after 10 s untouched", "Wakes on any touch or button. Never dims while a menu is open.", "dec"],
+    ["R5", "Everything on the bottom screen also exists in the single-screen layout", "So the app works fully with no bottom screen at all (a phone). With ⏻ off, the top stays clean and the buttons still work (D18).", "dec"],
+    ["R6", "Touch targets on the bottom screen are at least 48 dp (about 7.6 mm)", "The panel is small and touched with a thumb while holding the device.", "dec"],
+    ["R7", "Text is the same physical size on both screens", "The bottom panel is denser (≈419 ppi vs ≈367 ppi on top), so the same size needs about 14% more pixels there.", "dec"],
+    ["R8", "One accent colour marks focus and the main action; nothing else uses it", "Focus must be visible from across a room when docked.", "dec"],
+    ["R9", "Every screen shows its button legend along the bottom edge of the bottom screen", "Only the 3 buttons that do something here.", "dec"],
+    ["R10", "Typing happens on the bottom screen, with the app's own keyboard", "Search and Fix match draw their own keyboard on the bottom screen (touch, or D-pad and A). Android's keyboard isn't reliable there, so the app doesn't use it. Only if a language or input the built-in keyboard can't handle is needed does the system keyboard open on the top screen.", "dec"],
     ["R12", "A always goes one step forward, B always goes one step back", "Forward: open, play, confirm. Back: leave the cards, close the season, stop playback. On every screen.", "dec"],
-    ["R11", "The top screen is display only: it never takes input, focus or touch", "Everything you do happens on the bottom screen. Exception to settle: single-screen mode, where the top screen is the only one.", "dec"]
+    ["R11", "The top screen is display only: it never takes input, focus or touch", "Everything you do happens on the bottom screen. Exceptions: the No bottom screen layout (a phone), and the system keyboard fallback in R10.", "dec"]
   ];
   var PILL = { fixed: "Fixed", prop: "Proposed", dec: "Decided", conf: "Conflict" };
   function rule(r, pill) { pill = r[3] || pill; return '<div class="rule"><span class="id">' + r[0] + '</span><div><b>' + r[1] + '</b><small>' + r[2] + '</small><span class="pill ' + pill + '">' + PILL[pill] + '</span></div></div>'; }
