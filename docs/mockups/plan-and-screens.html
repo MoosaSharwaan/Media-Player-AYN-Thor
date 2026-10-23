@@ -287,6 +287,7 @@ p { margin: 0; }
   function mk(t, h, p, m, d, r, a) { return { t: t, h: h, p: p, m: m || "", d: d || "", r: r, a: a, g: "linear-gradient(160deg,hsl(" + h + ",42%,58%),hsl(" + h + ",48%,26%) 48%,hsl(" + h + ",55%,6%))" }; }
   function art(it) { return it.a ? "url(art-local/posters/" + it.a + ".jpg) center/cover no-repeat, " + it.g : it.g; }
   function bdrop(a) { return "url(art-local/backdrops/" + a + ".jpg) center/cover no-repeat, #000"; }
+  function wide(a) { return "url(art-local/wide/" + a + ".jpg) center/cover no-repeat, #000"; }
   function frame(a) { return "url(art-local/frames/" + a + ".jpg) center/cover no-repeat, #000"; }
   var T = {
     god:  mk("The Godfather", 30, 0, "1972 · 2 h 55 m · Crime, Drama", "The ageing head of a mafia family hands control of his empire to his reluctant youngest son.", 0, "god"),
@@ -343,14 +344,13 @@ p { margin: 0; }
 
   // Top screen once you move through the cards: the focused title's poster, details and plot.
   // Top screen for the focused title: key art filling the screen, title, year and plot over it on the left.
-  // The poster is the key art for now: shown full height on the right, faded into its own blurred backdrop.
+  // Art: a 16:9 crop of the poster for now; real backdrops (TMDB) would fit the screen better still.
   function browseDetail() {
     var it = TABS[browseTab].items[focusIdx], h = it.h, m = it.m.split(" · ");
-    var ground = it.a ? bdrop(it.a) : 'radial-gradient(110% 90% at 72% 35%,hsl(' + h + ',45%,52%) 0%,hsl(' + h + ',50%,24%) 38%,hsl(' + h + ',55%,8%) 70%,#000 100%)';
+    var ground = it.a ? wide(it.a) : 'radial-gradient(110% 90% at 72% 35%,hsl(' + h + ',45%,52%) 0%,hsl(' + h + ',50%,24%) 38%,hsl(' + h + ',55%,8%) 70%,#000 100%)';
     return '<div class="s-fill" style="background:' + ground + '"></div>' +
-      (it.a ? '<div style="position:absolute;top:0;bottom:0;right:0;width:46cqw;background:url(art-local/posters/' + it.a + '.jpg) center 22%/cover no-repeat;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 30%);mask-image:linear-gradient(90deg,transparent 0%,#000 30%)"></div>' : '') +
-      '<div class="s-fill" style="background:linear-gradient(90deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.72) 38%,rgba(0,0,0,.1) 66%,rgba(0,0,0,0) 100%),linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 40%)"></div>' +
-      '<div style="position:absolute;left:5cqw;top:0;bottom:0;width:50cqw;display:flex;flex-direction:column;justify-content:center;gap:1.4cqw">' +
+      '<div class="s-fill" style="background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.82) 30%,rgba(0,0,0,.4) 50%,rgba(0,0,0,0) 72%),linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 40%)"></div>' +
+      '<div style="position:absolute;left:5cqw;top:0;bottom:0;width:40cqw;display:flex;flex-direction:column;justify-content:center;gap:1.4cqw;text-shadow:0 .15cqw .6cqw rgba(0,0,0,.8)">' +
         '<div class="s-title" style="font-size:6.4cqw;text-shadow:0 .3cqw 1.5cqw rgba(0,0,0,.6)">' + it.t + '</div>' +
         '<div style="font-size:1.6cqw"><b style="font-size:2.2cqw">' + m[0] + '</b>' + m.slice(1).map(function (x) { return '<span class="s-mute"> · </span><span class="s-mute" style="white-space:nowrap">' + x + '</span>'; }).join('') + '</div>' +
         '<div style="font-size:1.6cqw;line-height:1.45;color:#d6d8dc">' + it.d + '</div>' +
@@ -409,7 +409,7 @@ p { margin: 0; }
     {
       id: "movie", label: "Movie selected",
       top: function () {
-        return '<div class="backdrop" style="background:' + bdrop("int") + '"></div>' +
+        return '<div class="backdrop" style="background:' + wide("int") + '"></div>' +
           '<div class="s-fill" style="display:grid;grid-template-columns:20cqw 1fr;gap:4cqw;padding:5cqw">' +
             '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + art(T.int) + '"></div>' +
           '<div class="s-col" style="gap:1.3cqw;min-width:0;justify-content:center">' +
@@ -448,7 +448,7 @@ p { margin: 0; }
     {
       id: "series", label: "Series selected",
       top: function () {
-        return '<div class="backdrop" style="background:' + bdrop("bb") + '"></div>' +
+        return '<div class="backdrop" style="background:' + wide("bb") + '"></div>' +
           '<div class="s-fill s-col" style="padding:6cqw 5cqw;gap:1.3cqw">' +
             '<div class="s-title" style="font-size:6.4cqw">Breaking Bad</div>' +
             '<div class="s-mute" style="font-size:1.45cqw">2008–2013 · Crime, Drama · Ended · 62 episodes</div>' +
