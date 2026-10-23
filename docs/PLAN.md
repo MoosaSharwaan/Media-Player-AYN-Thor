@@ -89,6 +89,8 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D26 | **Rule R1 accepted: nothing is ever drawn over a playing video** except its subtitles. No clock, progress bar, buttons, pop-ups or notices from the app on the top screen, with the bottom screen on or off. Exception: the No bottom screen layout | Oct 23, 2026 |
 | D27 | **No stats screen for now.** Watching stats and CSV export move to Later. The app still records watch sessions (cheap, and needed for resume and Continue watching), so stats can be added later without losing history | Oct 23, 2026 |
 | D28 | **Playback engine: Media3 ExoPlayer** with the FFmpeg audio add-on. libVLC stays the fallback if odd files become a problem | Oct 23, 2026 |
+| D29 | **No bottom screen layout: menus slide in as a panel from the right** (subtitles, audio, episodes), as in landscape phone players. The video stays visible on the left; the panel is used with the D-pad | Oct 23, 2026 |
+| D30 | **Docked to a TV (v2): the TV gets everything.** Video on the TV in the one-screen layout, menus in the right-hand panel, the Thor's bottom screen off (like Loki's couch mode). A setting keeps the controls on the Thor's bottom screen instead, for when it's in your hands | Oct 23, 2026 |
 
 **Questions the design must answer**
 
