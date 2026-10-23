@@ -1,0 +1,73 @@
+# Thor Media Player: product features
+
+What the app does, and the version each feature arrives in. The reasons and the build plan are in [PLAN.md](PLAN.md).
+
+**Versions:** v0 = two-screen test app and layout mockups · v1 = first usable player · v2 = comfort and stats · v3 = extras.
+Rows marked **(research)** were added or changed after the [Thor research](research/).
+
+## Baseline: what every good player does
+
+These are the features people expect from VLC, MX Player, Just Player and Kodi. The app must match the v1 rows before it's worth switching to.
+
+| Feature | What it means | Version |
+| --- | --- | --- |
+| Wide format support | mkv, mp4, avi, webm, ts; H.264, HEVC (incl. 10-bit), VP9, AV1; AAC, AC3, E-AC3, DTS, FLAC, Opus | v1 |
+| Hardware decoding | Uses the video chip by default; software decoding only as a fallback | v1 |
+| Unsupported audio notice **(research)** | If a file's audio can't be decoded (for example TrueHD), say so instead of playing silently | v1 |
+| Seek and skip | Scrub bar, ±10 s skip, double-tap or button skip, chapter jump | v1 |
+| Resume | Opens where you stopped | v1 |
+| Audio track switch | Pick language or commentary track | v1 |
+| Subtitle track switch | Pick an embedded or external track, or off | v1 |
+| Subtitle and audio delay | Shift timing in 50 ms steps | v1 |
+| Subtitle styling | Size, colour, outline, position; ASS/SSA styles honoured | v1 (basic), v2 (full ASS) |
+| Aspect and zoom | Fit, fill, crop, 16:9, 4:3, stretch | v1 |
+| Playback speed | 0.5× to 2× | v1 |
+| Volume and brightness | Per-app volume boost, quick brightness (top screen) | v1 |
+| Screen lock | Locks touch so nothing is pressed by accident | v1 |
+| Sleep timer | Stop after this episode or after N minutes | v2 |
+| Background audio | Keep audio going with the screen off | v2 |
+| Picture-in-picture | Small floating video while using another app | v3 |
+| Night mode | Quieter loud scenes (dynamic range compression), on top of AYN's system EQ | v2 |
+| Bluetooth audio delay | Auto or manual offset for headphones | v2 |
+| Folder browser | Browse files directly, outside the library | v1 |
+| Search, sort, filter | By title, year, genre, recently added, unwatched. **Typing happens on the top screen (research)** | v1 |
+| Playlists and queue | Queue several files, repeat, shuffle | v2 |
+| TV output | Plays correctly when docked over USB-C DisplayPort: video on the TV, controls on the bottom screen | v2 |
+| Network shares | SMB, DLNA, Jellyfin | Later |
+| Casting | Chromecast | Not planned |
+
+## Our features
+
+These are what make the app better than the baseline. Each one is done only when its acceptance test passes.
+
+| Feature | Done when | Version |
+| --- | --- | --- |
+| Library scan | You pick a folder once (SD card); it finds every video in it and its subfolders, and rescans only changed files | v1 |
+| Filename identification | Reads names like `The.Dark.Knight.2008.1080p.mkv` and `Breaking.Bad.S02E05.mkv` correctly; 95% of a test set of 100 real names match | v1 |
+| Artwork and info | Poster, backdrop, logo, plot, year, rating, runtime from TMDB; episode stills and titles for series | v1 |
+| Series grouping | Episodes grouped Show › Season › Episode, even when the files sit loose in one folder | v1 |
+| Fix a match | Any title can be re-searched or given a TMDB ID by hand; the fix survives rescans | v1 |
+| Missing episodes | Shows episodes not on the card, greyed out, from TMDB's episode list | v1 |
+| Resume and watched | Position saved; marked watched at 90%; can be marked watched or unwatched by hand | v1 |
+| Continue watching | Home row with the next unwatched episode of each show and half-watched movies | v1 |
+| Auto-play next | 10 s countdown at the credits, then the next episode; cancel with one button | v1 |
+| Two-screen playback **(research)** | Video full-screen on the top screen; controls, episode list and pickers on the bottom screen; the controller keeps working on the top screen even after you touch the bottom one | v1 |
+| Bottom screen off **(research)** | A button combo and an on-screen button blank the bottom screen to pure black and switch to the single-screen layout without stopping playback (AYN's own "hold the AYN button" can't be detected by apps) | v1 |
+| Survives screen changes **(research)** | Swapping or moving screens (AYN swap, Wayfinder, docking, sleep and wake, lid) never restarts playback | v1 |
+| Local subtitles | Loads .srt, .ass and .vtt files next to the video automatically, matched by name and language | v1 |
+| Launch from frontends | RetroHrai!, Cocoon or ES-DE can open the app, or a specific file in it. **If launched on the bottom screen, the player moves itself to the top screen (research)** | v2 |
+| Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video | v2 |
+| Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list | v2 |
+| Stats export | Export stats and watch history as CSV | v2 |
+| Backup | Export and import settings, matches and watch history in one file | v2 |
+| Skip intro | Set the intro start and end once per show; a Skip button appears in later episodes | v3 |
+| Trakt sync | Optional two-way sync of watched status | v3 |
+| Themes | True-black default, plus accent colours | v3 |
+
+## Not in scope
+
+- Streaming services, downloading films, or any piracy sources.
+- Music playback.
+- Publishing on the Play Store. It's a personal app, installed as an APK.
+- Media servers (Plex, Jellyfin) and network shares in v1.
+- Root or AYN's privileged service (`PServerBinder`). The app uses public Android APIs only. **(research)**
