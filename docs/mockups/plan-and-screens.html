@@ -75,26 +75,46 @@ p { margin: 0; }
 .device-scroll { overflow-x: auto; padding-bottom: 6px; }
 
 /* ---------- the Thor, drawn to scale (top 6" 16:9, bottom 3.92" 1240×1080 → 56.5% of top width) ---------- */
-.thor { min-width: 540px; width: 100%; display: grid; gap: 0; }
-.lid, .deck { background: linear-gradient(180deg, var(--shell-hi), var(--shell)); border-radius: 22px; padding: 4.2% 5% 4.2%; }
-.lid { border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
-.hinge { height: 14px; margin: 0 9%; background: linear-gradient(180deg, #111316, #2a2d33 60%, #15171a); border-radius: 0 0 8px 8px; }
-.deck { border-top-left-radius: 10px; border-top-right-radius: 10px; display: grid; grid-template-columns: 1fr 56.5% 1fr; align-items: center; padding-top: 3.6%; padding-bottom: 5%; }
+/* Control positions come from Wayfinder's Thor map (base 1420×808 units): bottom screen 51.8% of the base width,
+   left stick over D-pad, ABXY over right stick, Select/Start by the screen's top corners, Home/Back at the bottom corners. */
+.thor { min-width: 560px; width: 100%; display: grid; gap: 0; container-type: inline-size; }
+.lid, .deck { background: linear-gradient(180deg, var(--shell-hi), var(--shell)); border-radius: 22px; }
+.lid { padding: 3.6% 4.2%; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+.shoulders { display: grid; grid-template-columns: 15% 1fr 15%; align-items: center; height: 4.6cqw; }
+.hinge { height: 1.6cqw; margin: 0 4%; background: linear-gradient(180deg, #111316, #2a2d33 60%, #15171a); border-radius: 0 0 8px 8px; align-self: start; }
+.sh { display: flex; flex-direction: column; gap: .35cqw; align-items: center; }
+.deck { position: relative; aspect-ratio: 1420 / 808; border-top-left-radius: 10px; border-top-right-radius: 10px; }
 .screen { position: relative; overflow: hidden; background: var(--scr-bg); color: var(--scr-ink); container-type: inline-size; border-radius: 4px; box-shadow: 0 0 0 2px #050607, 0 0 0 3px #3a3e45; font-family: var(--f-body); }
 .screen.top { aspect-ratio: 1920 / 1080; }
 .screen.bottom { aspect-ratio: 1240 / 1080; }
 .scrlabel { position: absolute; left: 0; top: -1px; transform: translateY(-100%); font: 600 10px/1 var(--f-mono); letter-spacing: .08em; color: #8a909a; padding-bottom: 6px; text-transform: uppercase; }
-.lid .screen-holder, .deck .screen-holder { position: relative; }
-.pad { display: grid; place-items: center; }
-.dpad { width: 44%; aspect-ratio: 1; position: relative; }
-.dpad::before, .dpad::after { content: ""; position: absolute; background: #121417; border-radius: 4px; }
+.lid .screen-holder { position: relative; }
+.deck .screen-holder { position: absolute; left: 24.12%; top: 4.46%; width: 51.76%; }
+/* controls: placed by centre point */
+.ctl { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; font: 700 1.25cqw/1 var(--f-mono); color: #868c95; background: #121417; }
+.ctl.on { color: #1a1204; background: var(--scr-acc); box-shadow: 0 0 0 .3cqw rgba(242,179,61,.35); }
+.stick { width: 15.5%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #2a2e34 0 46%, #121417 47% 100%); box-shadow: inset 0 0 0 .25cqw #0a0b0d; }
+.stick.on { background: radial-gradient(circle at 50% 45%, var(--scr-acc) 0 46%, #121417 47% 100%); }
+.dpad { width: 15.5%; aspect-ratio: 1; background: none; }
+.dpad::before, .dpad::after { content: ""; position: absolute; background: #121417; border-radius: .4cqw; }
 .dpad::before { left: 34%; right: 34%; top: 0; bottom: 0; }
 .dpad::after { top: 34%; bottom: 34%; left: 0; right: 0; }
-.abxy { width: 50%; aspect-ratio: 1; position: relative; }
-.abxy i { position: absolute; width: 33%; aspect-ratio: 1; border-radius: 50%; background: #121417; display: grid; place-items: center; font: 700 9px/1 var(--f-mono); color: #7d838c; font-style: normal; }
-.abxy i:nth-child(1) { left: 33.5%; top: 0; } .abxy i:nth-child(2) { right: 0; top: 33.5%; }
-.abxy i:nth-child(3) { left: 33.5%; bottom: 0; } .abxy i:nth-child(4) { left: 0; top: 33.5%; }
-.chin { grid-column: 2; justify-self: center; margin-top: 10px; width: 16%; height: 7px; border-radius: 4px; background: #121417; }
+.dpad.on::before, .dpad.on::after { background: var(--scr-acc); }
+.dpad span { position: relative; z-index: 1; }
+.face { width: 5.6%; aspect-ratio: 1; border-radius: 50%; }
+.small { width: 3.6%; aspect-ratio: 1; border-radius: 50%; font-size: 1.15cqw; }
+.ayn { width: 6%; height: 1.1cqw; border-radius: 1cqw; font-size: .8cqw; letter-spacing: .08em; }
+.shbtn { width: 82%; height: 1.8cqw; border-radius: .9cqw; font-size: 1.05cqw; position: static; transform: none; }
+.shbtn.l2 { width: 70%; }
+.dpad.on { background: none; box-shadow: none; }
+.ctl[title] { cursor: help; }
+.keymap { width: 100%; border-collapse: collapse; font-size: 14px; }
+.keymap td { padding: 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.keymap tr:first-child td { border-top: 0; }
+.keymap td:first-child { width: 96px; padding-right: 10px; white-space: nowrap; }
+.kc { display: inline-block; min-width: 30px; text-align: center; font: 700 11.5px/1 var(--f-mono); padding: 5px 6px; border-radius: 6px; background: var(--ink); color: var(--bg); }
+.keymap tr.sys td { color: var(--muted); }
+.keymap tr.sys .kc { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 .scale-note { font: 12px/1.4 var(--f-mono); color: var(--muted); margin-top: 10px; }
 
 /* ---------- on-screen UI (sizes in cqw so they scale with each panel) ---------- */
@@ -207,16 +227,29 @@ p { margin: 0; }
         <div class="device-scroll">
           <div class="thor" aria-label="AYN Thor mockup">
             <div class="lid"><div class="screen-holder"><div class="scrlabel">Top · 6″ · 1920×1080</div><div class="screen top" id="topScreen"></div></div></div>
-            <div class="hinge"></div>
+            <div class="shoulders">
+              <div class="sh"><span class="ctl shbtn l2" data-k="L2">L2</span><span class="ctl shbtn" data-k="L1">L1</span></div>
+              <div class="hinge"></div>
+              <div class="sh"><span class="ctl shbtn l2" data-k="R2">R2</span><span class="ctl shbtn" data-k="R1">R1</span></div>
+            </div>
             <div class="deck">
-              <div class="pad"><div class="dpad"></div></div>
               <div class="screen-holder"><div class="screen bottom" id="bottomScreen"></div></div>
-              <div class="pad"><div class="abxy"><i>X</i><i>A</i><i>B</i><i>Y</i></div></div>
-              <div class="chin" title="AYN button"></div>
+              <span class="ctl small" data-k="SELECT" style="left:17.96%;top:7.18%">▢</span>
+              <span class="ctl small" data-k="START" style="left:82.04%;top:7.18%">▷</span>
+              <span class="ctl stick" data-k="L3" style="left:10.42%;top:26.98%"><span>L3</span></span>
+              <span class="ctl dpad" data-k="DPAD" style="left:10.42%;top:61.88%"><span>✛</span></span>
+              <span class="ctl face" data-k="X" style="left:89.58%;top:16.58%">X</span>
+              <span class="ctl face" data-k="Y" style="left:83.66%;top:26.98%">Y</span>
+              <span class="ctl face" data-k="A" style="left:95.5%;top:26.98%">A</span>
+              <span class="ctl face" data-k="B" style="left:89.58%;top:37.38%">B</span>
+              <span class="ctl stick" data-k="R3" style="left:89.58%;top:61.88%"><span>R3</span></span>
+              <span class="ctl small" data-k="HOME" style="left:15.49%;top:86.63%">⌂</span>
+              <span class="ctl small" data-k="BACK" style="left:84.51%;top:86.63%">↺</span>
+              <span class="ctl ayn" data-k="AYN" style="left:50%;top:91.5%">AYN</span>
             </div>
           </div>
         </div>
-        <p class="scale-note">Drawn to physical scale: the bottom panel is 56.5% as wide as the top. Text of the same physical size takes up about 1.8× more of the bottom panel's width.</p>
+        <p class="scale-note">Drawn to physical scale: the bottom panel is 56.5% as wide as the top. Text of the same physical size takes up about 1.8× more of the bottom panel's width. Control positions follow the Thor's real layout; buttons used in this state are lit. L1/L2 and R1/R2 sit on the back edge, L2/R2 behind L1/R1.</p>
       </div>
       <aside class="notes" id="notes" aria-live="polite"></aside>
     </div>
@@ -508,6 +541,37 @@ p { margin: 0; }
     }
   ];
 
+  // ---------- button maps (proposed; Nintendo face layout: A right, B bottom) ----------
+  var NAMES = { DPAD: "D-pad", L3: "Left stick", R3: "Right stick", SELECT: "Select", START: "Start", HOME: "Home", BACK: "Back", AYN: "AYN" };
+  var COMMON = { HOME: "Android home (system, not ours)", AYN: "AYN menu; hold = AYN's bottom-off (system, not ours)", BACK: "Same as B" };
+  var KEYS = {
+    browse: { DPAD: "Move along the poster row; up/down change row", L3: "Same as D-pad", A: "Open the selected title", B: "Back to the first row", X: "Filters (bottom screen)", Y: "Mark watched / unwatched", L1: "Previous filter", R1: "Next filter", L2: "Jump 5 titles left", R2: "Jump 5 titles right", SELECT: "Search (keyboard on top screen)", START: "Settings" },
+    movie:  { DPAD: "Move between the bottom-screen buttons", A: "Play / Resume", B: "Back to browsing", X: "Audio and subtitles", Y: "Mark watched", SELECT: "Fix match", START: "Settings" },
+    series: { DPAD: "Up/down the episode list", L3: "Same as D-pad", A: "Play the episode", B: "Back to browsing", X: "Audio and subtitles", Y: "Mark episode watched", L1: "Previous season", R1: "Next season", L2: "Page up the list", R2: "Page down the list", SELECT: "Fix match" },
+    play:   { A: "Play / pause", B: "Stop and go back (asks first)", X: "Audio and subtitle tracks", Y: "Wake the bottom screen", DPAD: "Move between bottom-screen controls", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Push right/left to scrub; click = chapter list", L3: "Click with R3: bottom screen off / on", START: "Playback settings (speed, aspect, delay)", SELECT: "Show the info overlay on top" },
+    ending: { A: "Play next episode now", B: "Cancel the countdown", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
+    stats:  { DPAD: "Scroll the history list", L1: "Previous period", R1: "Next period", Y: "Export CSV", B: "Back" },
+    single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
+  };
+  var LABEL = { DPAD: "✛ D-pad", L3: "L3 stick", R3: "R3 stick", SELECT: "▢ Select", START: "▷ Start", HOME: "⌂ Home", BACK: "↺ Back" };
+  var ORDER = ["A", "B", "X", "Y", "DPAD", "L3", "R3", "L1", "R1", "L2", "R2", "SELECT", "START", "BACK", "HOME", "AYN"];
+  function keymap(id) {
+    var k = KEYS[id] || {};
+    var rows = ORDER.filter(function (c) { return k[c] || COMMON[c]; }).map(function (c) {
+      var sys = !k[c];
+      return '<tr' + (sys ? ' class="sys"' : '') + '><td><span class="kc">' + (LABEL[c] || c) + '</span></td><td>' + (k[c] || COMMON[c]) + '</td></tr>';
+    });
+    return '<table class="keymap">' + rows.join('') + '</table>';
+  }
+  function lightKeys(id) {
+    var k = KEYS[id] || {};
+    Array.prototype.forEach.call(document.querySelectorAll(".thor .ctl"), function (el) {
+      var c = el.getAttribute("data-k"), on = !!k[c];
+      el.classList.toggle("on", on);
+      el.setAttribute("title", (NAMES[c] || c) + ": " + (k[c] || COMMON[c] || "Not used here"));
+    });
+  }
+
   var top = document.getElementById("topScreen"), bottom = document.getElementById("bottomScreen"), notes = document.getElementById("notes"), picker = document.getElementById("statePicker");
 
   function li(a) { return '<ul>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
@@ -516,9 +580,10 @@ p { margin: 0; }
     top.innerHTML = s.top(); bottom.innerHTML = s.bottom();
     var n = s.notes;
     notes.innerHTML = '<h2>' + s.label + '</h2><p class="what">' + n.what + '</p>' +
-      '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Controller</dt><dd>' + n.ctrl + '</dd></div></dl>' +
+      '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Buttons (proposed)</dt><dd>' + keymap(s.id) + '</dd></div></dl>' +
       (n.dim ? '<button class="btn" id="dimBtn" type="button" aria-pressed="false">Preview the dimmed bottom screen</button>' : '') +
       '<div class="qbox"><h4>To decide for this state</h4>' + li(n.q) + '</div>';
+    lightKeys(s.id);
     Array.prototype.forEach.call(picker.children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === s.id ? "true" : "false"); });
     var d = document.getElementById("dimBtn");
     if (d) d.addEventListener("click", function () {
@@ -622,7 +687,9 @@ p { margin: 0; }
     ["F4", "AYN's \"bottom screen off\" is invisible to apps", "It's a black overlay; the display still reports as on."],
     ["F5", "The keyboard is unreliable on the bottom screen", "All typing happens on the top screen."],
     ["F6", "Black pixels are off on both OLED panels", "Black costs almost no power; bright white costs the most."],
-    ["F7", "A brightness override may dim both screens", "Seen on older firmware; v0 tests current firmware."]
+    ["F7", "A brightness override may dim both screens", "Seen on older firmware; v0 tests current firmware."],
+    ["F8", "Controls: left stick over D-pad, ABXY over right stick; L1/L2 and R1/R2 on the back edge", "Face buttons are Nintendo-style (A right, B bottom); Thor Settings can swap the style. L2/R2 are analog."],
+    ["F9", "Home and the AYN button belong to the system", "Home goes to the launcher; AYN opens AYN's menu (hold = its bottom-off). Back reaches the app."]
   ];
   var draft = [
     ["R1", "The video is always full-screen and nothing is drawn over it while the bottom screen is on", "Subtitles are the only exception."],
