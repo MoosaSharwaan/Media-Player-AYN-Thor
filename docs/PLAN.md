@@ -57,6 +57,15 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 - **(research)** Touching the bottom screen never takes the controller away from the top screen, so the bottom screen can be touch-first and button-first at the same time.
 - **(research)** Text entry (search, fixing a match) happens on the top screen.
 
+**Decisions so far** (also shown on the [mockup page](mockups/plan-and-screens.html))
+
+| # | Decision | Date |
+| --- | --- | --- |
+| D1 | **The top screen is display only.** It never takes input, focus or touch; everything you do happens on the bottom screen (rule R11). Open: single-screen mode, and where typing goes (R10 now conflicts) | Oct 23, 2026 |
+| D2 | **Browsing, bottom screen:** five tabs: Continue watching, Movies, Series, Anime, Others. No library counts line. Nothing under the tabs until it's designed | Oct 23, 2026 |
+| D3 | **L2 / R2 move between the browsing tabs**; tapping a tab works too | Oct 23, 2026 |
+| D4 | **Browsing, top screen:** a poster mix of everything in the current tab, with the tab's name and count | Oct 23, 2026 |
+
 **Questions the design must answer**
 
 - Does the video always play on the top screen, or can you choose?
