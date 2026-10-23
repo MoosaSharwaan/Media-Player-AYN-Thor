@@ -292,15 +292,82 @@ p { margin: 0; }
   function key(k) { return '<span class="key">' + k + '</span>'; }
   function legend(items) { return '<div class="b-legend">' + items.map(function (i) { return '<span>' + key(i[0]) + i[1] + '</span>'; }).join('') + '</div>'; }
 
-  function mk(t, h, p) { return { t: t, p: p, g: "linear-gradient(160deg,hsl(" + h + ",42%,58%),hsl(" + h + ",48%,26%) 48%,hsl(" + h + ",55%,6%))" }; }
+  // mk(title, hue, progress %, meta line, plot, resume note)
+  function mk(t, h, p, m, d, r) { return { t: t, h: h, p: p, m: m || "", d: d || "", r: r, g: "linear-gradient(160deg,hsl(" + h + ",42%,58%),hsl(" + h + ",48%,26%) 48%,hsl(" + h + ",55%,6%))" }; }
+  var I = {
+    bb:  ["Breaking Bad", 95, "2008 · Series · Crime, Drama · 5 seasons", "A high-school chemistry teacher with cancer starts making meth to secure his family's future."],
+    sev: ["Severance", 210, "2022 · Series · Sci-fi, Thriller · 2 seasons", "Office workers have their work memories surgically separated from their private lives."],
+    dune:["Dune: Part Two", 32, "2024 · 2 h 46 m · Sci-fi, Adventure · ★ 8.2", "Paul Atreides unites with the Fremen while seeking revenge on those who destroyed his family."],
+    sho: ["Shōgun", 2, "2024 · Series · Drama, History · 1 season", "A shipwrecked English pilot is drawn into a deadly power struggle in feudal Japan."],
+    fri: ["Frieren", 190, "2023 · Anime series · Fantasy, Adventure", "An elf mage who outlives her old party sets out to understand the humans she travelled with."],
+    bear:["The Bear", 14, "2022 · Series · Comedy, Drama · 3 seasons", "A fine-dining chef comes home to Chicago to run his late brother's sandwich shop."]
+  };
+  function C(k, p, r) { var x = I[k]; return mk(x[0], x[1], p, x[2], x[3], r); }
+  function F(k) { var x = I[k]; return mk(x[0], x[1], 0, x[2], x[3]); }
   var TABS = [
-    { n: "Continue watching", sub: "6 in progress", items: [mk("Breaking Bad", 95, 60), mk("Severance", 210, 35), mk("Dune: Part Two", 32, 43), mk("Shōgun", 2, 80), mk("Frieren", 190, 20), mk("The Bear", 14, 55)] },
-    { n: "Movies", sub: "96 movies", items: [mk("Dune: Part Two", 32), mk("Arrival", 200), mk("Blade Runner 2049", 24), mk("Oppenheimer", 40), mk("Interstellar", 220), mk("The Batman", 355), mk("Past Lives", 170), mk("Parasite", 140), mk("Heat", 230)] },
-    { n: "Series", sub: "24 shows", items: [mk("Breaking Bad", 95), mk("Severance", 210), mk("The Bear", 14), mk("Shōgun", 2), mk("The Last of Us", 120), mk("Succession", 45), mk("Dark", 250), mk("Chernobyl", 75)] },
-    { n: "Anime", sub: "14 shows · 6 films", items: [mk("Frieren", 190), mk("Attack on Titan", 20), mk("Cowboy Bebop", 50), mk("Spirited Away", 160), mk("Your Name", 265), mk("Demon Slayer", 330), mk("Jujutsu Kaisen", 285), mk("Vinland Saga", 30)] },
-    { n: "Others", sub: "18 videos", items: [mk("Planet Earth II", 130), mk("Free Solo", 25), mk("Drive to Survive", 0), mk("Our Planet", 180), mk("Concerts", 300), mk("Home videos", 60)] }
+    { n: "Continue watching", sub: "6 in progress", items: [C("bb", 60, "S02E05 Breakage · 28 min left"), C("sev", 35, "S01E07 · 26 min left"), C("dune", 43, "1 h 33 m left"), C("sho", 80, "S01E09 · 12 min left"), C("fri", 20, "Episode 12 · 19 min left"), C("bear", 55, "S02E03 · 14 min left")] },
+    { n: "Movies", sub: "96 movies", items: [F("dune"),
+      mk("Arrival", 200, 0, "2016 · 1 h 56 m · Sci-fi, Drama · ★ 7.9", "A linguist is recruited to talk with alien visitors before tensions turn into war."),
+      mk("Blade Runner 2049", 24, 0, "2017 · 2 h 44 m · Sci-fi, Neo-noir · ★ 8.0", "A replicant blade runner uncovers a secret that could plunge what's left of society into chaos."),
+      mk("Oppenheimer", 40, 0, "2023 · 3 h 0 m · Drama, History · ★ 8.3", "J. Robert Oppenheimer leads the race to build the atomic bomb, and lives with what follows."),
+      mk("Interstellar", 220, 0, "2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7", "Explorers travel through a wormhole looking for a new home for humanity."),
+      mk("The Batman", 355, 0, "2022 · 2 h 56 m · Crime, Action · ★ 7.8", "In his second year as Batman, Bruce Wayne hunts a killer targeting Gotham's elite."),
+      mk("Past Lives", 170, 0, "2023 · 1 h 46 m · Romance, Drama · ★ 7.8", "Two childhood friends meet again in New York after twenty years apart."),
+      mk("Parasite", 140, 0, "2019 · 2 h 12 m · Thriller, Drama · ★ 8.5", "A poor family schemes its way into working for a wealthy household."),
+      mk("Heat", 230, 0, "1995 · 2 h 50 m · Crime, Thriller · ★ 8.3", "A detective and a master thief circle each other across Los Angeles.")] },
+    { n: "Series", sub: "24 shows", items: [F("bb"), F("sev"), F("bear"), F("sho"),
+      mk("The Last of Us", 120, 0, "2023 · Series · Drama, Sci-fi · 2 seasons", "A smuggler escorts a teenage girl across a broken, post-pandemic America."),
+      mk("Succession", 45, 0, "2018 · Series · Drama · 4 seasons", "The Roy family fights for control of a global media empire."),
+      mk("Dark", 250, 0, "2017 · Series · Sci-fi, Mystery · 3 seasons", "A child's disappearance exposes the time-travel secrets of four families in a German town."),
+      mk("Chernobyl", 75, 0, "2019 · Miniseries · Drama, History", "The 1986 nuclear disaster and the people who fought to contain it.")] },
+    { n: "Anime", sub: "14 shows · 6 films", items: [F("fri"),
+      mk("Attack on Titan", 20, 0, "2013 · Anime series · Action, Drama · 4 seasons", "Humanity fights to survive behind walls against giant man-eating Titans."),
+      mk("Cowboy Bebop", 50, 0, "1998 · Anime series · Sci-fi, Noir", "A crew of bounty hunters chases targets across the solar system in 2071."),
+      mk("Spirited Away", 160, 0, "2001 · Anime film · 2 h 5 m · Fantasy", "A girl must work in a bathhouse for spirits to free her parents."),
+      mk("Your Name", 265, 0, "2016 · Anime film · 1 h 46 m · Romance, Fantasy", "Two teenagers who have never met begin waking up in each other's bodies."),
+      mk("Demon Slayer", 330, 0, "2019 · Anime series · Action, Fantasy", "A boy becomes a demon slayer to turn his sister human again."),
+      mk("Jujutsu Kaisen", 285, 0, "2020 · Anime series · Action", "A student swallows a cursed finger and joins the sorcerers who fight curses."),
+      mk("Vinland Saga", 30, 0, "2019 · Anime series · Historical, Action", "A young Viking seeks revenge on the man who killed his father.")] },
+    { n: "Others", sub: "18 videos", items: [
+      mk("Planet Earth II", 130, 0, "2016 · Documentary series · Nature", "Wildlife on islands, mountains, jungles and in cities, filmed up close."),
+      mk("Free Solo", 25, 0, "2018 · Documentary · 1 h 40 m", "Alex Honnold attempts to climb El Capitan without ropes."),
+      mk("Drive to Survive", 0, 0, "2019 · Docuseries · Sport", "Behind the scenes of the Formula 1 world championship."),
+      mk("Our Planet", 180, 0, "2019 · Documentary series · Nature", "How a changing climate affects the living world."),
+      mk("Concerts", 300, 0, "Folder · 5 videos · not matched on TMDB", "Videos from a folder that isn't a film or a show."),
+      mk("Home videos", 60, 0, "Folder · 9 videos · not matched on TMDB", "Your own videos. Shown with a frame from the video instead of a poster.")] }
   ];
-  var browseTab = 0;
+  var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
+  var COLS = 4;
+
+  // Bottom screen: cards for every title in the tab, 4 across, scrolling so the focused row stays in view.
+  function browseCards() {
+    var items = TABS[browseTab].items, row = focusIdx < 0 ? 0 : Math.floor(focusIdx / COLS);
+    var cardW = 19.6, gap = 2.2, rowH = cardW * 1.5 + gap, shift = Math.max(0, row - 1) * rowH;
+    var cards = items.map(function (it, i) {
+      return '<div class="poster' + (i === focusIdx ? ' sel' : '') + '" data-card="' + i + '" style="width:auto;border-radius:1.2cqw;padding:1.4cqw;cursor:pointer;background:' + it.g + (i === focusIdx ? ';outline-width:.7cqw;outline-offset:.6cqw' : '') + '">' +
+        '<span style="font-size:2.2cqw">' + it.t + '</span>' +
+        (it.p ? '<div class="pbar" style="position:absolute;left:1.4cqw;right:1.4cqw;bottom:1cqw;height:.8cqw"><b style="width:' + it.p + '%"></b></div>' : '') + '</div>';
+    }).join('');
+    return '<div style="position:absolute;left:0;right:0;top:15cqw;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 88%,transparent);mask-image:linear-gradient(180deg,#000 88%,transparent)">' +
+      '<div style="position:absolute;left:5cqw;right:5cqw;top:1.4cqw;display:grid;grid-template-columns:repeat(' + COLS + ',1fr);gap:' + gap + 'cqw;transform:translateY(' + (-shift) + 'cqw)">' + cards + '</div>' +
+    '</div>';
+  }
+
+  // Top screen once you move through the cards: the focused title's poster, details and plot.
+  function browseDetail() {
+    var t = TABS[browseTab], it = t.items[focusIdx], h = it.h;
+    return '<div class="backdrop" style="background:radial-gradient(110% 90% at 72% 35%,hsl(' + h + ',45%,52%) 0%,hsl(' + h + ',50%,24%) 38%,hsl(' + h + ',55%,8%) 70%,#000 100%)"></div>' +
+      '<div class="s-fill" style="display:grid;grid-template-columns:22cqw 1fr;gap:4cqw;padding:5.5cqw 5cqw;align-items:center">' +
+        '<div class="poster" style="width:22cqw;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + it.g + '"><span style="font-size:1.9cqw">' + it.t + '</span></div>' +
+        '<div class="s-col" style="gap:1.2cqw;min-width:0">' +
+          '<div class="s-eyebrow">' + t.n + ' · ' + (focusIdx + 1) + ' of ' + t.items.length + '</div>' +
+          '<div class="s-title" style="font-size:5.6cqw">' + it.t + '</div>' +
+          '<div class="s-mute" style="font-size:1.5cqw">' + it.m + '</div>' +
+          '<div style="font-size:1.7cqw;line-height:1.4;color:#d6d8dc;max-width:52cqw">' + it.d + '</div>' +
+          (it.r ? '<div class="s-row" style="gap:1.2cqw;margin-top:.6cqw;font-size:1.4cqw"><div class="pbar" style="width:16cqw;height:.55cqw"><b style="width:' + it.p + '%"></b></div><span>' + it.r + '</span></div>' : '') +
+        '</div>' +
+      '</div>';
+  }
   var desert ="radial-gradient(120% 80% at 70% 30%,#f2c57a 0%,#d98b3e 30%,#7a3d16 60%,#1f0d05 100%)";
   var greenBd = "radial-gradient(100% 90% at 75% 35%,#9bb35a 0%,#4f6b2a 35%,#1d2a10 70%,#050803 100%)";
 
@@ -310,6 +377,7 @@ p { margin: 0; }
       id: "browse", label: "Browsing",
       top: function () {
         // Display only: a poster mix of everything in the current tab. No focus, no selection, no touch.
+        if (focusIdx >= 0) return browseDetail();
         var t = TABS[browseTab], n = t.items.length, rows = "";
         for (var r = 0; r < 3; r++) {
           var tiles = "";
@@ -336,16 +404,16 @@ p { margin: 0; }
         }
         return '<div style="position:absolute;left:0;right:0;top:4.5cqw;height:9cqw;overflow:hidden">' +
             '<div class="tabstrip" style="position:absolute;top:0;left:0;display:flex;gap:1.6cqw;white-space:nowrap">' + strip + '</div>' +
-            '<div style="position:absolute;inset:0 auto 0 0;width:9cqw;background:linear-gradient(90deg,#000 45%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
-            '<div style="position:absolute;inset:0 0 0 auto;width:9cqw;background:linear-gradient(270deg,#000 45%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
+            '<div style="position:absolute;inset:0 auto 0 0;width:13cqw;background:linear-gradient(90deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
+            '<div style="position:absolute;inset:0 0 0 auto;width:13cqw;background:linear-gradient(270deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
           '</div>' +
-          '<div style="position:absolute;left:5cqw;right:5cqw;top:16cqw;bottom:4.5cqw;border:.35cqw dashed var(--scr-line);border-radius:2cqw;display:grid;place-items:center;font:600 2.6cqw/1.3 var(--f-mono);color:var(--scr-dim);text-align:center">Space below the tabs:<br>to design next</div>';
+          browseCards();
       },
       notes: {
-        what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Tap a tab on the bottom screen, or press L2 / R2 on the drawing, to switch tabs.",
-        top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "A poster mix of everything in the current tab, with the tab's name and how many titles it holds"],
-        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line, and nothing under the tabs for now <b>(decided)</b>"],
-        q: ["What goes under the tabs: a list, a poster grid, or something else?", "Does the poster mix on top react to what's selected below (for example, bring it to the front), or stay a still mix?", "How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
+        what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Try it: L2 / R2 or a tap switches tabs; the arrow keys, the D-pad on the drawing or a tap on a card moves through the cards; B or Esc leaves them.",
+        top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "On a new tab: a poster mix of everything in it, with the tab's name and size <b>(decided)</b>", "Once you move through the cards: the focused title's poster, details and plot; for Continue watching, where you stopped <b>(decided)</b>"],
+        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>"],
+        q: ["Card shape: tall posters (shown) or square cards like the Thor's own launcher? How many across?", "Should the cards show the title under the art, or art only?", "When you switch tabs, does each tab remember the card you were on?","How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
       }
     },
     {
@@ -564,7 +632,7 @@ p { margin: 0; }
   var NAMES = { DPAD: "D-pad", L3: "Left stick", R3: "Right stick", SELECT: "Select", START: "Start", HOME: "Home", BACK: "Back", AYN: "AYN" };
   var COMMON = { HOME: "Android home (system, not ours)", AYN: "AYN menu; hold = AYN's bottom-off (system, not ours)", BACK: "Same as B" };
   var KEYS = {
-    browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)" },
+    browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)", DPAD: "Move through the cards; the top screen shows the focused title (decided)", L3: "Same as D-pad (proposed)", A: "Open the focused title (proposed)", B: "Leave the cards; the top screen goes back to the poster mix (proposed)" },
     movie:  { DPAD: "Move between the bottom-screen buttons", A: "Play / Resume", B: "Back to browsing", X: "Audio and subtitles", Y: "Mark watched", SELECT: "Fix match", START: "Settings" },
     series: { DPAD: "Up/down the episode list", L3: "Same as D-pad", A: "Play the episode", B: "Back to browsing", X: "Audio and subtitles", Y: "Mark episode watched", L1: "Previous season", R1: "Next season", L2: "Page up the list", R2: "Page down the list", SELECT: "Fix match" },
     play:   { A: "Play / pause", B: "Stop and go back (asks first)", X: "Audio and subtitle tracks", Y: "Wake the bottom screen", DPAD: "Move between bottom-screen controls", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Push right/left to scrub; click = chapter list", L3: "Click with R3: bottom screen off / on", START: "Playback settings (speed, aspect, delay)", SELECT: "Show the info overlay on top" },
@@ -621,12 +689,27 @@ p { margin: 0; }
     if (!c) return;
     strip.style.transform = "translateX(" + (bottom.clientWidth / 2 - (c.offsetLeft + c.offsetWidth / 2)) + "px)";
   }
-  function setTab(i) { browseTab = (i + TABS.length) % TABS.length; top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
+  function redrawBrowse() { top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
+  function setTab(i) { browseTab = (i + TABS.length) % TABS.length; focusIdx = -1; redrawBrowse(); }
+  function moveFocus(dx, dy) {
+    var n = TABS[browseTab].items.length;
+    if (focusIdx < 0) { focusIdx = 0; redrawBrowse(); return; }
+    var i = focusIdx + dx + dy * COLS;
+    if (i >= 0 && i < n) { focusIdx = i; redrawBrowse(); }
+  }
+  document.addEventListener("keydown", function (e) {
+    if (cur !== "browse" || document.getElementById("screens").hidden) return;
+    var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (m) { e.preventDefault(); moveFocus(m[0], m[1]); }
+    if (e.key === "Escape" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
+  });
   window.addEventListener("resize", centerTabs);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
   bottom.addEventListener("click", function (e) {
-    var t = e.target.closest ? e.target.closest("[data-tab]") : null;
-    if (t && cur === "browse") setTab(+t.getAttribute("data-tab"));
+    if (cur !== "browse" || !e.target.closest) return;
+    var t = e.target.closest("[data-tab]"), c = e.target.closest("[data-card]");
+    if (t) setTab(+t.getAttribute("data-tab"));
+    if (c) { focusIdx = +c.getAttribute("data-card"); redrawBrowse(); }
   });
   document.querySelector(".thor").addEventListener("click", function (e) {
     var k = e.target.closest ? e.target.closest(".ctl") : null;
@@ -634,6 +717,8 @@ p { margin: 0; }
     var c = k.getAttribute("data-k");
     if (c === "L2") setTab(browseTab - 1);
     if (c === "R2") setTab(browseTab + 1);
+    if (c === "DPAD" || c === "L3") moveFocus(1, 0);
+    if (c === "B" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
   });
 
   S.forEach(function (s, i) {
