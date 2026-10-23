@@ -68,6 +68,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D5 | **The tab row stays on one line** and runs past both edges of the bottom screen; the selected tab sits in the centre, and L2 / R2 go round in a full circle (Others → R2 → Continue watching) | Oct 23, 2026 |
 | D6 | **Browsing, cards:** under the tabs, cards for every title in the selected tab. Moving through them makes the top screen switch from the poster mix to the focused title's poster, details and plot (and where you stopped, in Continue watching) | Oct 23, 2026 |
 | D7 | **Artwork comes from proper sources through their APIs, at the right size.** Wide 16:9 backdrops for the top screen (never a crop of a poster), posters sized for the bottom-screen cards. The mockup's poster crops are a stand-in only. See *Artwork sources and sizes* below | Oct 23, 2026 |
+| D8 | **Opening a movie plays it straight away**, from where you stopped. One Movie screen covers playing and paused. Top screen: the film only while playing; the title's art and details while paused; never a progress bar or controls over the picture. Bottom screen, in order: progress bar, Resume / Pause, Play from start and Mark watched (same style), Audio and Subtitles (choose a track, or Find subtitles when the file has none), subtitle timing −50 / +50 ms, and a small ⏻ button in the bottom-right corner that turns the bottom screen off and stays visible while it is off. Fix match is not on this screen. L2 / R2 skip back / forward 10 s | Oct 23, 2026 |
 
 **Questions the design must answer**
 
