@@ -42,9 +42,9 @@ These are what make the app better than the baseline. Each one is done only when
 
 | Feature | Done when | Version |
 | --- | --- | --- |
-| Library scan | You pick a folder once (SD card); it finds every video in it and its subfolders, and rescans only changed files | v1 |
+| Library scan | Offline. You pick a folder once (SD card); it finds every video in it and its subfolders, whether loose or in Show/Season folders (D33), and rescans only changed files | v1 |
 | Filename identification | Reads names like `The.Dark.Knight.2008.1080p.mkv` and `Breaking.Bad.S02E05.mkv` correctly; 95% of a test set of 100 real names match | v1 |
-| Artwork and info | Poster, backdrop, logo, plot, year, rating, runtime from TMDB, with fanart.tv and AniList as fallbacks; episode stills and titles for series. **Each image is fetched through the API in the size its screen needs: 16:9 textless backdrops for the top screen, posters at card size for the bottom screen (D7)** | v1 |
+| Artwork and info | **Fetched only when you press Fetch info (D32).** Poster, backdrop, logo, plot, year, rating, runtime from TMDB, with fanart.tv and AniList as fallbacks; episode stills and titles for series. **Each image is fetched through the API in the size its screen needs: 16:9 textless backdrops for the top screen, posters at card size for the bottom screen (D7)** | v1 |
 | Series grouping | Episodes grouped Show › Season › Episode, even when the files sit loose in one folder | v1 |
 | Fix a match | Any title can be re-searched or given a TMDB ID by hand; the fix survives rescans | v1 |
 | Missing episodes | Shows episodes not on the card, greyed out, from TMDB's episode list | v1 |

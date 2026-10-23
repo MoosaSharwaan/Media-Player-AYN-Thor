@@ -1,4 +1,6 @@
-# Media Player for the AYN Thor
+# Exo Player
+
+*A media player for the AYN Thor*
 
 A personal Android video player built for the **AYN Thor Max**'s two screens. It plays movies and series from the SD card, fetches posters and plots, remembers where you stopped, plays the next episode for you, and uses less battery than VLC.
 
@@ -6,7 +8,7 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 - **Bottom screen:** episode list, seek bar, audio and subtitle pickers. Touch them freely; the controller stays on the film.
 - **One screen is fine:** with the bottom screen off, it works like a normal phone player.
 
-> Working name: *Thor Media Player*. Personal app, installed as an APK; not for the Play Store.
+> Personal app, installed as an APK; not for the Play Store. Online only when you ask: Fetch info and Find subtitles are the only things that connect.
 
 ## Status
 

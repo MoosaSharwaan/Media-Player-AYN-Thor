@@ -24,7 +24,7 @@ The full feature list, with versions, is in [FEATURES.md](FEATURES.md).
 
 **Design principles**
 
-1. **Offline first.** Everything works without internet once artwork is fetched.
+1. **Offline first, online only when you ask (D32).** The app never connects on its own. It goes online only when you press **Fetch info** (artwork, plots, episode lists) or **Find subtitles** on a video that has none. Everything else works without internet.
 2. **Battery first.** No feature may run work in the background during playback.
 3. **Controller first.** Every screen works with the D-pad and face buttons.
 4. **One screen is fine.** With the bottom screen off, the app still works fully.
@@ -91,6 +91,10 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D28 | **Playback engine: Media3 ExoPlayer** with the FFmpeg audio add-on. libVLC stays the fallback if odd files become a problem | Oct 23, 2026 |
 | D29 | **No bottom screen layout: menus slide in as a panel from the right** (subtitles, audio, episodes), as in landscape phone players. The video stays visible on the left; the panel is used with the D-pad | Oct 23, 2026 |
 | D30 | **Docked to a TV (v2): the TV gets everything.** Video on the TV in the one-screen layout, menus in the right-hand panel, the Thor's bottom screen off (like Loki's couch mode). A setting keeps the controls on the Thor's bottom screen instead, for when it's in your hands | Oct 23, 2026 |
+| D31 | **App name: Exo Player** | Oct 23, 2026 |
+| D32 | **The app goes online only when you ask.** Fetch info (artwork, plots, episode lists; for the whole library, a tab or one title) and Find subtitles (only offered when a video has none) are the only things that connect. No automatic downloads, no background jobs, no checks. Scanning the SD card is offline and still automatic | Oct 23, 2026 |
+| D33 | **Library layout: both** loose files in one folder and Show/Season folders are recognised | Oct 23, 2026 |
+| D34 | **Licence: GPL-3.0**, so code from Loki, melonDS and Azahar can be reused | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -149,7 +153,7 @@ The target: an hour of 1080p playback uses no more battery than VLC playing the 
 **Rules when not playing**
 
 1. **No always-running service.** Nothing runs in the background except a short job after you add files.
-2. **Artwork downloads are batched** and only run on Wi-Fi. An option limits them to when the Thor is charging.
+2. **Online fetches only on request** (D32): Fetch info and Find subtitles. Nothing runs in the background, on a timer, or after a scan.
 3. **Images decoded at display size.** Posters are stored at the size shown, not full resolution, so scrolling stays smooth and light.
 4. **Rescans are cheap.** Only folders whose contents changed are read again.
 
@@ -207,7 +211,7 @@ The app is split so playback depends only on local files and the database. Anyth
 | Settings | DataStore | Small settings without touching the database |
 | Images | Coil, decoded at display size, disk cache | Smooth scrolling, low memory |
 | Network | OkHttp with response cache | TMDB and OpenSubtitles calls, cached so they're not repeated |
-| Background work | WorkManager with Wi-Fi and charging rules | Runs only when allowed; Android batches it to save battery |
+| Background work | None scheduled. The SD-card scan runs when the app opens (offline); online fetches run only when you press Fetch info or Find subtitles (D32) | The app never connects on its own |
 | Filename parsing | Kotlin rules ported from the Movie Scraper | guessit is Python and can't run on Android |
 | Subtitles | Media3's subtitle renderer; a libass-based renderer in v2 | srt, vtt and basic ASS in v1; full ASS styling later |
 | Artwork and info | TMDB API first; fanart.tv and AniList as fallbacks (see below) | Free keys; proper 16:9 backdrops, posters, title logos, episode stills |
@@ -236,7 +240,7 @@ Rules:
 - **Anime** is matched on TMDB first; AniList fills gaps (its banners and covers are often better for anime). Both IDs are kept on the title.
 - **Credits:** TMDB in the About screen (required); fanart.tv and AniList as their terms require.
 - **Keys:** TMDB (free), fanart.tv personal API key (free); AniList needs no key.
-- **When:** only on Wi-Fi, batched, never during playback (battery rules).
+- **When:** only when you press **Fetch info** (for the whole library, a tab, or one title), never automatically and never during playback (D32).
 
 ## Data model
 
@@ -288,7 +292,7 @@ The app targets the Thor Max first and runs on any Android 10+ phone, with the d
 **Permissions**
 
 - **Folder access** through Android's folder picker for the SD card video folder only. No broad storage permission.
-- **Internet** and network state, for artwork and subtitle search only.
+- **Internet** and network state, used only when you press Fetch info or Find subtitles (D32).
 - **Foreground media playback service** and **notifications**, so playback controls show in the notification shade.
 - **Keep screen on** during playback only.
 
@@ -376,14 +380,14 @@ Most of the app can be tested before the Thor arrives. Only final dual-screen tu
 
 **Open decisions**
 
-- [ ] App name (Thor Media Player is a placeholder).
+- [x] App name: **Exo Player** (D31). Note: ExoPlayer is also the name of Google's playback library the app uses, so search results will mix the two; fine for a personal app.
 - [x] Playback engine: **Media3 ExoPlayer with the FFmpeg audio add-on** (decided, D28). libVLC stays the fallback if odd files become a problem. (Was: ExoPlayer, or libVLC, which plays more odd files, heavier).
-- [ ] Library layout: loose files only, or encourage Show/Season folders as well.
+- [x] Library layout: **both** loose files and Show/Season folders work (D33).
 - [ ] Create a TMDB API key now; OpenSubtitles account before v1.
-- [ ] Trakt sync: wanted, or skip.
+- [ ] Trakt sync: wanted, or skip. (Explained to you on Oct 23; it needs the internet, which D32 limits.)
 - [ ] Install Android Studio on your PC before v0 starts.
 - [ ] Screen layouts: design several options as mockups, compare them on the Thor, pick one (v0).
-- [ ] **(research)** Licence: borrowing code from Loki, melonDS or Azahar (GPL-3.0) makes the app GPL-3.0, which is fine for a personal app. Wayfinder's code (PolyForm Strict) can't be used.
+- [x] Licence: **GPL-3.0** (D34), so code from Loki, melonDS or Azahar can be reused. Wayfinder's code (PolyForm Strict) still can't.
 
 **Sources**
 
