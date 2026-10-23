@@ -1,3 +1,13 @@
 
 # Copyrighted posters supplied for the private mockup; never commit them
 docs/mockups/art-local/
+
+# Android / Gradle
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
