@@ -571,8 +571,8 @@ p { margin: 0; }
       notes: {
         what: "Opening a movie plays it straight away, from where you stopped. This one screen is both playing and paused; tap Pause / Resume on the bottom screen to see both top screens. Tap Subtitles to cycle its states, the timing buttons to shift subtitles, and ⏻ to turn the bottom screen off and on.",
         top: ["Playing: the film only <b>(decided)</b>", "Paused: the title's art and details, like Browsing; never a progress bar or anything else over the picture <b>(decided)</b>"],
-        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "Fix match is a small ✎ button next to ⏻, not a full-width field; it hides while the screen is off <b>(decided)</b>"],
-        q: ["While the bottom screen is off, should a movie show controls over the picture (like episodes do), or stay clean?"]
+        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "With the bottom screen off, the top screen stays clean: the film only, nothing over it; A, L2 and R2 still work, and pausing shows the title's art as usual. Same for movies and episodes <b>(decided)</b>", "Fix match is a small ✎ button next to ⏻, not a full-width field; it hides while the screen is off <b>(decided)</b>"],
+        q: []
       }
     },
     {
@@ -608,6 +608,7 @@ p { margin: 0; }
           '</div>';
       },
       bottom: function () {
+        if (mv.off) return offScreen();
         return '<div class="b-pad">' +
           '<div class="b-tiny">Up next</div>' +
           '<div class="s-row" style="gap:3cqw;align-items:stretch">' +
@@ -676,7 +677,7 @@ p { margin: 0; }
       }
     },
     {
-      id: "single", label: "Bottom screen off",
+      id: "single", label: "No bottom screen",
       top: function () {
         return '<div class="s-fill" style="background:' + frame("int") + '"></div>' +
           '<div class="s-fill" style="background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))"></div>' +
@@ -689,14 +690,13 @@ p { margin: 0; }
           '</div>';
       },
       bottom: function () {
-        return offScreen();
+        return '<div class="s-fill" style="background:repeating-linear-gradient(45deg,#08090a 0 2cqw,#0c0d0f 2cqw 4cqw);display:grid;place-items:center;text-align:center;font:600 2.6cqw/1.4 var(--f-mono);color:#3a3d43">No bottom display<br>(phone, or the panel is missing)</div>';
       },
       notes: {
-        what: "The single-screen layout: the bottom screen is pure black (OLED pixels off) and the controls appear over the video, like any phone player.",
+        what: "Only when there is no bottom screen at all: a phone, a ROM where the second display doesn't show up, or the panel is missing. Then the controls have nowhere else to go, so they appear over the video like any phone player. Turning the bottom screen off with ⏻ is different: the top screen stays clean (see Movie and Episode playing).",
         top: ["Controls fade in over the video on any button and fade out after 3 s", "Menus and episode list open as a side sheet over the video"],
-        bottom: ["Pure black, with only ⏻ left in the corner; only ⏻ turns it back on <b>(decided)</b>. Tap it on the page to go back to Playing", "Our own off action, because AYN's hold-the-AYN-button can't be detected", "Also used when the bottom display disappears"],
-        ctrl: "Same buttons as Playing. A combo (to decide) turns the bottom screen back on.",
-        q: ["Which combo turns the bottom screen off and on?", "Where does the episode list go: side sheet on the right, or bottom sheet?", "Should the app start in this mode when launched docked to a TV?"]
+        bottom: ["There is no bottom screen in this case", "The app switches here automatically when the second display is missing, and back when it appears"],
+        q: ["Where do the bottom-screen menus (subtitles, timing, episodes) go: a side sheet on the right, or a bottom sheet?", "When docked to a TV, use this layout on the TV, or keep controls on the Thor's bottom screen?"]
       }
     }
   ];
@@ -744,7 +744,7 @@ p { margin: 0; }
     notes.innerHTML = '<h2>' + s.label + '</h2><p class="what">' + n.what + '</p>' +
       '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Buttons (proposed)</dt><dd>' + keymap(s.id) + '</dd></div></dl>' +
       (n.dim ? '<button class="btn" id="dimBtn" type="button" aria-pressed="false">Preview the dimmed bottom screen</button>' : '') +
-      '<div class="qbox"><h4>To decide for this state</h4>' + li(n.q) + '</div>';
+      (n.q && n.q.length ? '<div class="qbox"><h4>To decide for this state</h4>' + li(n.q) + '</div>' : '');
     lightKeys(s.id);
     Array.prototype.forEach.call(picker.children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === s.id ? "true" : "false"); });
     var d = document.getElementById("dimBtn");
@@ -826,10 +826,7 @@ p { margin: 0; }
   window.addEventListener("resize", centerTabs);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
   bottom.addEventListener("click", function (e) {
-    if ((cur === "ending" || cur === "single") && e.target.closest && e.target.closest("[data-act=power]")) {
-      show(cur === "single" ? "play" : "single");
-      return;
-    }
+    if (cur === "ending" && e.target.closest && e.target.closest("[data-act=power]")) { mv.off = !mv.off; redrawCur(); return; }
     if ((cur === "movie" || cur === "play") && e.target.closest) {
       var act = e.target.closest("[data-act]"); if (!act) return;
       var k = act.getAttribute("data-act");
@@ -837,7 +834,7 @@ p { margin: 0; }
       if (k === "sub") mv.sub = (mv.sub + 1) % SUBS.length;
       if (k === "dminus" && SUBS[mv.sub].on) mv.delay -= 50;
       if (k === "dplus" && SUBS[mv.sub].on) mv.delay += 50;
-      if (k === "power") { if (cur === "play") { show("single"); return; } mv.off = !mv.off; }
+      if (k === "power") mv.off = !mv.off;
       if ((k === "prev" || k === "next") && EPISODE && EPISODE.ep) {
         var list = episodes(EPISODE.ep.si), j = EPISODE.ep.i, step = k === "next" ? 1 : -1;
         do { j += step; } while (j >= 0 && j < list.length && list[j].st === "m"); // skip episodes not on the card
