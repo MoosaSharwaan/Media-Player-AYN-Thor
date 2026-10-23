@@ -328,20 +328,24 @@ p { margin: 0; }
           '</div>';
       },
       bottom: function () {
-        return '<div class="b-pad">' +
-          '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center">' +
-            '<span class="b-legend" style="margin:0">' + key("L2") + '</span>' +
-            '<div class="b-chips" style="justify-content:center">' + TABS.map(function (x, i) { return '<span class="b-chip' + (i === browseTab ? ' on' : '') + '" data-tab="' + i + '" style="cursor:pointer">' + x.n + '</span>'; }).join('') + '</div>' +
-            '<span class="b-legend" style="margin:0">' + key("R2") + '</span>' +
+        // One line that runs past both edges; the selected tab sits in the centre and the ring repeats on each side.
+        var n = TABS.length, strip = "";
+        for (var o = -n; o <= n; o++) {
+          var i = ((browseTab + o) % n + n) % n;
+          strip += '<span class="b-chip' + (o === 0 ? ' on' : '') + '" data-tab="' + i + '"' + (o === 0 ? ' data-center="1"' : '') + ' style="cursor:pointer;flex:none;white-space:nowrap">' + TABS[i].n + '</span>';
+        }
+        return '<div style="position:absolute;left:0;right:0;top:4.5cqw;height:9cqw;overflow:hidden">' +
+            '<div class="tabstrip" style="position:absolute;top:0;left:0;display:flex;gap:1.6cqw;white-space:nowrap">' + strip + '</div>' +
+            '<div style="position:absolute;inset:0 auto 0 0;width:9cqw;background:linear-gradient(90deg,#000 45%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
+            '<div style="position:absolute;inset:0 0 0 auto;width:9cqw;background:linear-gradient(270deg,#000 45%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
           '</div>' +
-          '<div style="flex:1;border:.35cqw dashed var(--scr-line);border-radius:2cqw;display:grid;place-items:center;font:600 2.6cqw/1.3 var(--f-mono);color:var(--scr-dim);text-align:center">Space below the tabs:<br>to design next</div>' +
-        '</div>';
+          '<div style="position:absolute;left:5cqw;right:5cqw;top:16cqw;bottom:4.5cqw;border:.35cqw dashed var(--scr-line);border-radius:2cqw;display:grid;place-items:center;font:600 2.6cqw/1.3 var(--f-mono);color:var(--scr-dim);text-align:center">Space below the tabs:<br>to design next</div>';
       },
       notes: {
         what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Tap a tab on the bottom screen, or press L2 / R2 on the drawing, to switch tabs.",
         top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "A poster mix of everything in the current tab, with the tab's name and how many titles it holds"],
-        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "No library counts line, and nothing under the tabs for now <b>(decided)</b>"],
-        q: ["What goes under the tabs: a list, a poster grid, or something else?", "Does the poster mix on top react to what's selected below (for example, bring it to the front), or stay a still mix?", "How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?", "Do the tabs wrap around (Others → R2 → Continue watching)?"]
+        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line, and nothing under the tabs for now <b>(decided)</b>"],
+        q: ["What goes under the tabs: a list, a poster grid, or something else?", "Does the poster mix on top react to what's selected below (for example, bring it to the front), or stay a still mix?", "How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
       }
     },
     {
@@ -594,6 +598,7 @@ p { margin: 0; }
     var s = S.filter(function (x) { return x.id === id; })[0] || S[0];
     cur = s.id;
     top.innerHTML = s.top(); bottom.innerHTML = s.bottom();
+    if (s.id === "browse") centerTabs();
     var n = s.notes;
     notes.innerHTML = '<h2>' + s.label + '</h2><p class="what">' + n.what + '</p>' +
       '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Buttons (proposed)</dt><dd>' + keymap(s.id) + '</dd></div></dl>' +
@@ -611,7 +616,14 @@ p { margin: 0; }
   }
   // Browsing: tap a tab on the bottom screen, or press L2 / R2 on the drawing
   var cur = "browse";
-  function setTab(i) { browseTab = (i + TABS.length) % TABS.length; top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); }
+  function centerTabs() {
+    var strip = bottom.querySelector(".tabstrip"), c = strip && strip.querySelector("[data-center]");
+    if (!c) return;
+    strip.style.transform = "translateX(" + (bottom.clientWidth / 2 - (c.offsetLeft + c.offsetWidth / 2)) + "px)";
+  }
+  function setTab(i) { browseTab = (i + TABS.length) % TABS.length; top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
+  window.addEventListener("resize", centerTabs);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
   bottom.addEventListener("click", function (e) {
     var t = e.target.closest ? e.target.closest("[data-tab]") : null;
     if (t && cur === "browse") setTab(+t.getAttribute("data-tab"));
@@ -758,6 +770,7 @@ p { margin: 0; }
       document.getElementById("tab-" + t).setAttribute("aria-selected", t === id ? "true" : "false");
     });
     try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    if (id === "screens" && cur === "browse") centerTabs();
   }
   tabs.forEach(function (t) { document.getElementById("tab-" + t).addEventListener("click", function () { openTab(t); }); });
   openTab((location.hash || "").slice(1));

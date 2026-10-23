@@ -65,6 +65,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D2 | **Browsing, bottom screen:** five tabs: Continue watching, Movies, Series, Anime, Others. No library counts line. Nothing under the tabs until it's designed | Oct 23, 2026 |
 | D3 | **L2 / R2 move between the browsing tabs**; tapping a tab works too | Oct 23, 2026 |
 | D4 | **Browsing, top screen:** a poster mix of everything in the current tab, with the tab's name and count | Oct 23, 2026 |
+| D5 | **The tab row stays on one line** and runs past both edges of the bottom screen; the selected tab sits in the centre, and L2 / R2 go round in a full circle (Others → R2 → Continue watching) | Oct 23, 2026 |
 
 **Questions the design must answer**
 
