@@ -297,19 +297,42 @@ p { margin: 0; }
   };
   function C(k, p, r) { var x = I[k]; return mk(x[0], x[1], p, x[2], x[3], r, x[4]); }
   function F(k) { var x = I[k]; return mk(x[0], x[1], 0, x[2], x[3], undefined, x[4]); }
+  // Placeholders (no art key) are titles we have no openly licensed artwork for yet.
+  var A = {
+    fri: mk("Frieren", 190, 0, "2023 · Anime series · Fantasy, Adventure", "An elf mage who outlives her old party sets out to understand the humans she travelled with."),
+    aot: mk("Attack on Titan", 20, 0, "2013 · Anime series · Action, Drama · 4 seasons", "Humanity fights to survive behind walls against giant man-eating Titans."),
+    beb: mk("Cowboy Bebop", 50, 0, "1998 · Anime series · Sci-fi, Noir", "A crew of bounty hunters chases targets across the solar system in 2071."),
+    spi: mk("Spirited Away", 160, 0, "2001 · Anime film · 2 h 5 m · Fantasy", "A girl must work in a bathhouse for spirits to free her parents."),
+    yn:  mk("Your Name", 265, 0, "2016 · Anime film · 1 h 46 m · Romance, Fantasy", "Two teenagers who have never met begin waking up in each other's bodies."),
+    ds:  mk("Demon Slayer", 330, 0, "2019 · Anime series · Action, Fantasy", "A boy becomes a demon slayer to turn his sister human again."),
+    jjk: mk("Jujutsu Kaisen", 285, 0, "2020 · Anime series · Action", "A student swallows a cursed finger and joins the sorcerers who fight curses."),
+    vin: mk("Vinland Saga", 30, 0, "2019 · Anime series · Historical, Action", "A young Viking seeks revenge on the man who killed his father.")
+  };
+  function prog(it, p, r) { return mk(it.t, it.h, p, it.m, it.d, r, it.a); }
   var TABS = [
-    { n: "Continue watching", sub: "4 in progress", items: [C("cam", 45, "S01E02 Gran Dillama · 1 min left"), C("sin", 42, "8 min left"), C("tos", 70, "4 min left"), C("cos", 25, "9 min left")] },
-    { n: "Movies", sub: "6 movies", items: [F("sin"), F("tos"), F("bbb"), F("cos"), F("ed"), F("chg")] },
-    { n: "Series", sub: "1 show", items: [F("cam")] },
-    { n: "Anime", sub: "No artwork yet: placeholders", items: [
-      mk("Frieren", 190, 0, "2023 · Anime series · Fantasy, Adventure", "An elf mage who outlives her old party sets out to understand the humans she travelled with."),
-      mk("Cowboy Bebop", 50, 0, "1998 · Anime series · Sci-fi, Noir", "A crew of bounty hunters chases targets across the solar system in 2071."),
-      mk("Spirited Away", 160, 0, "2001 · Anime film · 2 h 5 m · Fantasy", "A girl must work in a bathhouse for spirits to free her parents."),
-      mk("Your Name", 265, 0, "2016 · Anime film · 1 h 46 m · Romance, Fantasy", "Two teenagers who have never met begin waking up in each other's bodies.")] },
-    { n: "Others", sub: "15 videos", items: [
+    { n: "Continue watching", sub: "8 in progress", items: [C("cam", 45, "S01E02 Gran Dillama · 1 min left"), C("sin", 42, "8 min left"), C("tos", 70, "4 min left"), C("cos", 25, "9 min left"), C("ed", 30, "7 min left"),
+      prog(A.fri, 20, "Episode 12 · 19 min left"), prog(A.beb, 60, "Session 5 · 9 min left"), prog(A.aot, 35, "S04E03 · 15 min left")] },
+    { n: "Movies", sub: "8 movies", items: [F("sin"), F("tos"), F("bbb"), F("cos"), F("ed"), F("chg"),
+      mk("Nosferatu", 40, 0, "1922 · 1 h 34 m · Horror · Public domain", "A real-estate agent travels to Transylvania to sell a house to the mysterious Count Orlok."),
+      mk("Metropolis", 45, 0, "1927 · 2 h 33 m · Sci-fi · Silent", "In a vast future city, a rich man's son sides with the workers who run the machines below.")] },
+    { n: "Series", sub: "8 shows", items: [F("cam"),
+      mk("Severance", 210, 0, "2022 · Series · Sci-fi, Thriller · 2 seasons", "Office workers have their work memories surgically separated from their private lives."),
+      mk("The Bear", 14, 0, "2022 · Series · Comedy, Drama · 3 seasons", "A fine-dining chef comes home to Chicago to run his late brother's sandwich shop."),
+      mk("Shōgun", 2, 0, "2024 · Series · Drama, History · 1 season", "A shipwrecked English pilot is drawn into a deadly power struggle in feudal Japan."),
+      mk("The Last of Us", 120, 0, "2023 · Series · Drama, Sci-fi · 2 seasons", "A smuggler escorts a teenage girl across a broken, post-pandemic America."),
+      mk("Succession", 45, 0, "2018 · Series · Drama · 4 seasons", "The Roy family fights for control of a global media empire."),
+      mk("Dark", 250, 0, "2017 · Series · Sci-fi, Mystery · 3 seasons", "A child's disappearance exposes the time-travel secrets of four families in a German town."),
+      mk("Chernobyl", 75, 0, "2019 · Miniseries · Drama, History", "The 1986 nuclear disaster and the people who fought to contain it.")] },
+    { n: "Anime", sub: "8 titles", items: [A.fri, A.aot, A.beb, A.spi, A.yn, A.ds, A.jjk, A.vin] },
+    { n: "Others", sub: "8 entries", items: [
+      mk("Planet Earth II", 130, 0, "2016 · Documentary series · Nature", "Wildlife on islands, mountains, jungles and in cities, filmed up close."),
+      mk("Free Solo", 25, 0, "2018 · Documentary · 1 h 40 m", "Alex Honnold attempts to climb El Capitan without ropes."),
+      mk("Drive to Survive", 0, 0, "2019 · Docuseries · Sport", "Behind the scenes of the Formula 1 world championship."),
+      mk("Our Planet", 180, 0, "2019 · Documentary series · Nature", "How a changing climate affects the living world."),
+      mk("Apollo 11 footage", 220, 0, "Folder · 4 videos · NASA, public domain", "Launch, landing and splashdown film from the 1969 mission."),
       mk("Concerts", 300, 0, "Folder · 5 videos · not matched on TMDB", "Videos from a folder that isn't a film or a show."),
       mk("Home videos", 60, 0, "Folder · 9 videos · not matched on TMDB", "Your own videos. Shown with a frame from the video instead of a poster."),
-      mk("Test clips", 210, 0, "Folder · 1 video · not matched on TMDB", "Codec test files kept for checking hardware decoding.")] }
+      mk("Test clips", 210, 0, "Folder · 12 videos · not matched on TMDB", "Codec test files kept for checking hardware decoding.")] }
   ];
   var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
   var COLS = 4;
