@@ -67,6 +67,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D4 | **Browsing, top screen:** a poster mix of everything in the current tab, with the tab's name and count | Oct 23, 2026 |
 | D5 | **The tab row stays on one line** and runs past both edges of the bottom screen; the selected tab sits in the centre, and L2 / R2 go round in a full circle (Others → R2 → Continue watching) | Oct 23, 2026 |
 | D6 | **Browsing, cards:** under the tabs, cards for every title in the selected tab. Moving through them makes the top screen switch from the poster mix to the focused title's poster, details and plot (and where you stopped, in Continue watching) | Oct 23, 2026 |
+| D7 | **Artwork comes from proper sources through their APIs, at the right size.** Wide 16:9 backdrops for the top screen (never a crop of a poster), posters sized for the bottom-screen cards. The mockup's poster crops are a stand-in only. See *Artwork sources and sizes* below | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -186,10 +187,32 @@ The app is split so playback depends only on local files and the database. Anyth
 | Background work | WorkManager with Wi-Fi and charging rules | Runs only when allowed; Android batches it to save battery |
 | Filename parsing | Kotlin rules ported from the Movie Scraper | guessit is Python and can't run on Android |
 | Subtitles | Media3's subtitle renderer; a libass-based renderer in v2 | srt, vtt and basic ASS in v1; full ASS styling later |
-| Artwork and info | TMDB API | Free key, posters, backdrops, logos, episode data |
+| Artwork and info | TMDB API first; fanart.tv and AniList as fallbacks (see below) | Free keys; proper 16:9 backdrops, posters, title logos, episode stills |
 | Subtitle search | OpenSubtitles API | Search by file hash finds the exact matching file |
 | Stats charts | A Compose charts library (e.g. Vico) | Draws on the device, no internet |
 | Opening from frontends | `ACTION_VIEW` for `video/*` with a temporary `content://` grant | How ES-DE (`%ACTION%`/`%DATA%`), Cocoon, Daijisho and RetroHrai! launch apps |
+
+## Artwork sources and sizes (decision D7)
+
+Every image is fetched through an API, in the size its screen needs, and stored on the device. Nothing is cropped from a different kind of image.
+
+| Where it shows | Image type | Source, in order | Size fetched | Notes |
+| --- | --- | --- | --- | --- |
+| Top screen: focused title, Movie/Series selected | **Backdrop**, 16:9 | TMDB backdrops → fanart.tv backgrounds → AniList banner (anime) | TMDB `w1280` (`original` when docked to a TV) | Prefer **textless** backdrops (`include_image_language=null`), because our own title sits over them. Highest-rated by TMDB vote |
+| Top screen: title over the art | **Logo** (transparent PNG) | TMDB logos → fanart.tv clearlogo | `w500` | Language: the app's language, then English. Falls back to the title in text |
+| Bottom screen: cards | **Poster**, 2:3 | TMDB posters → AniList `coverImage.extraLarge` (anime) → fanart.tv | TMDB `w342` (a card is ≈ 260 px wide on the 1240 px panel) | Decoded at card size (battery rule) |
+| Top screen: poster mix | Poster, 2:3 | Same as cards | `w342` | Reuses the card images; no extra downloads |
+| Series: episode list, Up next | **Still**, 16:9 | TMDB episode stills | `w300` (list), `w780` (Up next) | Missing stills fall back to the show's backdrop |
+| Others tab (unmatched videos) | Frame from the video | Extracted on the device | 960 × 540 | No network |
+
+Rules:
+
+- **Right size, once.** Download each image in the size above, resize to the exact display size, and store it as WebP. About 0.5 MB per title, as budgeted.
+- **Wide art only on the wide screen.** If no 16:9 backdrop exists from any source, show the blurred-poster fallback, never a stretched or cropped poster.
+- **Anime** is matched on TMDB first; AniList fills gaps (its banners and covers are often better for anime). Both IDs are kept on the title.
+- **Credits:** TMDB in the About screen (required); fanart.tv and AniList as their terms require.
+- **Keys:** TMDB (free), fanart.tv personal API key (free); AniList needs no key.
+- **When:** only on Wi-Fi, batched, never during playback (battery rules).
 
 ## Data model
 
@@ -202,7 +225,7 @@ Everything lives in one small database on the device, so the library, progress a
 | show | tmdb\_id, name, first aired, plot, genres, network, status | One per series |
 | season | show id, number, name, episode count | From TMDB, so missing episodes can be listed |
 | episode | show id, season, number, title, air date, plot, still | Linked to a file when one exists; none = missing |
-| artwork | owner, type (poster, backdrop, logo, still), local path, size | Images stored on the device after download |
+| artwork | owner, type (poster, backdrop, logo, still, frame), source (TMDB, fanart.tv, AniList, device), source id, language, width × height, local path | Images stored on the device after download, already at display size |
 | match\_override | file path, type, tmdb\_id, season, episode | Your manual fixes; applied before automatic matching |
 | playback\_state | file id, position, watched, times finished, last played, chosen audio and subtitle track, delays | One row per file |
 | watch\_session | file id, started, ended, seconds watched | One row each time you watch; all stats come from these |
