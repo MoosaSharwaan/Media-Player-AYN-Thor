@@ -95,6 +95,8 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D32 | **The app goes online only when you ask.** Fetch info (artwork, plots, episode lists; for the whole library, a tab or one title) and Find subtitles (only offered when a video has none) are the only things that connect. No automatic downloads, no background jobs, no checks. Scanning the SD card is offline and still automatic | Oct 23, 2026 |
 | D33 | **Library layout: both** loose files in one folder and Show/Season folders are recognised | Oct 23, 2026 |
 | D34 | **Licence: GPL-3.0**, so code from Loki, melonDS and Azahar can be reused | Oct 23, 2026 |
+| D35 | **Trakt sync stays in v3.** When it comes, it syncs only when you ask, in line with D32 | Oct 23, 2026 |
+| D36 | **Fetch info is a small ⟳ button in the bottom-right corner of the Browsing bottom screen**, matching ✎ and ⏻ on the video screens. It fetches info for the current tab. A single title is fetched through ✎ Fix match | Oct 23, 2026 |
 
 **Questions the design must answer**
 
@@ -384,7 +386,7 @@ Most of the app can be tested before the Thor arrives. Only final dual-screen tu
 - [x] Playback engine: **Media3 ExoPlayer with the FFmpeg audio add-on** (decided, D28). libVLC stays the fallback if odd files become a problem. (Was: ExoPlayer, or libVLC, which plays more odd files, heavier).
 - [x] Library layout: **both** loose files and Show/Season folders work (D33).
 - [ ] Create a TMDB API key now; OpenSubtitles account before v1.
-- [ ] Trakt sync: wanted, or skip. (Explained to you on Oct 23; it needs the internet, which D32 limits.)
+- [x] Trakt sync: **v3** (D35); syncs only when you ask.
 - [ ] Install Android Studio on your PC before v0 starts.
 - [ ] Screen layouts: design several options as mockups, compare them on the Thor, pick one (v0).
 - [x] Licence: **GPL-3.0** (D34), so code from Loki, melonDS or Azahar can be reused. Wayfinder's code (PolyForm Strict) still can't.

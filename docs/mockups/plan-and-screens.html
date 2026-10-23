@@ -577,12 +577,14 @@ p { margin: 0; }
             '<div style="position:absolute;inset:0 auto 0 0;width:13cqw;background:linear-gradient(90deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
             '<div style="position:absolute;inset:0 0 0 auto;width:13cqw;background:linear-gradient(270deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
           '</div>' +
-          browseCards();
+          browseCards() +
+          // ⟳ Fetch info for this tab: the only way Browsing goes online (D32, D36)
+          '<div title="Fetch info for this tab: artwork, plots and episode lists (goes online)" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;background:#000;font:700 3.8cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute);box-shadow:0 0 0 1.2cqw rgba(0,0,0,.7)">⟳</div>';
       },
       notes: {
         what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Try it: L2 / R2 or a tap switches tabs; the arrow keys, the D-pad on the drawing or a tap on a card moves through the cards; B or Esc leaves them.",
         top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "On a new tab: a poster mix of everything in it, with the tab's name and size <b>(decided)</b>", "Once you move through the cards: the focused title's poster, details and plot; for Continue watching, where you stopped <b>(decided)</b>"],
-        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>"],
+        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>", "⟳ in the bottom-right corner: Fetch info for this tab (artwork, plots, episode lists). The only way Browsing goes online <b>(decided)</b>"],
         q: ["Card shape: tall posters (shown) or square cards like the Thor's own launcher? How many across?", "Should the cards show the title under the art, or art only?", "When you switch tabs, does each tab remember the card you were on?","How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
       }
     },

@@ -61,7 +61,7 @@ These are what make the app better than the baseline. Each one is done only when
 | Stats export | Export stats and watch history as CSV | Later |
 | Backup | Export and import settings, matches and watch history in one file | v2 |
 | Skip intro | Set the intro start and end once per show; a Skip button appears in later episodes | v3 |
-| Trakt sync | Optional two-way sync of watched status | v3 |
+| Trakt sync | Optional two-way sync of watched status, only when you ask (D35) | v3 |
 | Themes | True-black default, plus accent colours | v3 |
 
 ## Not in scope
