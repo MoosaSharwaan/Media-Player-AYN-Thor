@@ -8,6 +8,7 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -36,6 +37,11 @@ class MainActivity : ComponentActivity() {
     private var bottom: BottomPresentation? = null
     private var bottomDisplayId: Int? = null
 
+    /** Android's folder picker: read access to one folder, no broad storage permission. */
+    private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) vm.browse.onFolderChosen(uri)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (moveToTopScreenIfNeeded()) return
@@ -51,6 +57,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { vm.displaySetup.collect { showBottomScreen(it.bottomDisplayId) } }
+                launch { vm.browse.folderRequests.collect { pickFolder.launch(null) } }
                 launch {
                     vm.diagnostics.bottomBrightness.collect { level ->
                         bottom?.window?.let { w -> w.attributes = w.attributes.apply { screenBrightness = level } }
@@ -92,6 +99,12 @@ class MainActivity : ComponentActivity() {
         // The display can disappear between finding it and showing the window.
         runCatching { presentation.show(); bottom = presentation }
             .onFailure { if (it !is WindowManager.BadTokenException && it !is WindowManager.InvalidDisplayException) throw it }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Reading the SD card is offline, so it still runs by itself (D32).
+        vm.browse.rescan()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean =

@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msharwaan.exoplayer.AppViewModel
+import com.msharwaan.exoplayer.browse.BrowseBottom
+import com.msharwaan.exoplayer.browse.BrowseTop
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsBottom
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsTop
 import com.msharwaan.exoplayer.nav.Route
@@ -79,6 +81,7 @@ fun BottomRoot(vm: AppViewModel) {
 @Composable
 private fun TopContent(vm: AppViewModel, route: Route) {
     when (route) {
+        Route.Browse -> BrowseTop(vm.browse)
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
         else -> PlaceholderTop(route)
     }
@@ -86,9 +89,13 @@ private fun TopContent(vm: AppViewModel, route: Route) {
 
 @Composable
 private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
-    when (route) {
-        Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
-        else -> PlaceholderBottom(route)
+    Box(Modifier.fillMaxSize()) {
+        when (route) {
+            Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo)
+            Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
+            else -> PlaceholderBottom(route)
+        }
+        Notice(vm)
     }
 }
 
@@ -113,3 +120,20 @@ private fun DimLayer(vm: AppViewModel, enabled: Boolean) {
 }
 
 private const val DIM_AFTER_MS = 10_000L
+
+/** A short message along the top of the bottom screen; it goes after a few seconds. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.Notice(vm: AppViewModel) {
+    val notice by vm.notice.collectAsStateWithLifecycle()
+    val text = notice ?: return
+    androidx.compose.material3.Text(
+        text,
+        color = Palette.Ink,
+        fontSize = androidx.compose.ui.unit.TextUnit(14f, androidx.compose.ui.unit.TextUnitType.Sp),
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .padding(12.dp)
+            .background(Palette.Panel, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    )
+}

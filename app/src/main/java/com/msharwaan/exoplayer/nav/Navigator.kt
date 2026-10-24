@@ -7,7 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /** A place in the app. A goes one step forward into a new route; B goes one step back (D20). */
 sealed interface Route {
     data object Browse : Route
-    data class Show(val titleId: Long) : Route
+    /** A series or anime: [groupKey] names the show; [openEpisodes] starts on the episode cards. */
+    data class Show(val groupKey: String, val openEpisodes: Boolean = false) : Route
     data class Player(val fileId: Long) : Route
     data object Diagnostics : Route
 }
