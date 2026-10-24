@@ -194,7 +194,8 @@ class PlayerModel(
             upNextCancelled = false
             siblings = if (f.kind == "EPISODE") group.sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }, { it.fileName })) else listOf(f)
             val index = siblings.indexOfFirst { it.id == f.id }
-            val isEpisode = f.kind == "EPISODE"
+            // A show with one episode gets the movie screen (D22).
+            val isEpisode = f.kind == "EPISODE" && siblings.size > 1
             val episodeTitle = if (isEpisode) Library.episodeLabel(f) else null
             _ui.value = PlayerUi(
                 fileId = f.id,

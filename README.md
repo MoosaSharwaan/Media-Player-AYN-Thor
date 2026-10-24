@@ -12,7 +12,7 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 
 ## Status
 
-**v1 is being built in stages.** Stages 1–4 are done: the app runs on both screens, reads your video folder, shows Browsing, and plays movies and episodes. Series and anime screens (stage 5) and the online parts (stage 6: Fetch info, Find subtitles, Fix match) are next.
+**v1 is being built in stages.** Stages 1–5 are done: the app runs on both screens, reads your video folder, shows Browsing, opens series and anime by season and episode, and plays movies and episodes. The online parts (stage 6: Fetch info, Find subtitles, Fix match) are next; they need your API keys.
 
 | Stage | What it adds | Status |
 | --- | --- | --- |
@@ -20,8 +20,8 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 | 2. Library | Folder picker, filename reading (movies, SxxEyy, anime), database | Done |
 | 3. Browsing | The five tabs on L2 / R2, poster cards, art on the top screen | Done |
 | 4. Player | Resume where you stopped, Pause, Play from start, Mark watched, Audio, Subtitles with ±50 ms timing, ‹ Prev / Next ›, Up next, ✎ and ⏻ | Done |
-| 5. Series and anime | Season and episode cards | Next |
-| 6. Online, on request | TMDB / fanart.tv / AniList artwork, OpenSubtitles, Fix match | Planned |
+| 5. Series and anime | Show details, season cards, episode cards (3 across, ✓ watched, progress, missing greyed), continue straight into the episode, one-season shows skip the season cards | Done |
+| 6. Online, on request | TMDB / fanart.tv / AniList artwork, OpenSubtitles, Fix match | Next |
 
 | Version | What it adds | Status |
 | --- | --- | --- |

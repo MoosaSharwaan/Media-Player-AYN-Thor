@@ -24,6 +24,9 @@ interface LibraryDao {
     suspend fun file(id: Long): MediaFile?
 
     @Query("SELECT * FROM media_file WHERE groupKey = :groupKey ORDER BY season, episode, fileName")
+    fun observeFilesOf(groupKey: String): Flow<List<MediaFile>>
+
+    @Query("SELECT * FROM media_file WHERE groupKey = :groupKey ORDER BY season, episode, fileName")
     suspend fun filesOf(groupKey: String): List<MediaFile>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

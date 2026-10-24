@@ -57,7 +57,8 @@ object Library {
 
     private fun card(title: TitleInfo, files: List<MediaFile>, state: Map<Long, PlaybackState>): Card = Card(
         groupKey = title.groupKey,
-        kind = title.kind,
+        // A show with one episode (an anime film, a special) plays straight away like a movie (D22).
+        kind = if (title.kind == "SHOW" && files.size == 1) "MOVIE" else title.kind,
         name = title.name,
         year = title.year,
         meta = meta(title, files),

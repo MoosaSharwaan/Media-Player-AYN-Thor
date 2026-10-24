@@ -13,6 +13,7 @@ import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.nav.Navigator
 import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.player.PlayerModel
+import com.msharwaan.exoplayer.show.ShowModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,11 +60,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (navigator.current is Route.Player) navigator.pop()
     }
 
+    /** Series and anime: details → seasons → episodes (D14, D15, D21). */
+    val show = ShowModel(viewModelScope, exo.db, ::showNotice)
+
     init {
         // The Player route opens its file; leaving it stops and saves (D8).
         viewModelScope.launch {
+            var previous: Route? = null
             navigator.stack.collect { stack ->
                 val route = stack.last()
+                // The show under the top of the stack; continuing a show puts its Player right above it.
+                val showIndex = stack.indexOfLast { it is Route.Show }
+                (stack.getOrNull(showIndex) as? Route.Show)?.let { s ->
+                    show.open(s.groupKey, s.openEpisodes, (stack.getOrNull(showIndex + 1) as? Route.Player)?.fileId)
+                }
+                val left = previous
+                if (route is Route.Show && left is Route.Player) show.returnedFrom(left.fileId)
+                previous = route
                 when {
                     route is Route.Player -> if (player.openFileId != route.fileId) player.open(route.fileId)
                     stack.none { it is Route.Player } -> player.stop()
@@ -134,6 +147,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 BrowseResult.NotUsed -> false
             }
             is Route.Player -> player.onAction(action)
+            is Route.Show -> when (val r = show.onAction(action)) {
+                is ShowModel.Result.Play -> { navigator.push(Route.Player(r.fileId)); true }
+                ShowModel.Result.Used -> true
+                ShowModel.Result.NotUsed -> false
+            }
             else -> false
         }
         if (used) return true

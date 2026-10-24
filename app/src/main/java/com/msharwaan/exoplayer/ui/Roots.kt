@@ -31,6 +31,8 @@ import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.player.PlayerBottom
 import com.msharwaan.exoplayer.player.PlayerTop
 import com.msharwaan.exoplayer.player.VideoSurface
+import com.msharwaan.exoplayer.show.ShowBottom
+import com.msharwaan.exoplayer.show.ShowTop
 import com.msharwaan.exoplayer.ui.theme.Palette
 import kotlinx.coroutines.delay
 
@@ -115,12 +117,12 @@ private fun TopContent(vm: AppViewModel, route: Route) {
     when (route) {
         Route.Browse -> BrowseTop(vm.browse)
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
+        is Route.Show -> ShowTop(vm.show)
         is Route.Player -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
             val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
             PlayerTop(ui, subtitle) { VideoSurface(vm.player.player) }
         }
-        else -> PlaceholderTop(route)
     }
 }
 
@@ -130,13 +132,13 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
         when (route) {
             Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo)
             Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
+            is Route.Show -> ShowBottom(vm.show) { vm.navigator.push(Route.Player(it)) }
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 PlayerBottom(ui, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
                 // One screen: no ⏻ (there is no bottom screen to turn off), ✎ stays.
                 if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.fixMatch() } }
             }
-            else -> PlaceholderBottom(route)
         }
         Notice(vm)
     }
