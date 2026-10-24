@@ -12,12 +12,15 @@ import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.nav.Navigator
 import com.msharwaan.exoplayer.nav.Route
+import com.msharwaan.exoplayer.player.PlayerModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -51,6 +54,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val diagnostics = DiagnosticsModel(app)
     val browse = BrowseModel(viewModelScope, exo.db, exo.prefs, exo.scanner)
 
+    /** One player for movies and episodes (D13). A finished movie goes back to where it was opened. */
+    val player = PlayerModel(app, viewModelScope, exo.db, exo.playback, ::showNotice) {
+        if (navigator.current is Route.Player) navigator.pop()
+    }
+
+    init {
+        // The Player route opens its file; leaving it stops and saves (D8).
+        viewModelScope.launch {
+            navigator.stack.collect { stack ->
+                val route = stack.last()
+                when {
+                    route is Route.Player -> if (player.openFileId != route.fileId) player.open(route.fileId)
+                    stack.none { it is Route.Player } -> player.stop()
+                }
+            }
+        }
+        // ‹ Prev, Next › and Up next change the file inside the player; keep the route in step,
+        // so coming back from the diagnostics page doesn't reopen the earlier episode.
+        viewModelScope.launch {
+            player.ui.map { it.fileId }.distinctUntilChanged().collect { id ->
+                val route = navigator.current
+                if (id != 0L && route is Route.Player && route.fileId != id) navigator.replace(Route.Player(id))
+            }
+        }
+    }
+
     private val held = mutableSetOf<PadAction>()
 
     fun toggleBottomScreen() { _bottomOff.value = !_bottomOff.value; touched() }
@@ -78,6 +107,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** ✎ Fix match: pick the right title, or type its TMDB ID (D11). Arrives in stage 6. */
+    fun fixMatch() {
+        showNotice("Fix match uses TMDB search. It comes in the next build stage.")
+    }
+
     /** ⟳ Fetch info: the only way Browsing goes online (D32, D36). Arrives in stage 6. */
     fun fetchInfo() {
         showNotice("Fetch info needs your TMDB key. It comes in the next build stage.")
@@ -99,11 +133,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 BrowseResult.Used -> true
                 BrowseResult.NotUsed -> false
             }
+            is Route.Player -> player.onAction(action)
             else -> false
         }
         if (used) return true
         // B always goes one step back (decision D20). At the root, Back is left to the system.
         if (action == PadAction.B) return navigator.pop()
         return false
+    }
+
+    override fun onCleared() {
+        player.stop()
+        exo.playback.release()
     }
 }

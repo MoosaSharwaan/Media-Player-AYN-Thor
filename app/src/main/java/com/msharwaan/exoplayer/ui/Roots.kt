@@ -4,6 +4,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,6 +28,9 @@ import com.msharwaan.exoplayer.browse.BrowseTop
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsBottom
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsTop
 import com.msharwaan.exoplayer.nav.Route
+import com.msharwaan.exoplayer.player.PlayerBottom
+import com.msharwaan.exoplayer.player.PlayerTop
+import com.msharwaan.exoplayer.player.VideoSurface
 import com.msharwaan.exoplayer.ui.theme.Palette
 import kotlinx.coroutines.delay
 
@@ -45,7 +50,7 @@ fun TopRoot(vm: AppViewModel) {
     val route = stack.last()
     Box(Modifier.fillMaxSize().background(Palette.Black)) {
         TopContent(vm, route)
-        if (setup.bottomDisplayId == null) {
+        if (setup.bottomDisplayId == null && oneScreenPanelShown(vm, route)) {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 Box(
                     Modifier
@@ -58,6 +63,26 @@ fun TopRoot(vm: AppViewModel) {
         }
     }
 }
+
+/**
+ * With one screen, the controls cover part of the picture, so during playback they show
+ * only while paused or for a few seconds after a button press.
+ */
+@Composable
+private fun oneScreenPanelShown(vm: AppViewModel, route: Route): Boolean {
+    if (!route.isVideo()) return true
+    val ui by vm.player.ui.collectAsStateWithLifecycle()
+    val last by vm.lastInteraction.collectAsStateWithLifecycle()
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(last) {
+        now = System.currentTimeMillis()
+        delay(PANEL_HIDE_AFTER_MS)
+        now = System.currentTimeMillis()
+    }
+    return ui.paused || ui.upNext != null || now - last < PANEL_HIDE_AFTER_MS
+}
+
+private const val PANEL_HIDE_AFTER_MS = 4_000L
 
 /** The bottom screen, shown in the Presentation on the Thor's second display. */
 @Composable
@@ -73,6 +98,13 @@ fun BottomRoot(vm: AppViewModel) {
             }
         } else {
             BottomContent(vm, route, oneScreen = false)
+            if (route.isVideo()) {
+                // ✎ Fix match next to ⏻ in the bottom-right corner (decisions D11, D12).
+                Row(Modifier.align(Alignment.BottomEnd).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CornerButton("✎") { vm.fixMatch() }
+                    CornerButton("⏻") { vm.toggleBottomScreen() }
+                }
+            }
             DimLayer(vm, enabled = route.isVideo())
         }
     }
@@ -83,6 +115,11 @@ private fun TopContent(vm: AppViewModel, route: Route) {
     when (route) {
         Route.Browse -> BrowseTop(vm.browse)
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
+        is Route.Player -> {
+            val ui by vm.player.ui.collectAsStateWithLifecycle()
+            val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
+            PlayerTop(ui, subtitle) { VideoSurface(vm.player.player) }
+        }
         else -> PlaceholderTop(route)
     }
 }
@@ -93,6 +130,12 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
         when (route) {
             Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo)
             Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
+            is Route.Player -> {
+                val ui by vm.player.ui.collectAsStateWithLifecycle()
+                PlayerBottom(ui, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
+                // One screen: no ⏻ (there is no bottom screen to turn off), ✎ stays.
+                if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.fixMatch() } }
+            }
             else -> PlaceholderBottom(route)
         }
         Notice(vm)

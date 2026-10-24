@@ -19,6 +19,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.msharwaan.exoplayer.display.BottomPresentation
 import com.msharwaan.exoplayer.display.DisplayMonitor
 import com.msharwaan.exoplayer.input.PadAction
+import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.ui.BottomRoot
 import com.msharwaan.exoplayer.ui.TopRoot
 import com.msharwaan.exoplayer.ui.theme.ExoTheme
@@ -64,6 +65,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 launch {
+                    // The screen stays on only while a film is actually playing.
+                    vm.player.ui.collect { ui ->
+                        if (ui.fileId != 0L && !ui.paused && vm.navigator.current is Route.Player) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        }
+                    }
+                }
+                launch {
                     vm.diagnostics.topModeId.collect { modeId ->
                         window.attributes = window.attributes.apply { preferredDisplayModeId = modeId }
                     }
@@ -105,6 +116,12 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         // Reading the SD card is offline, so it still runs by itself (D32).
         vm.browse.rescan()
+    }
+
+    override fun onStop() {
+        // Leaving the app (Home, a frontend, the screen going off) pauses and saves (D8).
+        vm.player.pause()
+        super.onStop()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean =

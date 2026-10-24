@@ -12,14 +12,32 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 
 ## Status
 
-**Planning done; v0 (the two-screen test app) is next.** There is no code yet.
+**v1 is being built in stages.** Stages 1–4 are done: the app runs on both screens, reads your video folder, shows Browsing, and plays movies and episodes. Series and anime screens (stage 5) and the online parts (stage 6: Fetch info, Find subtitles, Fix match) are next.
+
+| Stage | What it adds | Status |
+| --- | --- | --- |
+| 1. Shell | Both screens, controller input, B steps back, the diagnostics page (Select + Start) with the v0 measurements | Done |
+| 2. Library | Folder picker, filename reading (movies, SxxEyy, anime), database | Done |
+| 3. Browsing | The five tabs on L2 / R2, poster cards, art on the top screen | Done |
+| 4. Player | Resume where you stopped, Pause, Play from start, Mark watched, Audio, Subtitles with ±50 ms timing, ‹ Prev / Next ›, Up next, ✎ and ⏻ | Done |
+| 5. Series and anime | Season and episode cards | Next |
+| 6. Online, on request | TMDB / fanart.tv / AniList artwork, OpenSubtitles, Fix match | Planned |
 
 | Version | What it adds | Status |
 | --- | --- | --- |
-| v0 | Two-screen test app that measures the Thor; layout mockups | Next |
-| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles, subtitle search | Planned |
+| v0 | Two-screen test app that measures the Thor; layout mockups | Done (diagnostics page in the app) |
+| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles, subtitle search | In progress |
 | v2 | Backup, launch from frontends, TV output | Planned |
 | v3 | Skip intro, Trakt sync, themes, picture-in-picture | Planned |
+
+## Building
+
+Needs JDK 17+ and the Android SDK (platform 36). Put `sdk.dir=…` in `local.properties`, then:
+
+```
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew testDebugUnitTest    # unit tests, plus screenshots of both screens in app/build/screenshots
+```
 
 ## Documents
 

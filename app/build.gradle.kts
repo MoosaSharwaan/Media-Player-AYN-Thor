@@ -56,6 +56,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
+    // FFmpeg audio decoders (DTS, TrueHD, AC3…) for what the device can't decode itself (D28). GPL-3.0, as is this app (D34).
+    implementation(libs.jellyfin.media3.ffmpeg)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
