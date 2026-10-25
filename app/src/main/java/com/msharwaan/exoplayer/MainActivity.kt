@@ -91,6 +91,15 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 launch { displayPrefs.bottom.collect { applyBottomRate() } }
+                launch {
+                    // Top screen brightness from Playback settings, only while a film is open.
+                    combine(vm.navigator.stack, vm.player.settings) { stack, s -> if (stack.last() is Route.Player) s.brightness else null }
+                        .collect { level ->
+                            window.attributes = window.attributes.apply {
+                                screenBrightness = level ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                            }
+                        }
+                }
             }
         }
     }

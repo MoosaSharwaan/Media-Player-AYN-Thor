@@ -53,6 +53,14 @@ class PlayerScreenshotTest {
     fun episodeBottom() = Screens.shoot(rule, "player_bottom_episode", Panel.BOTTOM) { PlayerBottom(episode.copy(paused = true), 150, {}, {}, {}) }
 
     @Test
+    fun settingsPanel() = Screens.shoot(rule, "player_bottom_settings", Panel.BOTTOM) {
+        PlayerBottom(
+            movie.copy(panelRow = 2), 65, {}, {}, {},
+            settings = com.msharwaan.exoplayer.player.PlaybackSettings(speed = 1.25f, picture = com.msharwaan.exoplayer.player.Picture.ZOOM, audioDelayMs = 150),
+        )
+    }
+
+    @Test
     fun upNext() = Screens.shoot(rule, "player_bottom_upnext", Panel.BOTTOM) {
         PlayerBottom(episode.copy(upNext = UpNext(3, "Caminandes", "S01E03", 7)), 65, {}, {}, {})
     }

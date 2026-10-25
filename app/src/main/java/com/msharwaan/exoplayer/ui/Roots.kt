@@ -128,7 +128,8 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         is Route.Player, is Route.FindSubtitles -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
             val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
-            PlayerTop(ui, subtitle) { VideoSurface(vm.player.player) }
+            val settings by vm.player.settings.collectAsStateWithLifecycle()
+            PlayerTop(ui, subtitle, settings) { VideoSurface(vm.player.player, settings.picture) }
         }
         is Route.FixMatch -> FixMatchTop(vm.fixMatch)
     }
@@ -150,7 +151,11 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 val volume by vm.player.volume.percent.collectAsStateWithLifecycle()
-                PlayerBottom(ui, volume, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
+                val settings by vm.player.settings.collectAsStateWithLifecycle()
+                PlayerBottom(
+                    ui, volume, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext,
+                    settings = settings, onSeek = vm.player::seekToFraction, onSetting = vm.player::changeSetting, onCloseSettings = vm.player::closeSettings,
+                )
                 // One screen: no ⏻ (there is no bottom screen to turn off), ✎ stays.
                 if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.openFixMatch() } }
             }

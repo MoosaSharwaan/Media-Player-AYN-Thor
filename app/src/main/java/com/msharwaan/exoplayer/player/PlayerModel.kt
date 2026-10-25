@@ -59,6 +59,10 @@ data class PlayerUi(
     val hasNext: Boolean = false,
     val focus: PlayerButton = PlayerButton.RESUME,
     val upNext: UpNext? = null,
+    /** Already watched: the button offers Mark unwatched. */
+    val watched: Boolean = false,
+    /** Playback settings open (Start), with this row focused; null when closed. */
+    val panelRow: Int? = null,
 )
 
 /** The Up next card at the end of an episode: 10 s, then the next one plays (D23). */
@@ -98,6 +102,11 @@ class PlayerModel(
     val subtitle: StateFlow<String?> = _subtitle.asStateFlow()
 
     val player get() = holder.player
+
+    private val prefs = PlaybackPrefs(context)
+    private val _settings = MutableStateFlow(prefs.load())
+    /** Speed, picture, audio delay, subtitle look, brightness (Start opens them). */
+    val settings: StateFlow<PlaybackSettings> = _settings.asStateFlow()
 
     /** The volume bar: media volume, then a boost to 200 %. */
     val volume = VolumeControl(context) { player.audioSessionId }
@@ -218,7 +227,10 @@ class PlayerModel(
                 hasPrev = isEpisode && index > 0,
                 hasNext = isEpisode && index < siblings.size - 1,
                 subtitleDelayMs = state?.subtitleDelayMs ?: 0,
+                watched = state?.watched == true,
             )
+            // Audio delay is kept per file; speed carries over from the last film.
+            applySettings(_settings.value.copy(audioDelayMs = prefs.audioDelay(f.id)), save = false)
             // Own-drawn files: .srt and .vtt. ExoPlayer decodes .ass/.ssa and subtitles inside the file.
             val sideloaded = subs.filter { it.fileName.endsWith(".ass", true) || it.fileName.endsWith(".ssa", true) }.map { s ->
                 MediaItem.SubtitleConfiguration.Builder(Uri.parse(s.uri))
@@ -260,7 +272,23 @@ class PlayerModel(
                 else -> Unit
             }
         }
+        val panel = _ui.value.panelRow
+        if (panel != null) {
+            val rows = PlaybackSettings.Row.entries
+            when (action) {
+                PadAction.UP -> _ui.update { it.copy(panelRow = (panel - 1).coerceAtLeast(0)) }
+                PadAction.DOWN -> _ui.update { it.copy(panelRow = (panel + 1).coerceAtMost(rows.size - 1)) }
+                PadAction.LEFT -> changeSetting(rows[panel], -1)
+                PadAction.RIGHT, PadAction.A -> changeSetting(rows[panel], 1)
+                PadAction.L2 -> seekBy(-10_000)
+                PadAction.R2 -> seekBy(10_000)
+                PadAction.B, PadAction.START -> closeSettings()
+                else -> Unit
+            }
+            return true
+        }
         when (action) {
+            PadAction.START -> openSettings()
             PadAction.L2 -> seekBy(-10_000)
             PadAction.R2 -> seekBy(10_000)
             PadAction.A -> press(_ui.value.focus)
@@ -321,13 +349,47 @@ class PlayerModel(
         siblings.getOrNull(index + step)?.let { open(it.id) }
     }
 
+    /** Mark watched, or unwatched when it already is (Y, or the button). */
     private fun markWatched() {
         val f = file ?: return
+        val watched = !_ui.value.watched
+        _ui.update { it.copy(watched = watched) }
         writeScope.launch {
             val old = db.library().playback(f.id) ?: PlaybackState(f.id)
-            db.library().upsertPlayback(old.copy(watched = true, finishedCount = old.finishedCount + 1, lastPlayed = System.currentTimeMillis()))
+            db.library().upsertPlayback(
+                if (watched) old.copy(watched = true, finishedCount = old.finishedCount + 1, lastPlayed = System.currentTimeMillis())
+                else old.copy(watched = false, lastPlayed = System.currentTimeMillis()),
+            )
         }
-        onNotice("Marked watched.")
+        onNotice(if (watched) "Marked watched." else "Marked unwatched.")
+    }
+
+    // ---- playback settings (Start) ----
+
+    fun openSettings() = _ui.update { it.copy(panelRow = 0) }
+
+    fun closeSettings() = _ui.update { it.copy(panelRow = null) }
+
+    fun changeSetting(row: PlaybackSettings.Row, dir: Int) {
+        _ui.update { it.copy(panelRow = PlaybackSettings.Row.entries.indexOf(row)) }
+        applySettings(_settings.value.step(row, dir), save = true)
+    }
+
+    private fun applySettings(s: PlaybackSettings, save: Boolean) {
+        _settings.value = s
+        player.setPlaybackSpeed(s.speed)
+        holder.audioDelayUs = s.audioDelayMs * 1000L
+        if (save) {
+            prefs.save(s)
+            file?.let { prefs.saveAudioDelay(it.id, s.audioDelayMs) }
+        }
+    }
+
+    /** A tap or drag on the progress bar: jump to that point. */
+    fun seekToFraction(fraction: Float) {
+        val d = player.duration.takeIf { it > 0 } ?: return
+        player.seekTo((d * fraction.coerceIn(0f, 1f)).toLong())
+        tick()
     }
 
     // ---- audio and subtitles ----

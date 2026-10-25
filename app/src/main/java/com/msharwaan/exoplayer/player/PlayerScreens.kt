@@ -7,6 +7,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -62,20 +70,23 @@ import com.msharwaan.exoplayer.ui.theme.Palette
  * leave it out.
  */
 @Composable
-fun PlayerTop(ui: PlayerUi, subtitle: String?, video: @Composable () -> Unit) {
+fun PlayerTop(ui: PlayerUi, subtitle: String?, style: PlaybackSettings = PlaybackSettings(), video: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize().background(Palette.Black)) {
         video()
         if (ui.paused) {
             PausedArt(ui)
         } else if (subtitle != null) {
+            val size = style.subtitleSize.sp
             Text(
                 subtitle,
                 color = Color.White,
-                fontSize = 30.sp,
-                lineHeight = 38.sp,
+                fontSize = size.sp,
+                lineHeight = (size * 1.27f).sp,
                 textAlign = TextAlign.Center,
                 style = TextStyle(shadow = Shadow(Color.Black, Offset(0f, 2f), blurRadius = 6f)),
-                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 64.dp, end = 64.dp, bottom = 36.dp),
+                modifier = Modifier.align(Alignment.BottomCenter)
+                    .padding(start = 64.dp, end = 64.dp, bottom = style.subtitlePosition.dp.dp)
+                    .then(if (style.subtitleBackground) Modifier.background(Color(0x99000000), RoundedCornerShape(6.dp)).padding(horizontal = 12.dp, vertical = 4.dp) else Modifier),
             )
         }
     }
@@ -111,7 +122,7 @@ private fun PausedArt(ui: PlayerUi) {
 /** The picture: a SurfaceView, the cheapest way to show video (battery rule 2), at the video's own shape. */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoSurface(player: Player) {
+fun VideoSurface(player: Player, picture: Picture = Picture.FIT) {
     var ratio by remember { mutableFloatStateOf(16f / 9f) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -123,11 +134,20 @@ fun VideoSurface(player: Player) {
         player.addListener(listener)
         onDispose { player.removeListener(listener) }
     }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    BoxWithConstraints(Modifier.fillMaxSize().clipToBounds(), contentAlignment = Alignment.Center) {
+        val screen = maxWidth / maxHeight
+        val size = when (picture) {
+            Picture.FIT -> Modifier.aspectRatio(ratio)
+            Picture.WIDE -> Modifier.aspectRatio(16f / 9f)
+            Picture.STANDARD -> Modifier.aspectRatio(4f / 3f)
+            Picture.STRETCH -> Modifier.fillMaxSize()
+            // Cover the whole screen at the film's own shape; the edges that don't fit are cut off.
+            Picture.ZOOM -> if (ratio > screen) Modifier.requiredSize(maxHeight * ratio, maxHeight) else Modifier.requiredSize(maxWidth, maxWidth / ratio)
+        }
         AndroidView(
             factory = { SurfaceView(it).also(player::setVideoSurfaceView) },
             onRelease = player::clearVideoSurfaceView,
-            modifier = Modifier.aspectRatio(ratio),
+            modifier = size,
         )
     }
 }
@@ -138,17 +158,42 @@ fun VideoSurface(player: Player) {
  * Subtitles, then subtitle timing. The corner buttons are drawn by the bottom root.
  */
 @Composable
-fun PlayerBottom(ui: PlayerUi, volume: Int, onPress: (PlayerButton) -> Unit, onPlayNow: (Long) -> Unit, onCancelUpNext: () -> Unit) {
+fun PlayerBottom(
+    ui: PlayerUi,
+    volume: Int,
+    onPress: (PlayerButton) -> Unit,
+    onPlayNow: (Long) -> Unit,
+    onCancelUpNext: () -> Unit,
+    settings: PlaybackSettings = PlaybackSettings(),
+    onSeek: (Float) -> Unit = {},
+    onSetting: (PlaybackSettings.Row, Int) -> Unit = { _, _ -> },
+    onCloseSettings: () -> Unit = {},
+) {
     val upNext = ui.upNext
     if (upNext != null) {
         UpNextCard(ui, upNext, onPlayNow, onCancelUpNext)
+        return
+    }
+    val panelRow = ui.panelRow
+    if (panelRow != null) {
+        SettingsPanel(settings, panelRow, onSetting, onCloseSettings)
         return
     }
     fun focused(b: PlayerButton) = ui.focus == b
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxWidth().padding(start = 28.dp, end = 28.dp, top = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                ProgressBar(if (ui.durationMs > 0) ui.positionMs.toFloat() / ui.durationMs else 0f, Modifier.fillMaxWidth())
+                // Tap or drag along the bar to jump there.
+                var barWidth by remember { mutableFloatStateOf(1f) }
+                Box(
+                    Modifier.fillMaxWidth().height(28.dp)
+                        .onSizeChanged { barWidth = it.width.toFloat().coerceAtLeast(1f) }
+                        .pointerInput(Unit) { detectTapGestures { onSeek(it.x / barWidth) } }
+                        .pointerInput(Unit) { detectHorizontalDragGestures { change, _ -> onSeek(change.position.x / barWidth) } },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ProgressBar(if (ui.durationMs > 0) ui.positionMs.toFloat() / ui.durationMs else 0f, Modifier.fillMaxWidth())
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(clock(ui.positionMs), color = Palette.Ink, fontSize = 15.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
                     Text(
@@ -176,7 +221,7 @@ fun PlayerBottom(ui: PlayerUi, volume: Int, onPress: (PlayerButton) -> Unit, onP
             VolumeRow(volume, focused(PlayerButton.VOLUME_DOWN), focused(PlayerButton.VOLUME_UP), onPress)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PanelButton("Play from start", Modifier.weight(1f), focused = focused(PlayerButton.FROM_START)) { onPress(PlayerButton.FROM_START) }
-                PanelButton("Mark watched", Modifier.weight(1f), focused = focused(PlayerButton.MARK_WATCHED), keyHint = "Y") { onPress(PlayerButton.MARK_WATCHED) }
+                PanelButton(if (ui.watched) "Mark unwatched" else "Mark watched", Modifier.weight(1f), focused = focused(PlayerButton.MARK_WATCHED), keyHint = "Y") { onPress(PlayerButton.MARK_WATCHED) }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 LabelledButton("Audio", ui.audioLabel, Modifier.weight(1f), focused(PlayerButton.AUDIO)) { onPress(PlayerButton.AUDIO) }
@@ -202,7 +247,7 @@ fun PlayerBottom(ui: PlayerUi, volume: Int, onPress: (PlayerButton) -> Unit, onP
             }
         }
         Box(Modifier.align(Alignment.BottomStart).padding(start = 28.dp, bottom = 30.dp)) {
-            Legend("L2" to "−10 s", "R2" to "+10 s", "B" to "Back")
+            Legend("L2" to "−10 s", "R2" to "+10 s", "▷" to "Settings", "B" to "Back")
         }
     }
 }
@@ -233,6 +278,32 @@ private fun VolumeRow(percent: Int, minusFocused: Boolean, plusFocused: Boolean,
             }
         }
         PanelButton("+", Modifier.width(64.dp), focused = plusFocused) { onPress(PlayerButton.VOLUME_UP) }
+    }
+}
+
+/** Playback settings (Start): each row changes with ◀ ▶ or A; B or Start closes. */
+@Composable
+private fun SettingsPanel(s: PlaybackSettings, focus: Int, onSetting: (PlaybackSettings.Row, Int) -> Unit, onClose: () -> Unit) {
+    Column(Modifier.fillMaxSize().padding(start = 24.dp, end = 24.dp, top = 22.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Playback settings", color = Palette.Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("Done", color = Palette.Accent, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onClose).padding(8.dp))
+        }
+        PlaybackSettings.Row.entries.forEachIndexed { i, row ->
+            val shape = RoundedCornerShape(12.dp)
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 50.dp).background(Palette.Panel, shape)
+                    .border(2.dp, if (i == focus) Palette.Accent else Palette.Line, shape).padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("◀", color = Palette.Muted, fontSize = 16.sp, modifier = Modifier.clickable { onSetting(row, -1) }.padding(horizontal = 12.dp, vertical = 12.dp))
+                Text(row.label, color = Palette.Ink, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(s.valueOf(row), color = if (i == focus) Palette.Accent else Palette.Ink, fontSize = 15.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                Text("▶", color = Palette.Muted, fontSize = 16.sp, modifier = Modifier.clickable { onSetting(row, 1) }.padding(horizontal = 12.dp, vertical = 12.dp))
+            }
+        }
+        Box(Modifier.weight(1f))
+        Legend("◀▶" to "Change", "L2" to "−10 s", "R2" to "+10 s", "B" to "Close")
     }
 }
 
