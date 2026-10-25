@@ -97,6 +97,8 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D34 | **Licence: GPL-3.0**, so code from Loki, melonDS and Azahar can be reused | Oct 23, 2026 |
 | D35 | **Trakt sync stays in v3.** When it comes, it syncs only when you ask, in line with D32 | Oct 23, 2026 |
 | D36 | **Fetch info is a small ⟳ button in the bottom-right corner of the Browsing bottom screen**, matching ✎ and ⏻ on the video screens. It fetches info for the current tab. A single title is fetched through ✎ Fix match | Oct 23, 2026 |
+| D37 | **Downloaded subtitles are saved next to the video**, named like local ones (`Name.en.srt`), so they travel with the file and later scans pick them up like any local subtitle. The app asks for read and write access to the video folder when you pick it | Oct 25, 2026 |
+| D38 | **Fetch info only fetches what's missing.** Titles that already have their info and artwork are skipped; for a show, only new seasons, new episodes and missing images are fetched. Nothing that's already on the device is downloaded again. Fix match is the one exception: a corrected title is fetched fresh, since its old info belonged to the wrong match | Oct 25, 2026 |
 
 **Questions the design must answer**
 

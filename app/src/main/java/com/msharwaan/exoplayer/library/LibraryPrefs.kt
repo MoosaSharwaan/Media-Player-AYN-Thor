@@ -13,9 +13,14 @@ class LibraryPrefs(private val context: Context) {
         get() = prefs.getString(KEY_FOLDER, null)?.let(Uri::parse)
         private set(value) = prefs.edit { putString(KEY_FOLDER, value?.toString()) }
 
-    /** Keeps read access to the folder across restarts. */
+    /**
+     * Keeps access to the folder across restarts: read for scanning, write so downloaded
+     * subtitles can be saved next to their video (D37).
+     */
     fun choose(uri: Uri) {
-        context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.contentResolver.takePersistableUriPermission(
+            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
         folder = uri
     }
 

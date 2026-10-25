@@ -44,7 +44,7 @@ These are what make the app better than the baseline. Each one is done only when
 | --- | --- | --- |
 | Library scan | Offline. You pick a folder once (SD card); it finds every video in it and its subfolders, whether loose or in Show/Season folders (D33), and rescans only changed files | v1 |
 | Filename identification | Reads names like `The.Dark.Knight.2008.1080p.mkv` and `Breaking.Bad.S02E05.mkv` correctly; 95% of a test set of 100 real names match | v1 |
-| Artwork and info | **Fetched only when you press Fetch info (D32).** Poster, backdrop, logo, plot, year, rating, runtime from TMDB, with fanart.tv and AniList as fallbacks; episode stills and titles for series. **Each image is fetched through the API in the size its screen needs: 16:9 textless backdrops for the top screen, posters at card size for the bottom screen (D7)** | v1 |
+| Artwork and info | **Fetched only when you press Fetch info (D32), and only what's missing (D38):** titles that already have their info and images are skipped; for shows, only new seasons, episodes and missing images. Poster, backdrop, logo, plot, year, rating, runtime from TMDB, with fanart.tv and AniList as fallbacks; episode stills and titles for series. **Each image is fetched through the API in the size its screen needs: 16:9 textless backdrops for the top screen, posters at card size for the bottom screen (D7)** | v1 |
 | Series grouping | Episodes grouped Show › Season › Episode, even when the files sit loose in one folder | v1 |
 | Fix a match | Any title can be re-searched or given a TMDB ID by hand; the fix survives rescans | v1 |
 | Missing episodes | Shows episodes not on the card, greyed out, from TMDB's episode list | v1 |
@@ -56,7 +56,7 @@ These are what make the app better than the baseline. Each one is done only when
 | Survives screen changes **(research)** | Swapping or moving screens (AYN swap, Wayfinder, docking, sleep and wake, lid) never restarts playback | v1 |
 | Local subtitles | Loads .srt, .ass and .vtt files next to the video automatically, matched by name and language | v1 |
 | Launch from frontends | RetroHrai!, Cocoon or ES-DE can open the app, or a specific file in it. **If launched on the bottom screen, the player moves itself to the top screen (research)** | v2 |
-| Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video. Reached from the Movie screen's Subtitles block when the file has none (D9) | v1 (moved up from v2) |
+| Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video, named like a local subtitle (`Name.en.srt`) so it travels with the file (D37). Reached from the Movie screen's Subtitles block when the file has none (D9) | v1 (moved up from v2) |
 | Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list. Not needed for now (D27); watch sessions are still recorded so it can be added later | Later |
 | Stats export | Export stats and watch history as CSV | Later |
 | Backup | Export and import settings, matches and watch history in one file | v2 |
