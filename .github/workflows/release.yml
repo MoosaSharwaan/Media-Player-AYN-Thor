@@ -22,7 +22,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      # The runner already has the Android SDK (ANDROID_HOME); Gradle fetches platform 36 if missing.
       - name: Build the APK
         run: ./gradlew --no-daemon assembleDebug
       - name: Publish the release
