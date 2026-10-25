@@ -25,7 +25,20 @@ object Screens {
     /** Top screen 1920 × 1080 px, bottom screen 1240 × 1080 px, both drawn at density 2. */
     enum class Panel(val widthDp: Int, val heightDp: Int) { TOP(960, 540), BOTTOM(620, 540) }
 
+    /**
+     * Robolectric's native library caches Java classes (JniConstants) the first time a buffer
+     * crosses into it; done from a background thread (the app decodes artwork and Room queries
+     * off the main thread) it can't find them and aborts the process. Copying a bitmap's pixels
+     * into a buffer here builds that cache on the test's main thread first.
+     */
+    fun warmUpGraphics() {
+        val b = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        b.copyPixelsToBuffer(java.nio.ByteBuffer.allocate(4))
+        b.recycle()
+    }
+
     fun shoot(rule: Rule, name: String, panel: Panel, content: @Composable () -> Unit) {
+        warmUpGraphics()
         rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(2f)) {
                 ExoTheme { Box(Modifier.size(panel.widthDp.dp, panel.heightDp.dp).background(Palette.Black)) { content() } }
@@ -42,6 +55,19 @@ object Screens {
         rule.runOnUiThread { view.draw(Canvas(bitmap)) }
         val dir = File("build/screenshots").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    /**
+     * Waits for data that Room delivers on its own thread: Compose's waitUntil doesn't give it
+     * real time, so this runs the main looper and sleeps until [ready] or five seconds pass.
+     */
+    fun waitFor(ready: () -> Boolean) {
+        val until = System.currentTimeMillis() + 5_000
+        while (!ready() && System.currentTimeMillis() < until) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            Thread.sleep(20)
+        }
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
     }
 
     /** Sample artwork: the CC-BY open-movie posters kept in the repo for development. */

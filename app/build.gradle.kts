@@ -31,6 +31,8 @@ android {
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Robolectric's native graphics (screenshots) can be loaded once per process: one process per test class.
+        unitTests.all { it.forkEvery = 1 }
     }
 }
 

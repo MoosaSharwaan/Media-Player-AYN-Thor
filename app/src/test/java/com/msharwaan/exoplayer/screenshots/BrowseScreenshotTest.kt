@@ -34,15 +34,17 @@ class BrowseScreenshotTest {
 
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
     private lateinit var model: BrowseModel
+    private lateinit var db: AppDatabase
 
     @Before
     fun setUp() {
+        Screens.warmUpGraphics()
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
         context.getSharedPreferences("library", Context.MODE_PRIVATE).edit().putString("folder", "content://test").commit()
         runBlocking { seed(db) }
         model = BrowseModel(MainScope(), db, LibraryPrefs(context), LibraryScanner(context, db))
-        rule.waitUntil(5_000) { model.library.value.values.any { it.isNotEmpty() } }
+        Screens.waitFor { model.library.value.values.any { it.isNotEmpty() } }
     }
 
     private suspend fun seed(db: AppDatabase) {
@@ -60,11 +62,11 @@ class BrowseScreenshotTest {
                     runtimeMin = 12, genres = "Animation", posterPath = Screens.art("posters", art), backdropPath = Screens.art("backdrops", art),
                 ),
             )
-            val id = dao.insertFile(MediaFile(0, "u$i", "", "$name.mkv", 1, 1, "MOVIE", key, name, year, null, null, false))
+            val id = dao.insertFile(MediaFile(0, "u$i", if (i < 3) "Movies/Blender" else "Movies", "$name.mkv", 1, 1, "MOVIE", key, name, year, null, null, false))
             if (i == 0) dao.upsertPlayback(PlaybackState(id, positionMs = 6 * 60_000, durationMs = 15 * 60_000, lastPlayed = 10))
         }
         dao.upsertTitle(TitleInfo("s:caminandes", "SHOW", "SERIES", "Caminandes", 2013, posterPath = Screens.art("posters", "caminandes"), backdropPath = Screens.art("backdrops", "caminandes")))
-        for (e in 1..3) dao.insertFile(MediaFile(0, "c$e", "", "Caminandes.S01E0$e.mkv", 1, 1, "EPISODE", "s:caminandes", "Caminandes", null, 1, e, false))
+        for (e in 1..3) dao.insertFile(MediaFile(0, "c$e", "Series/Caminandes", "Caminandes.S01E0$e.mkv", 1, 1, "EPISODE", "s:caminandes", "Caminandes", null, 1, e, false))
         dao.upsertTitle(TitleInfo("s:frieren", "SHOW", "ANIME", "Frieren", null))
         dao.insertFile(MediaFile(0, "f1", "", "[SubsPlease] Frieren - 01.mkv", 1, 1, "EPISODE", "s:frieren", "Frieren", null, null, 1, true))
     }
@@ -87,6 +89,28 @@ class BrowseScreenshotTest {
         model.selectTab(Tab.MOVIES)
         model.focusCard(1)
         Screens.shoot(rule, "browse_bottom_movies", Panel.BOTTOM) { BrowseBottom(model, onOpen = {}, onFetchInfo = {}, onSettings = {}) }
+    }
+
+    @Test
+    fun searchAsYouType() {
+        val search = com.msharwaan.exoplayer.browse.SearchModel({ model.allCards }, { null }, {})
+        // Types "s" then "i" with the keyboard: q→a row, s; up to the q row, i.
+        listOf(com.msharwaan.exoplayer.input.PadAction.DOWN, com.msharwaan.exoplayer.input.PadAction.RIGHT, com.msharwaan.exoplayer.input.PadAction.A).forEach { search.onAction(it) }
+        Screens.shoot(rule, "search_top", Panel.TOP) { com.msharwaan.exoplayer.browse.SearchTop(search) }
+    }
+
+    @Test
+    fun searchBottom() {
+        val search = com.msharwaan.exoplayer.browse.SearchModel({ model.allCards }, { null }, {})
+        listOf(com.msharwaan.exoplayer.input.PadAction.DOWN, com.msharwaan.exoplayer.input.PadAction.RIGHT, com.msharwaan.exoplayer.input.PadAction.A).forEach { search.onAction(it) }
+        Screens.shoot(rule, "search_bottom", Panel.BOTTOM) { com.msharwaan.exoplayer.browse.SearchBottom(search) {} }
+    }
+
+    @Test
+    fun folders() {
+        val folders = com.msharwaan.exoplayer.browse.FoldersModel(MainScope(), db)
+        Screens.waitFor { folders.files.value.first.isNotEmpty() }
+        Screens.shoot(rule, "folders_bottom", Panel.BOTTOM) { com.msharwaan.exoplayer.browse.FoldersBottom(folders, "") {} }
     }
 
     @Test

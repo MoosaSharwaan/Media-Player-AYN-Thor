@@ -8,6 +8,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.msharwaan.exoplayer.browse.BrowseModel
 import com.msharwaan.exoplayer.browse.BrowseResult
+import com.msharwaan.exoplayer.browse.FoldersModel
+import com.msharwaan.exoplayer.browse.SearchModel
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsModel
 import com.msharwaan.exoplayer.display.DisplayMonitor
 import com.msharwaan.exoplayer.display.DisplaySetup
@@ -102,6 +104,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         onDone = { if (navigator.current is Route.FindSubtitles) navigator.pop() },
     )
 
+    /** Search (X on Browsing). */
+    val search = SearchModel({ browse.allCards }, clipboard, ::showNotice)
+
+    /** The folder browser (R1 on Browsing). */
+    val folders = FoldersModel(viewModelScope, exo.db)
+
     /** True while Fetch info runs; ⟳ shows "…". */
     private val _fetching = MutableStateFlow(false)
     val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
@@ -159,7 +167,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         noticeJob = viewModelScope.launch { delay(4_000); _notice.value = null }
     }
 
-    fun onButtonUp(action: PadAction) { held -= action }
+    private var comboUsed = false
+
+    fun onButtonUp(action: PadAction) {
+        held -= action
+        if (action == PadAction.SELECT) {
+            if (!comboUsed && navigator.current == Route.Browse && browse.hasFolder.value) {
+                browse.cycleOrder()
+                showNotice("Showing: ${browse.order.value.label}")
+            }
+            comboUsed = false
+        }
+    }
+
+    fun openSearch() {
+        search.open()
+        navigator.push(Route.Search)
+    }
+
+    /** A folder opens a deeper level; a video plays. */
+    fun onFolders(r: FoldersModel.Result): Boolean = when (r) {
+        is FoldersModel.Result.OpenFolder -> { navigator.push(Route.Folders(r.path)); true }
+        is FoldersModel.Result.Play -> { navigator.push(Route.Player(r.fileId)); true }
+        FoldersModel.Result.Used -> true
+        FoldersModel.Result.NotUsed -> false
+    }
 
     /** Opens a Browsing card: shows go to the series flow, everything else plays (D8, D14, D21, D22). */
     fun open(card: Card) {
@@ -235,6 +267,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         held += action
         // Select + Start: the hidden diagnostics page (the v0 measurements).
         if (PadAction.SELECT in held && PadAction.START in held) {
+            comboUsed = true
             when (navigator.current) {
                 Route.Diagnostics -> Unit
                 // Start alone opens Settings, so Start then Select lands there first: swap it.
@@ -246,7 +279,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val used = when (navigator.current) {
             Route.Diagnostics -> diagnostics.onAction(action)
             Route.Settings -> settings.onAction(action)
-            Route.Browse -> if (action == PadAction.START) { openSettings(); true } else when (val r = browse.onAction(action)) {
+            Route.Search -> when (val r = search.onAction(action)) {
+                is SearchModel.Result.Open -> { open(r.card); true }
+                SearchModel.Result.Used -> true
+                SearchModel.Result.NotUsed -> false
+            }
+            is Route.Folders -> onFolders(folders.onAction((navigator.current as Route.Folders).path, action))
+            Route.Browse -> if (action == PadAction.START) { openSettings(); true }
+            else if (action == PadAction.X && browse.hasFolder.value) { openSearch(); true }
+            else if (action == PadAction.R1 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
+            // Select changes the order when it's let go, so Select + Start (diagnostics) doesn't change it.
+            else if (action == PadAction.SELECT) true
+            else when (val r = browse.onAction(action)) {
                 is BrowseResult.Open -> { open(r.card); true }
                 is BrowseResult.FixMatch -> { openFixMatch(r.groupKey); true }
                 BrowseResult.Used -> true

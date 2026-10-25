@@ -3,6 +3,7 @@ package com.msharwaan.exoplayer.browse
 import android.net.Uri
 import com.msharwaan.exoplayer.data.AppDatabase
 import com.msharwaan.exoplayer.input.PadAction
+import com.msharwaan.exoplayer.library.BrowseOrder
 import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.library.Library
 import com.msharwaan.exoplayer.library.LibraryPrefs
@@ -33,11 +34,28 @@ class BrowseModel(
     private val prefs: LibraryPrefs,
     private val scanner: LibraryScanner,
 ) {
-    val library: StateFlow<Map<Tab, List<Card>>> = combine(
+    private val all: StateFlow<Map<Tab, List<Card>>> = combine(
         db.library().observeFiles(), db.library().observeTitles(), db.library().observePlayback(),
     ) { files, titles, playback -> Library.build(files, titles, playback) }
         .flowOn(Dispatchers.Default)
         .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    private val _order = MutableStateFlow(BrowseOrder.NAME)
+    /** A–Z, Recently added, Year or Unwatched only (Select). */
+    val order: StateFlow<BrowseOrder> = _order.asStateFlow()
+
+    /** The tabs as shown: in the chosen order. Continue watching keeps its own (newest first). */
+    val library: StateFlow<Map<Tab, List<Card>>> = combine(all, _order) { tabs, order ->
+        tabs.mapValues { (tab, cards) -> if (tab == Tab.CONTINUE) cards else Library.order(cards, order) }
+    }.stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    /** Every title in the library, for Search. */
+    val allCards: List<Card> get() = all.value.filterKeys { it != Tab.CONTINUE }.values.flatten()
+
+    fun cycleOrder() {
+        _order.value = BrowseOrder.entries[(_order.value.ordinal + 1) % BrowseOrder.entries.size]
+        _focus.value = -1
+    }
 
     private val _tab = MutableStateFlow(Tab.CONTINUE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()

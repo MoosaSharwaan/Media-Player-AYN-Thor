@@ -26,7 +26,16 @@ data class Card(
     /** Continue watching only: how far through, and "S02E05 · 28 min left". */
     val progress: Float = 0f,
     val resumeNote: String? = null,
+    /** Newest file time, for "Recently added". */
+    val addedAt: Long = 0,
+    /** Every file of it watched, for "Unwatched only". */
+    val watched: Boolean = false,
+    /** Genres, for search. */
+    val genres: String? = null,
 )
+
+/** Browsing's sort and filter, stepped through with Select. */
+enum class BrowseOrder(val label: String) { NAME("A–Z"), ADDED("Recently added"), YEAR("Year"), UNWATCHED("Unwatched only") }
 
 /** Builds the tabs from the database rows. Plain Kotlin, unit tested. */
 object Library {
@@ -66,6 +75,9 @@ object Library {
         posterPath = title.posterPath,
         backdropPath = title.backdropPath,
         playFileId = if (title.kind == "SHOW") nextEpisode(files, state)?.id else files.firstOrNull()?.id,
+        addedAt = files.maxOfOrNull { it.modified } ?: 0,
+        watched = files.isNotEmpty() && files.all { state[it.id]?.watched == true },
+        genres = title.genres,
     )
 
     /** Half-watched movies and the next episode of each show you've started, newest first. */
@@ -133,6 +145,28 @@ object Library {
         }
         return parts.joinToString(" · ")
     }
+
+    /** Applies Browsing's order to a tab's cards. Continue watching keeps its own order. */
+    fun order(cards: List<Card>, order: BrowseOrder): List<Card> = when (order) {
+        BrowseOrder.NAME -> cards.sortedBy { it.name.lowercase() }
+        BrowseOrder.ADDED -> cards.sortedByDescending { it.addedAt }
+        BrowseOrder.YEAR -> cards.sortedWith(compareByDescending<Card> { it.year ?: 0 }.thenBy { it.name.lowercase() })
+        BrowseOrder.UNWATCHED -> cards.filterNot { it.watched }.sortedBy { it.name.lowercase() }
+    }
+
+    /** Titles matching every word of [query], in name, year or genres; accents and dots don't matter. */
+    fun search(all: Collection<Card>, query: String): List<Card> {
+        val words = fold(query).split(' ').filter { it.isNotEmpty() }
+        if (words.isEmpty()) return emptyList()
+        return all.distinctBy { it.groupKey }.filter { c ->
+            val hay = fold(listOfNotNull(c.name, c.year?.toString(), c.genres).joinToString(" "))
+            words.all { w -> hay.split(' ').any { it.startsWith(w) } }
+        }.sortedBy { it.name.lowercase() }
+    }
+
+    /** "Pokémon: The.Movie" → "pokemon the movie". */
+    private fun fold(s: String): String =
+        LibraryScanner.normalise(java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), ""))
 
     fun formatRuntime(minutes: Int): String = if (minutes >= 60) "${minutes / 60} h ${minutes % 60} m" else "$minutes min"
 

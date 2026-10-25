@@ -25,6 +25,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.msharwaan.exoplayer.AppViewModel
 import com.msharwaan.exoplayer.browse.BrowseBottom
 import com.msharwaan.exoplayer.browse.BrowseTop
+import com.msharwaan.exoplayer.browse.FoldersBottom
+import com.msharwaan.exoplayer.browse.FoldersTop
+import com.msharwaan.exoplayer.browse.SearchBottom
+import com.msharwaan.exoplayer.browse.SearchTop
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsBottom
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsTop
 import com.msharwaan.exoplayer.nav.Route
@@ -132,6 +136,8 @@ private fun TopContent(vm: AppViewModel, route: Route) {
             PlayerTop(ui, subtitle, settings) { VideoSurface(vm.player.player, settings.picture) }
         }
         is Route.FixMatch -> FixMatchTop(vm.fixMatch)
+        Route.Search -> SearchTop(vm.search)
+        is Route.Folders -> FoldersTop(vm.folders, route.path)
     }
 }
 
@@ -147,6 +153,8 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
             }
             is Route.FixMatch -> FixMatchBottom(vm.fixMatch)
             is Route.FindSubtitles -> FindSubtitlesBottom(vm.findSubtitles)
+            Route.Search -> SearchBottom(vm.search, onOpen = vm::open)
+            is Route.Folders -> FoldersBottom(vm.folders, route.path) { vm.onFolders(it) }
             Route.Settings -> SettingsBottom(vm.settings)
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()

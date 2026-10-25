@@ -42,6 +42,7 @@ class ShowScreenshotTest {
 
     @Before
     fun setUp() {
+        Screens.warmUpGraphics()
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
         runBlocking {

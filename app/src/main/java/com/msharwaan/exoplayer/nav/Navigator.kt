@@ -14,6 +14,9 @@ sealed interface Route {
     data object Settings : Route
     data class FixMatch(val groupKey: String) : Route
     data class FindSubtitles(val fileId: Long) : Route
+    data object Search : Route
+    /** The folder browser at [path] (folders from the library root, joined with '/'). */
+    data class Folders(val path: String) : Route
 }
 
 /** The back stack. Browse is always at the bottom. */

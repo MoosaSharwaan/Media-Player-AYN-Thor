@@ -101,6 +101,7 @@ class FetchInfoTest {
 
     @Before
     fun setUp() {
+        com.msharwaan.exoplayer.screenshots.Screens.warmUpGraphics()
         server.dispatcher = dispatcher
         server.start()
         val context = ApplicationProvider.getApplicationContext<Context>()

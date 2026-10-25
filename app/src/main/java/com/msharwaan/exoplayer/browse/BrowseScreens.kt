@@ -40,6 +40,7 @@ import com.msharwaan.exoplayer.library.Tab
 import com.msharwaan.exoplayer.ui.Artwork
 import com.msharwaan.exoplayer.ui.CornerButton
 import com.msharwaan.exoplayer.ui.KeyHint
+import com.msharwaan.exoplayer.ui.Legend
 import com.msharwaan.exoplayer.ui.PanelButton
 import com.msharwaan.exoplayer.ui.theme.Palette
 
@@ -166,9 +167,9 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
         return
     }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize()) {
-            TabStrip(tab, onSelect = model::selectTab)
+    Column(Modifier.fillMaxSize()) {
+        TabStrip(tab, onSelect = model::selectTab)
+        Box(Modifier.fillMaxWidth().weight(1f)) {
             if (cards.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -183,7 +184,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
                     columns = GridCells.Fixed(BrowseModel.COLUMNS),
                     state = grid,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 80.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -198,8 +199,11 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
                 }
             }
         }
-        Box(Modifier.align(Alignment.BottomEnd).padding(14.dp)) {
-            // ⚙ Settings (also Start) next to ⟳ Fetch info.
+        // A bar of its own, so nothing covers the cards: Search, the order (Select) and the
+        // folder browser on the left; ⚙ Settings (also Start) and ⟳ Fetch info on the right.
+        val order by model.order.collectAsStateWithLifecycle()
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 14.dp, top = 4.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.weight(1f)) { Legend("X" to "Search", "▢" to order.label, "R1" to "Folders") }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CornerButton("⚙", onClick = onSettings)
                 CornerButton(if (scanning || fetching) "…" else "⟳", onClick = onFetchInfo)
@@ -209,7 +213,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
 }
 
 @Composable
-private fun PosterCard(card: Card, focused: Boolean, onClick: () -> Unit) {
+internal fun PosterCard(card: Card, focused: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(10.dp)
     Box(
         Modifier
