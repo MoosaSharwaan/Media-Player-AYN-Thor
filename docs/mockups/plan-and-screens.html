@@ -291,7 +291,7 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player · updated Oct 25, 2026 · v1 built; gates need the Thor</div>
+  <div class="eyebrow">Exo Player v1.0.0 · Oct 25, 2026 · built and tested on a PC; gates need the Thor</div>
   <h1>Both screens, every state, and the plan behind them</h1>
   <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
@@ -1047,7 +1047,7 @@ p { margin: 0; }
     { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
       ["True black everywhere; bottom screen redraws once a second", "v0", "done"],
       ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Auto does this (film rate only when seamless); Settings can also fix a rate per screen (D42). Check on the Thor"],
-      ["No background work during playback", "v1", "done", "Nothing runs in the background at all"],
+      ["No background work during playback", "v1", "done", "Leaving the app pauses the film and frees its decoders; only a Fetch info you started carries on, with a notification (D48)"],
       ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
       ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
     { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
@@ -1205,7 +1205,7 @@ p { margin: 0; }
     ["3. Browsing", "done", "f4a7370", "The five tabs and the cards.", ["Continue watching, Movies, Series, Anime, Others on L2 / R2, in a full circle", "Poster cards 4 across", "Top: poster mix, or the focused title's art and details", "⟳ Fetch info corner (online part in stage 6)"]],
     ["4. Player", "done", "965f46e", "One player for movies and episodes.", ["Resumes where you stopped; saved on pause, stop and each minute; watched at 90%", "Progress, Resume / Pause, ‹ Prev / Next ›, Play from start, Mark watched", "Audio, Subtitles, subtitle timing in 50 ms steps both ways (.srt, .vtt)", "Up next with a 10 s countdown; ✎ and ⏻ corners; L2 / R2 ±10 s", "FFmpeg audio for DTS, TrueHD, AC3"]],
     ["5. Series and anime", "done", "df18a0e", "Details → seasons → episodes → play.", ["Season cards 4 across, episode cards 3 across", "✓ watched, progress bar, missing episodes greyed", "Continue watching plays the episode; B lands on its season's episodes", "One-season shows skip the season cards; one-episode shows play like movies"]],
-    ["6. Online, on request", "done", "86c2cf6", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, fanart.tv and AniList; only what's missing (D38, D44)", "Find subtitles: OpenSubtitles, saved next to the video (D37)", "✎ Fix match by name or TMDB ID (D43)", "Tested against stand-in servers: the real services weren't reachable from the build machine"]],
+    ["6. Online, on request", "done", "86c2cf6", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, fanart.tv and AniList; only what's missing (D38, D44); it finishes even if you leave the app, with a progress notification (D48)", "Find subtitles: OpenSubtitles, saved next to the video (D37)", "✎ Fix match by name or TMDB ID (D43)", "Tested against stand-in servers: the real services weren't reachable from the build machine"]],
     ["7. Player extras", "done", "986fe4d", "Everything else the player needed for v1.", ["Playback settings on Start: speed, picture, audio delay, subtitle look, brightness (D45)", "Volume bar with boost; pause when leaving (D40, D41)", "Mark unwatched, scrubbing, headset buttons"]],
     ["Library extras", "done", "ac18e60", "Finding things without scrolling.", ["X Search, as you type", "Select: A–Z, Recently added, Year, Unwatched only", "R1 Folder browser (D46)"]],
     ["Gates 1 and 2", "todo", "", "What v1 still needs: the Thor itself.", ["Gate 1: both screens, buttons and touch on the device", "Gate 2: battery against VLC; 95 % of your 100 file names matched"]]

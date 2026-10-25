@@ -50,6 +50,9 @@ class PlayerScreenshotTest {
     fun movieBottom() = Screens.shoot(rule, "player_bottom_movie", Panel.BOTTOM) { PlayerBottom(movie, 65, {}, {}, {}) }
 
     @Test
+    fun moviePausedBottom() = Screens.shoot(rule, "player_bottom_movie_paused", Panel.BOTTOM) { PlayerBottom(movie.copy(paused = true), 65, {}, {}, {}) }
+
+    @Test
     fun episodeBottom() = Screens.shoot(rule, "player_bottom_episode", Panel.BOTTOM) { PlayerBottom(episode.copy(paused = true), 150, {}, {}, {}) }
 
     @Test
