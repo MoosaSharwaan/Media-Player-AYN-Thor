@@ -1,6 +1,9 @@
 package com.msharwaan.exoplayer
 
+import android.Manifest
 import android.app.ActivityOptions
+import android.content.pm.PackageManager
+import android.os.Build
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -44,6 +47,9 @@ class MainActivity : ComponentActivity() {
     private var bottom: BottomPresentation? = null
     private var bottomDisplayId: Int? = null
 
+    /** Fetch info's progress notification (Android 13+ asks once; the work runs either way). */
+    private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     /** Android's folder picker: read access to one folder, no broad storage permission. */
     private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) vm.onFolderChosen(uri)
@@ -67,6 +73,13 @@ class MainActivity : ComponentActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { vm.displaySetup.collect { showBottomScreen(it.bottomDisplayId) } }
                 launch { vm.browse.folderRequests.collect { pickFolder.launch(null) } }
+                launch {
+                    vm.notificationRequests.collect {
+                        if (Build.VERSION.SDK_INT >= 33 &&
+                            ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
                 launch {
                     vm.diagnostics.bottomBrightness.collect { level ->
                         bottom?.window?.let { w -> w.attributes = w.attributes.apply { screenBrightness = level } }
@@ -147,6 +160,7 @@ class MainActivity : ComponentActivity() {
         // Reading the SD card is offline, so it still runs by itself (D32).
         vm.browse.rescan()
         vm.player.toForeground()
+        (application as ExoApp).work.appVisible = true
     }
 
     /**
@@ -161,6 +175,7 @@ class MainActivity : ComponentActivity() {
         // Leaving the app (Home, a frontend, the screen going off) pauses, saves and frees the
         // decoders, so nothing of the player runs in the background (D8, battery rule 1 when idle).
         vm.player.toBackground()
+        (application as ExoApp).work.appVisible = false
         super.onStop()
     }
 

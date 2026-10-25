@@ -27,7 +27,11 @@ import com.msharwaan.exoplayer.settings.SettingsModel
 import com.msharwaan.exoplayer.show.ShowModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -110,7 +114,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** The folder browser (R1 on Browsing). */
     val folders = FoldersModel(viewModelScope, exo.db)
 
-    /** True while Fetch info runs; ⟳ shows "…". */
+    /** True while Fetch info runs, here or in the background; ⟳ shows "…". */
     private val _fetching = MutableStateFlow(false)
     val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
 
@@ -121,6 +125,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         player.onFindSubtitles = { navigator.push(Route.FindSubtitles(it)) }
+        // Fetch info's progress and its end, from the background runner.
+        viewModelScope.launch {
+            exo.work.progress.collect { text ->
+                _fetching.value = text != null
+                browse.setFetching(text != null)
+                if (text != null) showNotice(text)
+            }
+        }
+        viewModelScope.launch { exo.work.finished.collect { showNotice(it) } }
         // A fixed top-screen rate holds during films too; Auto follows the film when seamless.
         viewModelScope.launch { exo.displayPrefs.top.collect { exo.playback.followFilmRate(it == null) } }
         // The Player route opens its file; leaving it stops and saves (D8).
@@ -237,29 +250,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (!exo.online.isConnected()) return showNotice("No internet connection. Fetch info needs one.")
         val keys = browse.cards.map { it.groupKey }.filterNot { it.startsWith("o:") }.distinct()
         if (keys.isEmpty()) return showNotice("Nothing in this tab to fetch info for.")
-        _fetching.value = true
-        browse.setFetching(true)
-        viewModelScope.launch {
+        _notificationRequests.tryEmit(Unit)
+        // Runs in the app, not this screen, so it finishes even if you leave (D48).
+        exo.work.start("Fetching info…") { progress ->
             try {
-                val r = fetch.fetch(keys) { done, total -> if (done < total) showNotice("Fetching info… ${done + 1} of $total") }
-                showNotice(
-                    buildList {
-                        if (r.fetched > 0) add("Fetched ${r.fetched}" + if (r.fetched == 1) " title." else " titles.")
-                        if (r.fetched == 0 && r.notFound.isEmpty() && r.failed.isEmpty()) add("Everything here is up to date.")
-                        if (r.notFound.isNotEmpty()) add("Not found: " + r.notFound.take(3).joinToString(", ") + (if (r.notFound.size > 3) "…" else "") + ". Use ✎ Fix match (Y).")
-                        if (r.failed.isNotEmpty()) add("${r.failed.size} couldn't be fetched; press ⟳ again later.")
-                    }.joinToString(" "),
-                )
+                val r = fetch.fetch(keys) { done, total -> if (done < total) progress("Fetching info… ${done + 1} of $total") }
+                buildList {
+                    if (r.fetched > 0) add("Fetched ${r.fetched}" + if (r.fetched == 1) " title." else " titles.")
+                    if (r.fetched == 0 && r.notFound.isEmpty() && r.failed.isEmpty()) add("Everything here is up to date.")
+                    if (r.notFound.isNotEmpty()) add("Not found: " + r.notFound.take(3).joinToString(", ") + (if (r.notFound.size > 3) "…" else "") + ". Use ✎ Fix match (Y).")
+                    if (r.failed.isNotEmpty()) add("${r.failed.size} couldn't be fetched; press ⟳ again later.")
+                }.joinToString(" ")
             } catch (e: KeyRejected) {
-                showNotice("TMDB didn't accept your API key. Check it in Settings.")
+                "TMDB didn't accept your API key. Check it in Settings."
             } catch (e: IOException) {
-                showNotice("Fetch info stopped: the connection was lost. Press ⟳ to carry on.")
-            } finally {
-                _fetching.value = false
-                browse.setFetching(false)
+                "Fetch info stopped: the connection was lost. Press ⟳ to carry on."
             }
         }
     }
+
+    private val _notificationRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    /** The activity asks for notification permission (Android 13+) the first time Fetch info runs. */
+    val notificationRequests: SharedFlow<Unit> = _notificationRequests.asSharedFlow()
 
     /** Returns true when the app used the button; false leaves it to the system. */
     fun onAction(action: PadAction): Boolean {

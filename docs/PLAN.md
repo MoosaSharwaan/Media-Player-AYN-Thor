@@ -108,6 +108,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D45 | **Playback settings on Start in the player:** speed, picture (Fit, Zoom to fill, 16:9, 4:3, Stretch), audio delay (50 ms steps, kept per file), subtitle size, position and background, top screen brightness. Speed lasts the session; the rest are kept | Oct 25, 2026 |
 | D46 | **More buttons on Browsing:** X Search, Select the order (A–Z, Recently added, Year, Unwatched only; it changes on release so Select + Start still opens diagnostics), R1 the folder browser. They are shown in a bar under the cards | Oct 25, 2026 |
 | D47 | **Left out of v1, and why:** MKV chapter jumps (ExoPlayer doesn't read MKV chapters); a touch lock (⏻ already turns the only touch screen off); notification controls (they come with background audio in v2). Headset and Bluetooth play / pause work through a media session | Oct 25, 2026 |
+| D48 | **Fetch info finishes even if you leave the app.** It runs in the app rather than on a screen, held in the foreground by a service with a notification showing its progress ("Fetching info… 3 of 12"), and a wake lock (at most an hour) so it continues with the screen off. Both end with the work. When you're not in the app, a notification says how it went. It only ever starts from ⟳ (D32). The player itself still pauses and lets go of its decoders when you leave (D40) | Oct 25, 2026 |
 
 **Questions the design must answer**
 
@@ -165,7 +166,7 @@ The target: an hour of 1080p playback uses no more battery than VLC playing the 
 
 **Rules when not playing**
 
-1. **No always-running service.** Nothing runs in the background except a short job after you add files.
+1. **No always-running service.** When you leave the app, playback pauses and frees its decoders, and nothing else runs. The one exception is a Fetch info you started: it carries on to the end with a notification, then stops (D48).
 2. **Online fetches only on request** (D32): Fetch info and Find subtitles. Nothing runs in the background, on a timer, or after a scan.
 3. **Images decoded at display size.** Posters are stored at the size shown, not full resolution, so scrolling stays smooth and light.
 4. **Rescans are cheap.** Only folders whose contents changed are read again.

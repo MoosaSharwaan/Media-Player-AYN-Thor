@@ -5,6 +5,7 @@ import com.msharwaan.exoplayer.data.AppDatabase
 import com.msharwaan.exoplayer.library.LibraryPrefs
 import com.msharwaan.exoplayer.library.LibraryScanner
 import com.msharwaan.exoplayer.player.PlaybackHolder
+import com.msharwaan.exoplayer.online.BackgroundWork
 import com.msharwaan.exoplayer.online.Online
 import com.msharwaan.exoplayer.settings.DisplayPrefs
 import com.msharwaan.exoplayer.settings.Secrets
@@ -26,4 +27,6 @@ class ExoApp : Application() {
     val displayPrefs: DisplayPrefs by lazy { DisplayPrefs(this) }
     /** Fetch info, Fix match and Find subtitles: only when you press them (D32). */
     val online: Online by lazy { Online(this, db, secrets) }
+    /** Fetch info, kept going when you leave the app (D48). */
+    val work: BackgroundWork by lazy { BackgroundWork(this) }
 }
