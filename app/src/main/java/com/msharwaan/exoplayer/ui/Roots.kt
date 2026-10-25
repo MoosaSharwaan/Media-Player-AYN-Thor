@@ -139,7 +139,8 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
             Route.Settings -> SettingsBottom(vm.settings)
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
-                PlayerBottom(ui, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
+                val volume by vm.player.volume.percent.collectAsStateWithLifecycle()
+                PlayerBottom(ui, volume, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
                 // One screen: no ⏻ (there is no bottom screen to turn off), ✎ stays.
                 if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.fixMatch() } }
             }

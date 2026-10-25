@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -136,7 +138,7 @@ fun VideoSurface(player: Player) {
  * Subtitles, then subtitle timing. The corner buttons are drawn by the bottom root.
  */
 @Composable
-fun PlayerBottom(ui: PlayerUi, onPress: (PlayerButton) -> Unit, onPlayNow: (Long) -> Unit, onCancelUpNext: () -> Unit) {
+fun PlayerBottom(ui: PlayerUi, volume: Int, onPress: (PlayerButton) -> Unit, onPlayNow: (Long) -> Unit, onCancelUpNext: () -> Unit) {
     val upNext = ui.upNext
     if (upNext != null) {
         UpNextCard(ui, upNext, onPlayNow, onCancelUpNext)
@@ -171,6 +173,7 @@ fun PlayerBottom(ui: PlayerUi, onPress: (PlayerButton) -> Unit, onPlayNow: (Long
                     }
                 }
             }
+            VolumeRow(volume, focused(PlayerButton.VOLUME_DOWN), focused(PlayerButton.VOLUME_UP), onPress)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PanelButton("Play from start", Modifier.weight(1f), focused = focused(PlayerButton.FROM_START)) { onPress(PlayerButton.FROM_START) }
                 PanelButton("Mark watched", Modifier.weight(1f), focused = focused(PlayerButton.MARK_WATCHED), keyHint = "Y") { onPress(PlayerButton.MARK_WATCHED) }
@@ -201,6 +204,35 @@ fun PlayerBottom(ui: PlayerUi, onPress: (PlayerButton) -> Unit, onPlayNow: (Long
         Box(Modifier.align(Alignment.BottomStart).padding(start = 28.dp, bottom = 30.dp)) {
             Legend("L2" to "−10 s", "R2" to "+10 s", "B" to "Back")
         }
+    }
+}
+
+/**
+ * − [bar] +. The first 80 % of the bar is the media volume up to 100 %; the last 20 % is the
+ * boost to 200 %, in a darker accent past a tick, so it's clear when the sound is boosted.
+ */
+@Composable
+private fun VolumeRow(percent: Int, minusFocused: Boolean, plusFocused: Boolean, onPress: (PlayerButton) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+        PanelButton("−", Modifier.width(64.dp), focused = minusFocused) { onPress(PlayerButton.VOLUME_DOWN) }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(if (percent > 100) "VOLUME · BOOST" else "VOLUME", color = if (percent > 100) Palette.Accent else Palette.Muted, fontSize = 11.sp, letterSpacing = 1.sp)
+                Text("$percent %", color = Palette.Ink, fontSize = 14.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+            }
+            val normal = (percent.coerceAtMost(100) / 100f) * 0.8f
+            val boost = ((percent - 100).coerceAtLeast(0) / 100f) * 0.2f
+            Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Palette.Line)) {
+                Row(Modifier.fillMaxSize()) {
+                    if (normal > 0f) Box(Modifier.fillMaxHeight().weight(normal).background(Palette.Accent))
+                    if (boost > 0f) Box(Modifier.fillMaxHeight().weight(boost).background(Color(0xFFC77B12)))
+                    if (normal + boost < 1f) Box(Modifier.fillMaxHeight().weight(1f - normal - boost))
+                }
+                // 100 % mark
+                Box(Modifier.fillMaxHeight().fillMaxWidth(0.8f)) { Box(Modifier.align(Alignment.CenterEnd).width(2.dp).fillMaxHeight().background(Palette.Ink)) }
+            }
+        }
+        PanelButton("+", Modifier.width(64.dp), focused = plusFocused) { onPress(PlayerButton.VOLUME_UP) }
     }
 }
 

@@ -3,6 +3,7 @@ package com.msharwaan.exoplayer
 import android.app.Application
 import android.content.ClipboardManager
 import android.net.Uri
+import android.view.Display
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.msharwaan.exoplayer.browse.BrowseModel
@@ -15,6 +16,8 @@ import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.nav.Navigator
 import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.player.PlayerModel
+import com.msharwaan.exoplayer.settings.DisplayPrefs
+import com.msharwaan.exoplayer.settings.Screen
 import com.msharwaan.exoplayer.settings.SettingsModel
 import com.msharwaan.exoplayer.show.ShowModel
 import kotlinx.coroutines.Job
@@ -59,7 +62,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val browse = BrowseModel(viewModelScope, exo.db, exo.prefs, exo.scanner)
 
     /** One player for movies and episodes (D13). A finished movie goes back to where it was opened. */
-    val player = PlayerModel(app, viewModelScope, exo.db, exo.playback, ::showNotice) {
+    val player = PlayerModel(app, viewModelScope, exo.db, exo.playback, exo.writeScope, ::showNotice) {
         if (navigator.current is Route.Player) navigator.pop()
     }
 
@@ -69,6 +72,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Settings: API keys, the OpenSubtitles login, the video folder, About. */
     val settings = SettingsModel(
         secrets = exo.secrets,
+        displayPrefs = exo.displayPrefs,
+        rates = { screen ->
+            val id = if (screen == Screen.TOP) Display.DEFAULT_DISPLAY else displaySetup.value.bottomDisplayId
+            id?.let { displayMonitor.display(it) }?.let(DisplayPrefs::ratesOf)
+        },
         folder = { exo.prefs.folder },
         readClipboard = {
             app.getSystemService(ClipboardManager::class.java)?.primaryClip
@@ -84,6 +92,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     init {
+        // A fixed top-screen rate holds during films too; Auto follows the film when seamless.
+        viewModelScope.launch { exo.displayPrefs.top.collect { exo.playback.followFilmRate(it == null) } }
         // The Player route opens its file; leaving it stops and saves (D8).
         viewModelScope.launch {
             var previous: Route? = null
@@ -194,6 +204,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     override fun onCleared() {
         player.stop()
+        player.release()
         exo.playback.release()
     }
 }

@@ -38,6 +38,12 @@ class PlaybackHolder(private val context: Context) {
             .apply { videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_ONLY_IF_SEAMLESS }
     }
 
+    /** Auto refresh rate: follow the film's frame rate when the switch is seamless; a fixed rate: never switch. */
+    fun followFilmRate(follow: Boolean) {
+        player.videoChangeFrameRateStrategy =
+            if (follow) C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_ONLY_IF_SEAMLESS else C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF
+    }
+
     fun release() {
         instance?.release()
         instance = null

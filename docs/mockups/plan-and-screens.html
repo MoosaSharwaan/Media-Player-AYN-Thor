@@ -460,6 +460,12 @@ p { margin: 0; }
         '<div class="b-btn" data-act="prev" title="Previous episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.first ? ';opacity:.35' : '') + '">‹ Prev</div>' : '') +
       '<div class="b-btn pri focus" data-act="toggle" style="cursor:pointer"><span>' + (mv.paused ? '▶  Resume' : '❚❚  Pause') + '</span>' + key("A") + '</div>' +
       (m.ep ? '<div class="b-btn" data-act="next" title="Next episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.last ? ';opacity:.35' : '') + '">Next ›</div></div>' : '') +
+      '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center">' +
+        '<div class="b-btn" style="justify-content:center;min-width:10cqw">−</div>' +
+        '<div class="s-col" style="gap:1cqw"><div class="s-row" style="justify-content:space-between"><span class="b-tiny">Volume</span><span style="font:700 2.6cqw/1 var(--f-mono)">65 %</span></div>' +
+          '<div class="pbar" style="height:1.2cqw;position:relative"><b style="width:52%"></b><i style="position:absolute;left:80%;top:0;bottom:0;width:.4cqw;background:var(--scr-ink)"></i></div></div>' +
+        '<div class="b-btn" style="justify-content:center;min-width:10cqw">+</div>' +
+      '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
         '<div class="b-btn"><span>Play from start</span></div>' +
         '<div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div>' +
@@ -975,7 +981,7 @@ p { margin: 0; }
   var gates = [
     ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Measuring needs the Thor"],
     ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "todo", "Needs the Thor"],
-    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Stages 1–5 and Settings built; stage 6 (online) next, then the player extras"],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Stages 1–5, Settings, volume bar and pause-on-leave built; stage 6 (online) next, then the player extras"],
     ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "Needs the Thor and your 100 file names"],
     ["v2", "Comfort", "Backup, frontends, TV output, sleep timer", 0, "todo", ""],
     ["G3", "Gate 3", "No battery regression", 1, "todo", ""],
@@ -1011,11 +1017,12 @@ p { margin: 0; }
       ["Group Show › Season › Episode; list missing episodes", "v1", "part", "Grouping built; missing episodes appear once Fetch info works"],
       ["Fix a match by hand; survives rescans", "v1", "todo", "Stage 6; the keyboard for it is built"],
       ["Folder browser; search, sort, filter", "v1", "todo"],
-      ["Settings: API keys (typed or pasted, stored encrypted), video folder, About", "v1", "done"] ] },
+      ["Settings: API keys (typed or pasted, stored encrypted), refresh rate per screen, video folder, About", "v1", "done"],
+      ["Pause and save when leaving the app, power off or lid (D40)", "v1", "done"] ] },
     { t: "Playback", s: "Everything that happens once you press Play.", steps: [
       ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1", "done"],
       ["Notices for software decoding and unsupported audio", "v1", "done"],
-      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "±10 s skip only; the rest is planned as stage 7"],
+      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "±10 s skip and the volume bar with boost to 200 %; the rest is planned as stage 7"],
       ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "part", "Tracks and subtitle delay built; audio delay not yet"],
       ["Resume; watched at 90%; auto-play next with countdown", "v1", "done"],
       ["Sleep timer, background audio, night mode, Bluetooth delay", "v2", "todo"],
@@ -1038,7 +1045,7 @@ p { margin: 0; }
       ["Sample ES-DE custom system and Cocoon setup notes", "v2", "todo"] ] },
     { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
       ["True black everywhere; bottom screen redraws once a second", "v0", "done"],
-      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Film rate is requested only when the switch is seamless; check on the Thor"],
+      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Auto does this (film rate only when seamless); Settings can also fix a rate per screen (D42). Check on the Thor"],
       ["No background work during playback", "v1", "done", "Nothing runs in the background at all"],
       ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
       ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
@@ -1209,8 +1216,8 @@ p { margin: 0; }
     ["Browsing: nothing focused", "browse", "The top screen shows a mix of the tab's posters; the selected tab sits in the centre of the strip.", "browse_top_mix", "browse_bottom_movies"],
     ["Browsing: a title focused", "browse", "The focused title's art fills the top screen, with its details on the left.", "browse_top_focused", null],
     ["Continue watching", "browse", "The same, with how far through you are.", "browse_top_continue", null],
-    ["Movie playing", "movie", "Only the picture and its subtitles on top. Subtitle timing set to −150 ms.", "player_top_subtitle", "player_bottom_movie"],
-    ["Paused, and episode controls", "play", "Paused: the title's art and details, never a progress bar. Episodes add ‹ Prev / Next ›; with no subtitles, the Subtitles button offers Find subtitles.", "player_top_paused", "player_bottom_episode"],
+    ["Movie playing", "movie", "Only the picture and its subtitles on top. Volume bar under Pause (the volume buttons move it too); subtitle timing set to −150 ms.", "player_top_subtitle", "player_bottom_movie"],
+    ["Paused, and episode controls", "play", "Paused: the title's art and details, never a progress bar. Episodes add ‹ Prev / Next ›; the volume here is boosted to 150 %; with no subtitles, the Subtitles button offers Find subtitles.", "player_top_paused", "player_bottom_episode"],
     ["Up next", "ending", "30 s before the end of an episode; A plays now, B cancels.", null, "player_bottom_upnext"],
     ["Series: details and seasons", "series", "The show first, with the episode to continue; season cards below.", "show_top_details", "show_bottom_seasons"],
     ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],

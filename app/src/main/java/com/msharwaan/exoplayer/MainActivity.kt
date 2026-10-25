@@ -1,7 +1,10 @@
 package com.msharwaan.exoplayer
 
 import android.app.ActivityOptions
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.view.Display
 import android.view.KeyEvent
@@ -10,6 +13,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -20,9 +24,11 @@ import com.msharwaan.exoplayer.display.BottomPresentation
 import com.msharwaan.exoplayer.display.DisplayMonitor
 import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.nav.Route
+import com.msharwaan.exoplayer.settings.DisplayPrefs
 import com.msharwaan.exoplayer.ui.BottomRoot
 import com.msharwaan.exoplayer.ui.TopRoot
 import com.msharwaan.exoplayer.ui.theme.ExoTheme
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -54,6 +60,8 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent { ExoTheme { TopRoot(vm) } }
+        ContextCompat.registerReceiver(this, screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED)
+        screenOffRegistered = true
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -75,10 +83,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 launch {
-                    vm.diagnostics.topModeId.collect { modeId ->
+                    // The rate chosen in Settings; the diagnostics mode test overrides it while it runs.
+                    combine(vm.diagnostics.topModeId, displayPrefs.top) { testMode, hz ->
+                        if (testMode != 0) testMode else display?.let { DisplayPrefs.modeIdFor(it, hz) } ?: 0
+                    }.collect { modeId ->
                         window.attributes = window.attributes.apply { preferredDisplayModeId = modeId }
                     }
                 }
+                launch { displayPrefs.bottom.collect { applyBottomRate() } }
             }
         }
     }
@@ -91,6 +103,15 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options.toBundle())
         finish()
         return true
+    }
+
+    private val displayPrefs get() = (application as ExoApp).displayPrefs
+
+    /** Asks the bottom screen for the rate chosen in Settings (0 = Auto). */
+    private fun applyBottomRate() {
+        val window = bottom?.window ?: return
+        val modeId = bottom?.display?.let { DisplayPrefs.modeIdFor(it, displayPrefs.bottom.value) } ?: 0
+        window.attributes = window.attributes.apply { preferredDisplayModeId = modeId }
     }
 
     /** Shows, moves or removes the bottom screen's window as displays come and go. */
@@ -108,7 +129,7 @@ class MainActivity : ComponentActivity() {
             onTouch = { vm.touched() },
         ) { ExoTheme { BottomRoot(vm) } }
         // The display can disappear between finding it and showing the window.
-        runCatching { presentation.show(); bottom = presentation }
+        runCatching { presentation.show(); bottom = presentation; applyBottomRate() }
             .onFailure { if (it !is WindowManager.BadTokenException && it !is WindowManager.InvalidDisplayException) throw it }
     }
 
@@ -116,6 +137,14 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         // Reading the SD card is offline, so it still runs by itself (D32).
         vm.browse.rescan()
+    }
+
+    /**
+     * The power button or the lid turning the screens off. onStop normally covers it too; this
+     * makes sure, since a window on the bottom screen can keep the activity counted as visible.
+     */
+    private val screenOff = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) { vm.player.pause() }
     }
 
     override fun onStop() {
@@ -129,6 +158,15 @@ class MainActivity : ComponentActivity() {
 
     private fun handleKey(event: KeyEvent, window: String): Boolean {
         vm.diagnostics.logKey(event, window)
+        // While a film is open, the volume buttons move the app's volume bar instead of
+        // Android's pop-up, which would cover the picture (rule R1).
+        if (vm.navigator.current is Route.Player && (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                vm.touched()
+                if (event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) vm.player.volume.up() else vm.player.volume.down()
+            }
+            return true
+        }
         val action = PadAction.fromKeyCode(event.keyCode) ?: return false
         return when (event.action) {
             KeyEvent.ACTION_DOWN -> {
@@ -151,7 +189,10 @@ class MainActivity : ComponentActivity() {
 
     private val usedKeys = mutableSetOf<Int>()
 
+    private var screenOffRegistered = false
+
     override fun onDestroy() {
+        if (screenOffRegistered) unregisterReceiver(screenOff)
         // Never leave a window stuck on the bottom screen (research: iiSU #265).
         bottom?.let { runCatching { it.dismiss() } }
         bottom = null

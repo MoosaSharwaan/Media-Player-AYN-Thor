@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-/** One line in Settings, in order. [secret] rows open the keyboard. */
-enum class SettingRow(val title: String, val group: String, val secret: Secret?, val help: String) {
+/** One line in Settings, in order. [secret] rows open the keyboard; [screen] rows pick a refresh rate. */
+enum class SettingRow(val title: String, val group: String, val secret: Secret?, val help: String, val screen: Screen? = null) {
     TMDB_KEY(
         "TMDB API key", "Online", Secret.TMDB_KEY,
         "Needed for Fetch info: posters, backdrops, plots, seasons and episodes. Free: make an account at themoviedb.org, " +
@@ -30,6 +30,18 @@ enum class SettingRow(val title: String, val group: String, val secret: Secret?,
     OPENSUBTITLES_PASSWORD(
         "OpenSubtitles password", "Online", Secret.OPENSUBTITLES_PASSWORD,
         "Stored encrypted on this device only, and sent only to OpenSubtitles when you press Find subtitles.",
+    ),
+    TOP_RATE(
+        "Top screen refresh rate", "Screens", null,
+        "A or ◀ ▶ changes it. Auto keeps the screen's own rate and, during a film, switches to the film's rate when that " +
+            "can happen without a blank flash. A fixed rate holds everywhere, films included. Higher rates use more battery.",
+        Screen.TOP,
+    ),
+    BOTTOM_RATE(
+        "Bottom screen refresh rate", "Screens", null,
+        "A or ◀ ▶ changes it. Auto leaves it to Android. During playback the bottom screen redraws only once a second, " +
+            "so a lower rate here saves battery without looking different.",
+        Screen.BOTTOM,
     ),
     FOLDER("Video folder", "Library", null, "The folder the library is read from, usually on the SD card. A picks a different one."),
     ABOUT(
@@ -55,6 +67,9 @@ data class SettingsUi(
  */
 class SettingsModel(
     private val secrets: Secrets,
+    private val displayPrefs: DisplayPrefs,
+    /** The refresh rates a screen offers, or null when that screen isn't there. */
+    private val rates: (Screen) -> List<Float>?,
     private val folder: () -> Uri?,
     private val readClipboard: () -> String?,
     private val onChooseFolder: () -> Unit,
@@ -75,6 +90,8 @@ class SettingsModel(
         SettingRow.ABOUT -> ""
         SettingRow.OPENSUBTITLES_USER -> secrets[Secret.OPENSUBTITLES_USER] ?: "Not set"
         SettingRow.OPENSUBTITLES_PASSWORD -> if (secrets[Secret.OPENSUBTITLES_PASSWORD] != null) "Set" else "Not set"
+        SettingRow.TOP_RATE, SettingRow.BOTTOM_RATE ->
+            if (rates(row.screen!!) == null) "No bottom screen" else DisplayPrefs.label(displayPrefs.rate(row.screen))
         else -> secrets[row.secret!!]?.let { "Set · …" + it.takeLast(4) } ?: "Not set"
     }
 
@@ -88,6 +105,11 @@ class SettingsModel(
             PadAction.DOWN -> _ui.update { it.copy(focus = (it.focus + 1).coerceAtMost(n - 1)) }
             PadAction.A -> activate(SettingRow.entries[_ui.value.focus])
             PadAction.X -> clear(SettingRow.entries[_ui.value.focus])
+            PadAction.LEFT, PadAction.RIGHT -> {
+                val row = SettingRow.entries[_ui.value.focus]
+                if (row.screen == null) return false
+                stepRate(row, if (action == PadAction.RIGHT) 1 else -1)
+            }
             else -> return false
         }
         return true
@@ -113,11 +135,24 @@ class SettingsModel(
                 val start = if (row == SettingRow.OPENSUBTITLES_PASSWORD) "" else secrets[row.secret].orEmpty()
                 _ui.update { it.copy(editing = SettingsUi.Editing(row, KeyboardState(text = start), reveal = false)) }
             }
+            row.screen != null -> stepRate(row, 1)
             row == SettingRow.FOLDER -> onChooseFolder()
         }
     }
 
+    /** Steps through Auto and each rate the screen offers, round in a circle. */
+    private fun stepRate(row: SettingRow, step: Int) {
+        val screen = row.screen ?: return
+        val available = rates(screen)
+        if (available == null) { onNotice("There's no bottom screen right now."); return }
+        val options: List<Float?> = listOf(null) + available
+        val i = options.indexOf(displayPrefs.rate(screen)).coerceAtLeast(0)
+        displayPrefs.setRate(screen, options[(i + step + options.size) % options.size])
+        refresh()
+    }
+
     private fun clear(row: SettingRow) {
+        row.screen?.let { if (displayPrefs.rate(it) != null) { displayPrefs.setRate(it, null); refresh() }; return }
         val secret = row.secret ?: return
         if (secrets[secret] == null) return
         secrets[secret] = null

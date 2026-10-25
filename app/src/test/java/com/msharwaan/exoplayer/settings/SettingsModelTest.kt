@@ -30,7 +30,8 @@ class SettingsModelTest {
     @Before
     fun setUp() {
         secrets = Secrets(ApplicationProvider.getApplicationContext(), ReversingCrypto())
-        model = SettingsModel(secrets, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { clipboard }, {}, { notices += it })
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        model = SettingsModel(secrets, DisplayPrefs(context), { if (it == Screen.TOP) listOf(60f, 90f, 120f) else null }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { clipboard }, {}, { notices += it })
     }
 
     @Test
@@ -88,6 +89,31 @@ class SettingsModelTest {
         model.onAction(PadAction.A)
         assertEquals("", model.ui.value.editing?.keyboard?.text)
         assertEquals(true, notices.last().startsWith("Nothing to paste"))
+    }
+
+    @Test
+    fun refreshRateStepsThroughAutoAndEachRate() {
+        repeat(5) { model.onAction(PadAction.DOWN) } // Top screen refresh rate
+        assertEquals("Auto", model.ui.value.summaries[SettingRow.TOP_RATE])
+        model.onAction(PadAction.A)
+        assertEquals("60 Hz", model.ui.value.summaries[SettingRow.TOP_RATE])
+        model.onAction(PadAction.RIGHT)
+        model.onAction(PadAction.RIGHT)
+        assertEquals("120 Hz", model.ui.value.summaries[SettingRow.TOP_RATE])
+        model.onAction(PadAction.RIGHT) // round to Auto
+        assertEquals("Auto", model.ui.value.summaries[SettingRow.TOP_RATE])
+        model.onAction(PadAction.LEFT)
+        assertEquals("120 Hz", model.ui.value.summaries[SettingRow.TOP_RATE])
+        model.onAction(PadAction.X)
+        assertEquals("Auto", model.ui.value.summaries[SettingRow.TOP_RATE])
+    }
+
+    @Test
+    fun bottomRateSaysWhenThereIsNoBottomScreen() {
+        repeat(6) { model.onAction(PadAction.DOWN) }
+        assertEquals("No bottom screen", model.ui.value.summaries[SettingRow.BOTTOM_RATE])
+        model.onAction(PadAction.A)
+        assertEquals("There's no bottom screen right now.", notices.last())
     }
 
     @Test

@@ -47,13 +47,13 @@ class PlayerScreenshotTest {
     }
 
     @Test
-    fun movieBottom() = Screens.shoot(rule, "player_bottom_movie", Panel.BOTTOM) { PlayerBottom(movie, {}, {}, {}) }
+    fun movieBottom() = Screens.shoot(rule, "player_bottom_movie", Panel.BOTTOM) { PlayerBottom(movie, 65, {}, {}, {}) }
 
     @Test
-    fun episodeBottom() = Screens.shoot(rule, "player_bottom_episode", Panel.BOTTOM) { PlayerBottom(episode.copy(paused = true), {}, {}, {}) }
+    fun episodeBottom() = Screens.shoot(rule, "player_bottom_episode", Panel.BOTTOM) { PlayerBottom(episode.copy(paused = true), 150, {}, {}, {}) }
 
     @Test
     fun upNext() = Screens.shoot(rule, "player_bottom_upnext", Panel.BOTTOM) {
-        PlayerBottom(episode.copy(upNext = UpNext(3, "Caminandes", "S01E03", 7)), {}, {}, {})
+        PlayerBottom(episode.copy(upNext = UpNext(3, "Caminandes", "S01E03", 7)), 65, {}, {}, {})
     }
 }

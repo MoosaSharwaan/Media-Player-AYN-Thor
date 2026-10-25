@@ -67,9 +67,10 @@ data class UpNext(val fileId: Long, val title: String, val label: String, val se
 /** Bottom-screen buttons in D-pad order, row by row. */
 enum class PlayerButton(val row: Int) {
     PREV(0), RESUME(0), NEXT(0),
-    FROM_START(1), MARK_WATCHED(1),
-    AUDIO(2), SUBTITLES(2),
-    DELAY_MINUS(3), DELAY_PLUS(3),
+    VOLUME_DOWN(1), VOLUME_UP(1),
+    FROM_START(2), MARK_WATCHED(2),
+    AUDIO(3), SUBTITLES(3),
+    DELAY_MINUS(4), DELAY_PLUS(4),
 }
 
 /**
@@ -84,6 +85,8 @@ class PlayerModel(
     private val scope: CoroutineScope,
     private val db: AppDatabase,
     private val holder: PlaybackHolder,
+    /** Database writes go here: an app-wide scope, so the last save still runs while the app closes. */
+    private val writeScope: CoroutineScope,
     private val onNotice: (String) -> Unit,
     private val onFinished: () -> Unit,
 ) {
@@ -95,6 +98,9 @@ class PlayerModel(
     val subtitle: StateFlow<String?> = _subtitle.asStateFlow()
 
     val player get() = holder.player
+
+    /** The volume bar: media volume, then a boost to 200 %. */
+    val volume = VolumeControl(context) { player.audioSessionId }
 
     private var file: MediaFile? = null
 
@@ -124,6 +130,8 @@ class PlayerModel(
             _ui.update { it.copy(playing = isPlaying) }
             if (isPlaying) startTicking() else { tick(); save() }
         }
+
+        override fun onAudioSessionIdChanged(audioSessionId: Int) = volume.onAudioSessionChanged()
 
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             _ui.update { it.copy(paused = !playWhenReady) }
@@ -265,6 +273,8 @@ class PlayerModel(
             PlayerButton.SUBTITLES -> if (_ui.value.subtitleMissing) onNotice("Find subtitles needs your OpenSubtitles key. It comes in the next build stage.") else cycleSubtitles()
             PlayerButton.DELAY_MINUS -> shiftSubtitles(-50)
             PlayerButton.DELAY_PLUS -> shiftSubtitles(50)
+            PlayerButton.VOLUME_DOWN -> volume.down()
+            PlayerButton.VOLUME_UP -> volume.up()
         }
     }
 
@@ -301,7 +311,7 @@ class PlayerModel(
 
     private fun markWatched() {
         val f = file ?: return
-        scope.launch(Dispatchers.IO) {
+        writeScope.launch {
             val old = db.library().playback(f.id) ?: PlaybackState(f.id)
             db.library().upsertPlayback(old.copy(watched = true, finishedCount = old.finishedCount + 1, lastPlayed = System.currentTimeMillis()))
         }
@@ -489,9 +499,16 @@ class PlayerModel(
         file = null
     }
 
-    fun pause() { if (player.playWhenReady) player.pause() }
+    /** Leaving the app, the screen going off or the Thor sleeping: pause and save straight away. */
+    fun pause() {
+        if (player.playWhenReady) player.pause()
+        saveNow()
+    }
 
-    private fun save() { scope.launch { saveNow() } }
+    private fun save() = saveNow()
+
+    /** The app is closing for good. */
+    fun release() = volume.release(context)
 
     private fun saveNow() {
         val f = file ?: return
@@ -503,7 +520,7 @@ class PlayerModel(
         val session = if (sessionStart > 0) WatchSession(mediaFileId = f.id, started = sessionStart, ended = now, secondsWatched = (now - sessionStart) / 1000) else null
         sessionStart = if (player.isPlaying) now else 0
         lastSaved = now
-        scope.launch(Dispatchers.IO) {
+        writeScope.launch {
             val dao = db.library()
             val old = dao.playback(f.id) ?: PlaybackState(f.id)
             dao.upsertPlayback(

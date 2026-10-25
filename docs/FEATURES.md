@@ -22,7 +22,7 @@ These are the features people expect from VLC, MX Player, Just Player and Kodi. 
 | Subtitle styling | Size, colour, outline, position; ASS/SSA styles honoured | v1 (basic), v2 (full ASS) |
 | Aspect and zoom | Fit, fill, crop, 16:9, 4:3, stretch | v1 |
 | Playback speed | 0.5× to 2× | v1 |
-| Volume and brightness | Per-app volume boost, quick brightness (top screen) | v1 |
+| Volume and brightness | Volume bar on the player's bottom screen with a boost to 200 %; the volume buttons move it without Android's pop-up (D41). Quick brightness (top screen) not yet | v1 |
 | Screen lock | Locks touch so nothing is pressed by accident | v1 |
 | Sleep timer | Stop after this episode or after N minutes | v2 |
 | Background audio | Keep audio going with the screen off | v2 |
@@ -56,7 +56,8 @@ These are what make the app better than the baseline. Each one is done only when
 | Survives screen changes **(research)** | Swapping or moving screens (AYN swap, Wayfinder, docking, sleep and wake, lid) never restarts playback | v1 |
 | Local subtitles | Loads .srt, .ass and .vtt files next to the video automatically, matched by name and language | v1 |
 | Launch from frontends | RetroHrai!, Cocoon or ES-DE can open the app, or a specific file in it. **If launched on the bottom screen, the player moves itself to the top screen (research)** | v2 |
-| Settings | API keys (TMDB, fanart.tv, OpenSubtitles) and the OpenSubtitles login, typed on the app's own keyboard or pasted; stored encrypted on the device (D39). Also the video folder and About with the TMDB credit. Opened with Start or ⚙ on Browsing | v1 |
+| Pause when leaving | Home, switching apps, closing, power button or lid: the film pauses and its position is saved (D40) | v1 |
+| Settings | Refresh rate for each screen: Auto or a fixed rate (D42). API keys (TMDB, fanart.tv, OpenSubtitles) and the OpenSubtitles login, typed on the app's own keyboard or pasted; stored encrypted on the device (D39). Also the video folder and About with the TMDB credit. Opened with Start or ⚙ on Browsing | v1 |
 | Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video, named like a local subtitle (`Name.en.srt`) so it travels with the file (D37). Reached from the Movie screen's Subtitles block when the file has none (D9) | v1 (moved up from v2) |
 | Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list. Not needed for now (D27); watch sessions are still recorded so it can be added later | Later |
 | Stats export | Export stats and watch history as CSV | Later |

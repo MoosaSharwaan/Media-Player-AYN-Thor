@@ -6,7 +6,9 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
 import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.screenshots.Screens.Panel
+import com.msharwaan.exoplayer.settings.DisplayPrefs
 import com.msharwaan.exoplayer.settings.ReversingCrypto
+import com.msharwaan.exoplayer.settings.Screen
 import com.msharwaan.exoplayer.settings.Secret
 import com.msharwaan.exoplayer.settings.Secrets
 import com.msharwaan.exoplayer.settings.SettingsBottom
@@ -33,7 +35,8 @@ class SettingsScreenshotTest {
         val secrets = Secrets(ApplicationProvider.getApplicationContext(), ReversingCrypto())
         secrets[Secret.TMDB_KEY] = "0123456789abcdef0123456789ab3f9a"
         secrets[Secret.OPENSUBTITLES_USER] = "msharwaan"
-        model = SettingsModel(secrets, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { "k3y" }, {}, {})
+        val prefs = DisplayPrefs(ApplicationProvider.getApplicationContext()).apply { setRate(Screen.TOP, 120f) }
+        model = SettingsModel(secrets, prefs, { listOf(60f, 120f) }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { "k3y" }, {}, {})
     }
 
     @Test
