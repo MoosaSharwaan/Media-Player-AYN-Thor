@@ -187,6 +187,44 @@ p { margin: 0; }
 .v.v1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
 
+/* ---------- compare ---------- */
+.cmp-key { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.cmp-key span { display: inline-flex; gap: 6px; align-items: center; }
+.cmp-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.cmp { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 860px; font-size: 14px; }
+.cmp th, .cmp td { padding: 9px 10px; border-top: 1px solid var(--line); text-align: center; vertical-align: middle; }
+.cmp thead th { border-top: 0; font: 700 13px/1.2 var(--f-body); white-space: nowrap; position: sticky; top: 0; background: var(--surface); }
+.cmp thead th.us { color: var(--accent); }
+.cmp th[scope="row"] { text-align: left; font-weight: 600; position: sticky; left: 0; background: var(--surface); min-width: 210px; max-width: 260px; box-shadow: 1px 0 0 var(--line); }
+.cmp th[scope="row"] small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+@media (max-width: 600px) { .cmp th[scope="row"] { min-width: 140px; max-width: 160px; font-size: 13px; } .cmp th[scope="row"] small { display: none; } .cmp { min-width: 720px; } }
+.cmp tr.grp th { text-align: left; font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); padding-top: 12px; position: sticky; left: 0; }
+.cmp td.us { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.c { font-style: normal; display: inline-block; min-width: 24px; font: 700 12.5px/1 var(--f-mono); padding: 4px 6px; border-radius: 6px; white-space: nowrap; }
+.c.y, .c.p, .c.n { font-size: 17px; font-family: var(--f-body); padding: 2px 4px; }
+.c.y { color: var(--ok); }
+.c.p { color: var(--warn); }
+.half { display: inline-block; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--warn); background: linear-gradient(90deg, var(--warn) 50%, transparent 50%); vertical-align: -2px; }
+.c.a { color: var(--muted); border: 1px solid var(--line); }
+.c.n { color: var(--muted); opacity: .7; }
+.c.ours { background: var(--ok); color: var(--bg); }
+.c.plan { border: 1px solid var(--accent); color: var(--accent); }
+.c.no { color: var(--muted); border: 1px dashed var(--line); }
+.players { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+@media (max-width: 420px) { .players { grid-template-columns: minmax(0, 1fr); } }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.player header { display: grid; gap: 2px; }
+.player b { font-family: var(--f-display); font-stretch: 85%; font-size: 19px; }
+.player .eng { font: 500 12px/1.35 var(--f-mono); color: var(--muted); }
+.player h4 { margin: 0 0 3px; font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.player ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.player .take { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 14px; }
+.player .take b { font: 700 13px/1.2 var(--f-body); color: var(--accent); }
+.cmp-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.cmp-sum > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+.cmp-sum h3 { font-size: 18px; }
+.cmp-sum ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
 /* ---------- build ---------- */
 .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 @media (max-width: 420px) { .stages { grid-template-columns: minmax(0, 1fr); } }
@@ -290,6 +328,13 @@ p { margin: 0; }
     <div class="gates" id="gates"></div>
     <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
     <div class="cats" id="cats"></div>
+
+    <div id="compare"><h2>How other players compare</h2><p class="lede" style="margin-top:6px">Six Android players side by side with Exo Player, feature by feature. For Exo Player the cell says where the feature stands: built, the build stage it's in, or the version it's planned for. For the others it's what each app offers out of the box, from its published features; nothing here was tested side by side.</p></div>
+    <div class="cmp-key"><span><i class="c y">✓</i> Yes</span><span><i class="c p"><span class="half"></span></i> Partly</span><span><i class="c a">+</i> Through an add-on</span><span><i class="c n">—</i> No</span><span><i class="c ours">Built</i> Exo Player: done</span><span><i class="c plan">Stage 6</i> Exo Player: planned</span></div>
+    <div class="cmp-scroll"><table class="cmp" id="cmpTable"></table></div>
+    <div><h3 style="font-size:21px">The players</h3><p class="lede" style="margin-top:4px">What each one is, what it does better than us, and what we do that it doesn't.</p></div>
+    <div class="players" id="players"></div>
+    <div class="cmp-sum" id="cmpSum"></div>
   </section>
 
   <!-- ================= BUILD ================= -->
@@ -980,6 +1025,95 @@ p { margin: 0; }
     return '<article class="cat"><div><h3>' + c.t + '</h3><p class="sub">' + c.s + '</p></div><ol>' +
       c.steps.map(function (s) { return '<li><span>' + s[0] + '</span><span class="v ' + s[1] + '">' + s[1] + '</span></li>'; }).join('') + '</ol></article>';
   }).join('');
+
+  // ---------- comparison with other players ----------
+  // Columns: Exo Player, then the others. Exo cells name the stage or version; other cells: y yes, p partly, a add-on, n no.
+  var PLAYERS = ["Exo Player", "VLC", "MX Player", "Just Player", "Kodi", "mpv", "Nova"];
+  var CMP = [
+    ["Formats"],
+    ["Hardware decoding first", "Lowest battery for H.264, HEVC, VP9, AV1", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Dolby and DTS audio", "AC3, E-AC3, DTS, TrueHD", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Software video fallback", "10-bit H.264 (old anime), DivX 3, WMV, MPEG-2", "Proposed", "y", "y", "n", "y", "y", "y"],
+    ["WMV, RMVB, DVD folders and ISOs", "", "No", "y", "p", "n", "y", "p", "p"],
+    ["MKV ordered chapters", "Anime openings and endings kept in separate files", "No", "y", "n", "n", "y", "y", "n"],
+    ["Subtitles"],
+    ["Subtitle files next to the video", ".srt, .ass, .vtt; matched by name and language", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Full ASS styling and embedded fonts", "Anime signs, karaoke, positions", "v2", "y", "p", "p", "y", "y", "p"],
+    ["Subtitle timing", "Exo Player moves its own subtitle files earlier or later, 50 ms at a time", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Find subtitles online", "OpenSubtitles", "Stage 6", "y", "y", "n", "a", "n", "y"],
+    ["Playback"],
+    ["Resume where you stopped", "", "Built", "y", "y", "y", "y", "p", "y"],
+    ["Speed, aspect and zoom, audio delay", "", "Stage 7", "y", "y", "p", "y", "y", "y"],
+    ["Up next with a countdown", "Next episode plays by itself; one button cancels", "Built", "p", "p", "n", "a", "p", "p"],
+    ["Picture-in-picture", "", "v3", "y", "y", "y", "n", "p", "y"],
+    ["Library"],
+    ["Posters, plots and backdrops", "Scraped from TMDB", "Stage 6", "n", "n", "n", "y", "n", "y"],
+    ["Show › Season › Episode", "Even when files sit loose in one folder", "Built", "p", "n", "n", "y", "n", "y"],
+    ["Continue watching", "Half-watched movies and the next episode of each show", "Built", "p", "p", "n", "y", "n", "p"],
+    ["Missing episodes greyed", "From TMDB's episode list", "Built", "n", "n", "n", "a", "n", "n"],
+    ["Fix a wrong match by hand", "", "Stage 6", "n", "n", "n", "y", "n", "y"],
+    ["Trakt sync", "", "v3", "n", "n", "n", "a", "n", "y"],
+    ["Network"],
+    ["Network shares", "SMB, DLNA", "Later", "y", "y", "n", "y", "p", "y"],
+    ["Jellyfin and Plex", "", "Later", "p", "n", "n", "a", "n", "n"],
+    ["Online only when you ask", "No background network use at all", "Built", "y", "p", "y", "p", "y", "p"],
+    ["The Thor, and the app itself"],
+    ["Uses both screens", "Picture on top; controls and lists on the bottom", "Built", "n", "n", "n", "n", "n", "n"],
+    ["Everything works with the buttons", "No touching needed", "Built", "p", "p", "p", "y", "p", "y"],
+    ["Free, no ads, open source", "", "Built", "y", "n", "y", "y", "y", "y"]
+  ];
+  var CELL = { y: ["y", "✓", "Yes"], p: ["p", '<span class="half"></span>', "Partly"], a: ["a", "+", "Through an add-on"], n: ["n", "—", "No"] };
+  function ourCell(v) {
+    var cls = v === "Built" ? "ours" : v === "No" ? "no" : "plan";
+    return '<i class="c ' + cls + '">' + v + '</i>';
+  }
+  document.getElementById("cmpTable").innerHTML =
+    '<thead><tr><th scope="col" style="text-align:left;position:sticky;left:0;z-index:1">Feature</th>' +
+      PLAYERS.map(function (p, i) { return '<th scope="col"' + (i === 0 ? ' class="us"' : '') + '>' + p + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    CMP.map(function (r) {
+      if (r.length === 1) return '<tr class="grp"><th colspan="' + (PLAYERS.length + 1) + '">' + r[0] + '</th></tr>';
+      return '<tr><th scope="row">' + r[0] + (r[1] ? '<small>' + r[1] + '</small>' : '') + '</th><td class="us">' + ourCell(r[2]) + '</td>' +
+        r.slice(3).map(function (v) { var c = CELL[v]; return '<td><i class="c ' + c[0] + '" title="' + c[2] + '" aria-label="' + c[2] + '">' + c[1] + '</i></td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+
+  var PCARDS = [
+    { n: "VLC", e: "libVLC with its own FFmpeg decoders, plus hardware · free, open source",
+      better: ["Plays almost any file: WMV, RMVB, DVD ISOs, 10-bit H.264, ordered chapters", "Full ASS styling with libass", "Network shares, Chromecast, equaliser, audio passthrough"],
+      ours: ["A real library: artwork, Show › Season › Episode, Continue watching", "Plays the next episode with a countdown; VLC just moves on in the folder, or stops", "Both screens"],
+      take: "The format list. Software video decoders and libass would close most of the gap." },
+    { n: "MX Player", e: "Own engine, hardware plus software decoders · free with ads, or paid · closed source",
+      better: ["Wide format support through its codec pack", "Gestures, zoom, kids lock, online subtitle search", "Network shares"],
+      ours: ["No ads and nothing hidden: open source, offline unless you ask", "Library with artwork and episodes", "Both screens and full button control"],
+      take: "Quick subtitle search from inside the player, which we have as Find subtitles." },
+    { n: "Just Player", e: "Media3 ExoPlayer with the FFmpeg audio add-on · free, open source",
+      better: ["Very small and simple", "Already polished on things we haven't built: speed, zoom, refresh-rate switching"],
+      ours: ["Same engine, but with a library, Continue watching and Up next", "Find subtitles, Fix match, missing episodes", "Both screens"],
+      take: "The closest to us under the hood; a reference for how ExoPlayer handles odd files and frame rates." },
+    { n: "Kodi", e: "Own player (FFmpeg plus hardware) and a full media centre · free, open source",
+      better: ["The richest library: scrapers, skins, add-ons for Trakt, Up Next, Jellyfin, Plex", "Plays almost everything, with full ASS styling", "DVD and Blu-ray menus"],
+      ours: ["Light: no media-centre start-up, lower battery, nothing running in the background", "Built for a 6-inch handheld, not a TV across the room", "Both screens"],
+      take: "Kodi's library model (seasons, episodes, fix a match) is the one we follow." },
+    { n: "mpv", e: "mpv with FFmpeg and libass · free, open source",
+      better: ["The best subtitle rendering of any Android player", "Plays nearly every format; deep settings and scripts", "Precise seeking and frame stepping"],
+      ours: ["Library, artwork and episodes; mpv opens one file at a time", "Built for the controller, not menus of settings", "Both screens"],
+      take: "If anime subtitles must look exactly right, libass is the bar to reach." },
+    { n: "Nova", e: "Hardware first, with FFmpeg software fallback · free, open source",
+      better: ["Library with TMDB scraping already working", "SMB and other network shares", "Trakt sync and online subtitles"],
+      ours: ["Two screens and a handheld-first layout", "Up next with a countdown, missing episodes greyed", "Never online unless you press a button"],
+      take: "The nearest to our library idea on Android; worth trying on the Thor to compare." }
+  ];
+  document.getElementById("players").innerHTML = PCARDS.map(function (c) {
+    return '<article class="player"><header><b>' + c.n + '</b><span class="eng">' + c.e + '</span></header>' +
+      '<div><h4>Better than Exo Player</h4>' + li(c.better) + '</div>' +
+      '<div><h4>Exo Player does that it doesn\'t</h4>' + li(c.ours) + '</div>' +
+      '<div class="take"><b>What we take from it:</b> ' + c.take + '</div></article>';
+  }).join('');
+
+  document.getElementById("cmpSum").innerHTML = [
+    ["Where we're ahead", ["The only player that uses both of the Thor's screens", "Continue watching, Up next and missing episodes together, in a player this light", "Never goes online unless you press a button"]],
+    ["Planned, to catch up", ["Stage 6: artwork from TMDB, Find subtitles, Fix match", "Stage 7: speed, aspect and zoom, audio delay, mark unwatched, search", "v2: full ASS styling, network shares later"]],
+    ["Gaps to decide", ["Software video decoders, our own FFmpeg build, for 10-bit H.264, DivX 3, WMV (proposed)", "Move libass from v2 to v1, for anime typesetting (proposed)", "WMV/RMVB containers, DVD ISOs and ordered chapters: only libVLC would cover these"]]
+  ].map(function (b) { return '<div><h3>' + b[0] + '</h3>' + li(b[1]) + '</div>'; }).join('');
 
   // ---------- rules ----------
   var fixed = [
