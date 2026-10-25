@@ -21,6 +21,7 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 | 3. Browsing | The five tabs on L2 / R2, poster cards, art on the top screen | Done |
 | 4. Player | Resume where you stopped, Pause, Play from start, Mark watched, Audio, Subtitles with ±50 ms timing, ‹ Prev / Next ›, Up next, ✎ and ⏻ | Done |
 | 5. Series and anime | Show details, season cards, episode cards (3 across, ✓ watched, progress, missing greyed), continue straight into the episode, one-season shows skip the season cards | Done |
+| Settings | API keys and the OpenSubtitles login (typed or pasted, stored encrypted), video folder, About. Start or ⚙ on Browsing | Done |
 | 6. Online, on request | TMDB / fanart.tv / AniList artwork, OpenSubtitles, Fix match | Next |
 
 | Version | What it adds | Status |

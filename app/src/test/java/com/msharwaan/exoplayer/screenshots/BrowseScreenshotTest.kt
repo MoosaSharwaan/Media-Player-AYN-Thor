@@ -86,7 +86,7 @@ class BrowseScreenshotTest {
     fun cards() {
         model.selectTab(Tab.MOVIES)
         model.focusCard(1)
-        Screens.shoot(rule, "browse_bottom_movies", Panel.BOTTOM) { BrowseBottom(model, onOpen = {}, onFetchInfo = {}) }
+        Screens.shoot(rule, "browse_bottom_movies", Panel.BOTTOM) { BrowseBottom(model, onOpen = {}, onFetchInfo = {}, onSettings = {}) }
     }
 
     @Test

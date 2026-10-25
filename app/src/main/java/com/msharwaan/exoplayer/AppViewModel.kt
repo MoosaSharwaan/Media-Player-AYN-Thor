@@ -1,6 +1,8 @@
 package com.msharwaan.exoplayer
 
 import android.app.Application
+import android.content.ClipboardManager
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.msharwaan.exoplayer.browse.BrowseModel
@@ -13,6 +15,7 @@ import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.nav.Navigator
 import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.player.PlayerModel
+import com.msharwaan.exoplayer.settings.SettingsModel
 import com.msharwaan.exoplayer.show.ShowModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -63,6 +66,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Series and anime: details → seasons → episodes (D14, D15, D21). */
     val show = ShowModel(viewModelScope, exo.db, ::showNotice)
 
+    /** Settings: API keys, the OpenSubtitles login, the video folder, About. */
+    val settings = SettingsModel(
+        secrets = exo.secrets,
+        folder = { exo.prefs.folder },
+        readClipboard = {
+            app.getSystemService(ClipboardManager::class.java)?.primaryClip
+                ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(app)?.toString()
+        },
+        onChooseFolder = { browse.chooseFolder() },
+        onNotice = ::showNotice,
+    )
+
+    fun onFolderChosen(uri: Uri) {
+        browse.onFolderChosen(uri)
+        settings.refresh()
+    }
+
     init {
         // The Player route opens its file; leaving it stops and saves (D8).
         viewModelScope.launch {
@@ -76,6 +96,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 val left = previous
                 if (route is Route.Show && left is Route.Player) show.returnedFrom(left.fileId)
+                if (route == Route.Settings && left != Route.Settings) settings.refresh()
                 previous = route
                 when {
                     route is Route.Player -> if (player.openFileId != route.fileId) player.open(route.fileId)
@@ -120,6 +141,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Start or ⚙ on Browsing. */
+    fun openSettings() {
+        if (navigator.current != Route.Settings) navigator.push(Route.Settings)
+    }
+
     /** ✎ Fix match: pick the right title, or type its TMDB ID (D11). Arrives in stage 6. */
     fun fixMatch() {
         showNotice("Fix match uses TMDB search. It comes in the next build stage.")
@@ -136,12 +162,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         held += action
         // Select + Start: the hidden diagnostics page (the v0 measurements).
         if (PadAction.SELECT in held && PadAction.START in held) {
-            if (navigator.current != Route.Diagnostics) navigator.push(Route.Diagnostics)
+            when (navigator.current) {
+                Route.Diagnostics -> Unit
+                // Start alone opens Settings, so Start then Select lands there first: swap it.
+                Route.Settings -> navigator.replace(Route.Diagnostics)
+                else -> navigator.push(Route.Diagnostics)
+            }
             return true
         }
         val used = when (navigator.current) {
             Route.Diagnostics -> diagnostics.onAction(action)
-            Route.Browse -> when (val r = browse.onAction(action)) {
+            Route.Settings -> settings.onAction(action)
+            Route.Browse -> if (action == PadAction.START) { openSettings(); true } else when (val r = browse.onAction(action)) {
                 is BrowseResult.Open -> { open(r.card); true }
                 BrowseResult.Used -> true
                 BrowseResult.NotUsed -> false

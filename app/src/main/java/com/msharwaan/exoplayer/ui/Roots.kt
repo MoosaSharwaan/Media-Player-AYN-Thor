@@ -31,6 +31,8 @@ import com.msharwaan.exoplayer.nav.Route
 import com.msharwaan.exoplayer.player.PlayerBottom
 import com.msharwaan.exoplayer.player.PlayerTop
 import com.msharwaan.exoplayer.player.VideoSurface
+import com.msharwaan.exoplayer.settings.SettingsBottom
+import com.msharwaan.exoplayer.settings.SettingsTop
 import com.msharwaan.exoplayer.show.ShowBottom
 import com.msharwaan.exoplayer.show.ShowTop
 import com.msharwaan.exoplayer.ui.theme.Palette
@@ -118,6 +120,7 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         Route.Browse -> BrowseTop(vm.browse)
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
         is Route.Show -> ShowTop(vm.show)
+        Route.Settings -> SettingsTop(vm.settings)
         is Route.Player -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
             val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
@@ -130,9 +133,10 @@ private fun TopContent(vm: AppViewModel, route: Route) {
 private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
     Box(Modifier.fillMaxSize()) {
         when (route) {
-            Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo)
+            Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo, onSettings = vm::openSettings)
             Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
             is Route.Show -> ShowBottom(vm.show) { vm.navigator.push(Route.Player(it)) }
+            Route.Settings -> SettingsBottom(vm.settings)
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 PlayerBottom(ui, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)

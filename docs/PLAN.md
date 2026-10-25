@@ -99,6 +99,7 @@ The screen layouts aren't decided yet. They get designed as mockups in v0, compa
 | D36 | **Fetch info is a small ⟳ button in the bottom-right corner of the Browsing bottom screen**, matching ✎ and ⏻ on the video screens. It fetches info for the current tab. A single title is fetched through ✎ Fix match | Oct 23, 2026 |
 | D37 | **Downloaded subtitles are saved next to the video**, named like local ones (`Name.en.srt`), so they travel with the file and later scans pick them up like any local subtitle. The app asks for read and write access to the video folder when you pick it | Oct 25, 2026 |
 | D38 | **Fetch info only fetches what's missing.** Titles that already have their info and artwork are skipped; for a show, only new seasons, new episodes and missing images are fetched. Nothing that's already on the device is downloaded again. Fix match is the one exception: a corrected title is fetched fresh, since its old info belonged to the wrong match | Oct 25, 2026 |
+| D39 | **API keys and the OpenSubtitles login are entered in Settings** (Start, or ⚙ next to ⟳ on Browsing), typed on the app's own keyboard or pasted from the clipboard. They're stored on the Thor only, encrypted with a key kept in Android's Keystore; app backup is off, and nothing is built into the app or the repo. The screens never show a key in full: the list shows the last four characters, the password only "Set" | Oct 25, 2026 |
 
 **Questions the design must answer**
 

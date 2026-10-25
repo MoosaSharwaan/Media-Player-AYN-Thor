@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
     /** Android's folder picker: read access to one folder, no broad storage permission. */
     private val pickFolder = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) vm.browse.onFolderChosen(uri)
+        if (uri != null) vm.onFolderChosen(uri)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

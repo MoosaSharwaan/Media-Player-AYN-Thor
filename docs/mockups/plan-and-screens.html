@@ -1162,7 +1162,7 @@ p { margin: 0; }
     ["3. Browsing", "done", "f4a7370", "The five tabs and the cards.", ["Continue watching, Movies, Series, Anime, Others on L2 / R2, in a full circle", "Poster cards 4 across", "Top: poster mix, or the focused title's art and details", "⟳ Fetch info corner (online part in stage 6)"]],
     ["4. Player", "done", "965f46e", "One player for movies and episodes.", ["Resumes where you stopped; saved on pause, stop and each minute; watched at 90%", "Progress, Resume / Pause, ‹ Prev / Next ›, Play from start, Mark watched", "Audio, Subtitles, subtitle timing in 50 ms steps both ways (.srt, .vtt)", "Up next with a 10 s countdown; ✎ and ⏻ corners; L2 / R2 ±10 s", "FFmpeg audio for DTS, TrueHD, AC3"]],
     ["5. Series and anime", "done", "df18a0e", "Details → seasons → episodes → play.", ["Season cards 4 across, episode cards 3 across", "✓ watched, progress bar, missing episodes greyed", "Continue watching plays the episode; B lands on its season's episodes", "One-season shows skip the season cards; one-episode shows play like movies"]],
-    ["6. Online, on request", "next", "", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, then fanart.tv / AniList, art at display size; only what's missing is fetched, never the whole library again (D38)", "Find subtitles: OpenSubtitles; the file is saved next to the video, like a local subtitle (D37)", "✎ Fix match with the app's own keyboard on the bottom screen", "Waiting for the TMDB, OpenSubtitles and fanart.tv keys"]]
+    ["6. Online, on request", "next", "", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, then fanart.tv / AniList, art at display size; only what's missing is fetched, never the whole library again (D38)", "Find subtitles: OpenSubtitles; the file is saved next to the video, like a local subtitle (D37)", "✎ Fix match with the app's own keyboard on the bottom screen", "Keys are entered in Settings (Start or ⚙ on Browsing), typed or pasted, stored encrypted (D39)"]]
   ];
   document.getElementById("stages").innerHTML = STAGES.map(function (g) {
     return '<div class="stg"><header><b>' + g[0] + '</b><span class="pill ' + g[1] + '" style="margin:0">' + (g[1] === "done" ? "Done" : "Next") + '</span></header>' +
@@ -1179,15 +1179,17 @@ p { margin: 0; }
     ["Up next", "ending", "30 s before the end of an episode; A plays now, B cancels.", null, "player_bottom_upnext"],
     ["Series: details and seasons", "series", "The show first, with the episode to continue; season cards below.", "show_top_details", "show_bottom_seasons"],
     ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],
-    ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"]
+    ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"],
+    ["Settings: what a key is for", null, "Start or ⚙ on Browsing. The top screen says what the setting is for and where to get it, never the key itself.", "settings_top", "settings_bottom_list"],
+    ["Settings: entering a key", null, "The app's own keyboard: D-pad and A, or touch. Paste puts in a key copied in the browser. Start saves, B cancels.", null, "settings_bottom_editor", "Top screen: the same, headed Editing"]
   ];
-  function shotImg(name, kind) {
-    if (!name) return '<div class="empty ' + kind + '">' + (kind === "top" ? "Top screen: the picture" : "Same as above") + '</div>';
+  function shotImg(name, kind, note) {
+    if (!name) return '<div class="empty ' + kind + '">' + (note || (kind === "top" ? "Top screen: the picture" : "Same as above")) + '</div>';
     return '<figure><img class="' + kind + '" src="shots/' + name + '.jpg" alt="' + (kind === "top" ? "Top" : "Bottom") + ' screen as the app draws it" loading="lazy"><figcaption>' + (kind === "top" ? "Top · 1920×1080" : "Bottom · 1240×1080") + '</figcaption></figure>';
   }
   document.getElementById("shots").innerHTML = SHOTS.map(function (x, i) {
-    return '<div class="shot"><header><h3>' + x[0] + '</h3><button class="btn" type="button" data-cmp="' + x[1] + '">Compare with mockup</button></header><p>' + x[2] + '</p>' +
-      '<div class="pair">' + shotImg(x[3], "top") + shotImg(x[4], "bottom") + '</div></div>';
+    return '<div class="shot"><header><h3>' + x[0] + '</h3>' + (x[1] ? '<button class="btn" type="button" data-cmp="' + x[1] + '">Compare with mockup</button>' : '') + '</header><p>' + x[2] + '</p>' +
+      '<div class="pair">' + shotImg(x[3], "top", x[5]) + shotImg(x[4], "bottom") + '</div></div>';
   }).join('');
   document.getElementById("shots").addEventListener("click", function (e) {
     var b = e.target.closest("[data-cmp]");

@@ -150,7 +150,7 @@ fun ProgressBar(progress: Float, modifier: Modifier = Modifier) {
 
 /** Bottom screen for Browsing: the tab row, the cards, and ⟳ Fetch info in the corner (D36). */
 @Composable
-fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> Unit) {
+fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> Unit, onSettings: () -> Unit) {
     val library by model.library.collectAsStateWithLifecycle()
     val tab by model.tab.collectAsStateWithLifecycle()
     val focus by model.focus.collectAsStateWithLifecycle()
@@ -198,7 +198,11 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
             }
         }
         Box(Modifier.align(Alignment.BottomEnd).padding(14.dp)) {
-            CornerButton(if (scanning) "…" else "⟳", onClick = onFetchInfo)
+            // ⚙ Settings (also Start) next to ⟳ Fetch info.
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CornerButton("⚙", onClick = onSettings)
+                CornerButton(if (scanning) "…" else "⟳", onClick = onFetchInfo)
+            }
         }
     }
 }

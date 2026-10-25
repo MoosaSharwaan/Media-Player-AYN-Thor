@@ -56,6 +56,7 @@ These are what make the app better than the baseline. Each one is done only when
 | Survives screen changes **(research)** | Swapping or moving screens (AYN swap, Wayfinder, docking, sleep and wake, lid) never restarts playback | v1 |
 | Local subtitles | Loads .srt, .ass and .vtt files next to the video automatically, matched by name and language | v1 |
 | Launch from frontends | RetroHrai!, Cocoon or ES-DE can open the app, or a specific file in it. **If launched on the bottom screen, the player moves itself to the top screen (research)** | v2 |
+| Settings | API keys (TMDB, fanart.tv, OpenSubtitles) and the OpenSubtitles login, typed on the app's own keyboard or pasted; stored encrypted on the device (D39). Also the video folder and About with the TMDB credit. Opened with Start or ⚙ on Browsing | v1 |
 | Subtitle search | Searches OpenSubtitles by file hash and title, downloads the chosen file next to the video, named like a local subtitle (`Name.en.srt`) so it travels with the file (D37). Reached from the Movie screen's Subtitles block when the file has none (D9) | v1 (moved up from v2) |
 | Watching stats | Total time watched, time per show, episodes finished, genres, streaks, history list. Not needed for now (D27); watch sessions are still recorded so it can be added later | Later |
 | Stats export | Export stats and watch history as CSV | Later |

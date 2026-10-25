@@ -11,6 +11,7 @@ sealed interface Route {
     data class Show(val groupKey: String, val openEpisodes: Boolean = false) : Route
     data class Player(val fileId: Long) : Route
     data object Diagnostics : Route
+    data object Settings : Route
 }
 
 /** The back stack. Browse is always at the bottom. */
