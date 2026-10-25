@@ -255,6 +255,7 @@ p { margin: 0; }
 .stg .commit { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
 .pill.done { color: var(--ok); border: 1px solid currentColor; }
 .pill.next { color: var(--accent); border: 1px solid currentColor; }
+.pill.todo { color: var(--muted); border: 1px dashed var(--line); }
 .shots { display: grid; gap: 22px; }
 .shot { display: grid; gap: 10px; min-width: 0; }
 .shot header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -290,7 +291,7 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player · updated Oct 25, 2026 · stages 1–5 of 6 built</div>
+  <div class="eyebrow">Exo Player · updated Oct 25, 2026 · v1 built; gates need the Thor</div>
   <h1>Both screens, every state, and the plan behind them</h1>
   <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
@@ -359,7 +360,7 @@ p { margin: 0; }
 
   <!-- ================= BUILD ================= -->
   <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
-    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 is being built in six stages. Each stage is committed to the repo once it compiles and its tests pass. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
+    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed. Every v1 feature is now built; the gates need the Thor. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
     <div class="stages" id="stages"></div>
     <div><h2>The real screens</h2><p class="lede" style="margin-top:6px">Top screen on the left, bottom screen on the right, as the app draws them. The ⏻ and ✎ corner buttons are drawn by the bottom window around these screens, so they don't appear here. <b>Compare with mockup</b> opens the same state on the Screens tab.</p></div>
     <div class="shots" id="shots"></div>
@@ -981,7 +982,7 @@ p { margin: 0; }
   var gates = [
     ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Measuring needs the Thor"],
     ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "todo", "Needs the Thor"],
-    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Stages 1–5, Settings, volume bar and pause-on-leave built; stage 6 (online) next, then the player extras"],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Every v1 feature is built and tested on the PC; what's left is the gates, which need the Thor"],
     ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "Needs the Thor and your 100 file names"],
     ["v2", "Comfort", "Backup, frontends, TV output, sleep timer", 0, "todo", ""],
     ["G3", "Gate 3", "No battery regression", 1, "todo", ""],
@@ -1013,25 +1014,25 @@ p { margin: 0; }
       ["Pick the SD card folder once (folder picker)", "v1", "done"],
       ["Scan, then rescan only changed folders", "v1", "part", "Only changed files are read again, but every folder is still listed"],
       ["Filename parser, tested on 100 real names", "v1", "part", "Built and tested on 38 names; needs your 100"],
-      ["Match on TMDB; download posters, backdrops, logos", "v1", "todo", "Stage 6"],
-      ["Group Show › Season › Episode; list missing episodes", "v1", "part", "Grouping built; missing episodes appear once Fetch info works"],
-      ["Fix a match by hand; survives rescans", "v1", "todo", "Stage 6; the keyboard for it is built"],
-      ["Folder browser; search, sort, filter", "v1", "todo"],
+      ["Match on TMDB; download posters, backdrops, logos", "v1", "done", "Only what's missing (D38); no logos yet, since nothing shows them. Tested against a stand-in server"],
+      ["Group Show › Season › Episode; list missing episodes", "v1", "done"],
+      ["Fix a match by hand; survives rescans", "v1", "done", "✎ or Y; by name or TMDB ID (D43)"],
+      ["Folder browser; search, sort, filter", "v1", "done", "X Search, Select order, R1 Folders (D46)"],
       ["Settings: API keys (typed or pasted, stored encrypted), refresh rate per screen, video folder, About", "v1", "done"],
       ["Pause and save when leaving the app, power off or lid (D40)", "v1", "done"] ] },
     { t: "Playback", s: "Everything that happens once you press Play.", steps: [
       ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1", "done"],
       ["Notices for software decoding and unsupported audio", "v1", "done"],
-      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "±10 s skip and the volume bar with boost to 200 %; the rest is planned as stage 7"],
-      ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "part", "Tracks and subtitle delay built; audio delay not yet"],
+      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "All built except chapters (ExoPlayer doesn't read MKV chapters) and the touch lock (dropped: ⏻ covers it) (D47)"],
+      ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "done", "Audio delay in Playback settings (Start)"],
       ["Resume; watched at 90%; auto-play next with countdown", "v1", "done"],
       ["Sleep timer, background audio, night mode, Bluetooth delay", "v2", "todo"],
       ["Playlists and queue; TV output when docked", "v2", "todo"],
       ["Picture-in-picture; skip intro", "v3", "todo"] ] },
     { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
       ["Load .srt, .ass, .vtt next to the video automatically", "v1", "done"],
-      ["Basic styling: size, colour, outline, position", "v1", "todo"],
-      ["OpenSubtitles search by file hash; save next to the video", "v1", "todo", "Stage 6; keys go in Settings"],
+      ["Basic styling: size, colour, outline, position", "v1", "done", "Size, position, dark box (D45)"],
+      ["OpenSubtitles search by file hash; save next to the video", "v1", "done", "Tested against a stand-in server"],
       ["Full ASS styling (libass renderer)", "v2", "todo"] ] },
     { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
       ["Watch sessions recorded; saves on pause, stop and once a minute", "v1", "done"],
@@ -1050,7 +1051,7 @@ p { margin: 0; }
       ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
       ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
     { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
-      ["Unit tests: parser, stats maths, overrides", "v1", "part", "45 tests: parser, library, subtitles, series, keyboard, settings; stats and overrides not yet"],
+      ["Unit tests: parser, stats maths, overrides", "v1", "part", "74 tests, overrides included; stats maths waits for the stats screen"],
       ["Emulator with a simulated 1240×1080 second screen", "v0", "part", "No emulator here: screenshot tests draw the screens at the Thor’s sizes instead"],
       ["Your phone: decoding, subtitles, Bluetooth controller", "v1", "todo"],
       ["Thor: both screens, buttons, battery", "v0", "todo", "Needs the Thor"] ] }
@@ -1082,18 +1083,18 @@ p { margin: 0; }
     ["Subtitle files next to the video", ".srt, .ass, .vtt; matched by name and language", "Built", "y", "y", "y", "y", "y", "y"],
     ["Full ASS styling and embedded fonts", "Anime signs, karaoke, positions", "v2", "y", "p", "p", "y", "y", "p"],
     ["Subtitle timing", "Exo Player moves its own subtitle files earlier or later, 50 ms at a time", "Built", "y", "y", "y", "y", "y", "y"],
-    ["Find subtitles online", "OpenSubtitles", "Stage 6", "y", "y", "n", "a", "n", "y"],
+    ["Find subtitles online", "OpenSubtitles", "Built", "y", "y", "n", "a", "n", "y"],
     ["Playback"],
     ["Resume where you stopped", "", "Built", "y", "y", "y", "y", "p", "y"],
-    ["Speed, aspect and zoom, audio delay", "", "Stage 7", "y", "y", "p", "y", "y", "y"],
+    ["Speed, aspect and zoom, audio delay", "", "Built", "y", "y", "p", "y", "y", "y"],
     ["Up next with a countdown", "Next episode plays by itself; one button cancels", "Built", "p", "p", "n", "a", "p", "p"],
     ["Picture-in-picture", "", "v3", "y", "y", "y", "n", "p", "y"],
     ["Library"],
-    ["Posters, plots and backdrops", "Scraped from TMDB", "Stage 6", "n", "n", "n", "y", "n", "y"],
+    ["Posters, plots and backdrops", "Scraped from TMDB", "Built", "n", "n", "n", "y", "n", "y"],
     ["Show › Season › Episode", "Even when files sit loose in one folder", "Built", "p", "n", "n", "y", "n", "y"],
     ["Continue watching", "Half-watched movies and the next episode of each show", "Built", "p", "p", "n", "y", "n", "p"],
     ["Missing episodes greyed", "From TMDB's episode list", "Built", "n", "n", "n", "a", "n", "n"],
-    ["Fix a wrong match by hand", "", "Stage 6", "n", "n", "n", "y", "n", "y"],
+    ["Fix a wrong match by hand", "", "Built", "n", "n", "n", "y", "n", "y"],
     ["Trakt sync", "", "v3", "n", "n", "n", "a", "n", "y"],
     ["Network"],
     ["Network shares", "SMB, DLNA", "Later", "y", "y", "n", "y", "p", "y"],
@@ -1153,7 +1154,7 @@ p { margin: 0; }
 
   document.getElementById("cmpSum").innerHTML = [
     ["Where we're ahead", ["The only player that uses both of the Thor's screens", "Continue watching, Up next and missing episodes together, in a player this light", "Never goes online unless you press a button"]],
-    ["Planned, to catch up", ["Stage 6: artwork from TMDB, Find subtitles, Fix match", "Stage 7: speed, aspect and zoom, audio delay, mark unwatched, search", "v2: full ASS styling, network shares later"]],
+    ["Planned, to catch up", ["v2: full ASS styling, background audio with notification controls, backup, TV output", "Later: network shares, Jellyfin and Plex"]],
     ["Gaps to decide", ["Software video decoders, our own FFmpeg build, for 10-bit H.264, DivX 3, WMV (proposed)", "Move libass from v2 to v1, for anime typesetting (proposed)", "WMV/RMVB containers, DVD ISOs and ordered chapters: only libVLC would cover these"]]
   ].map(function (b) { return '<div><h3>' + b[0] + '</h3>' + li(b[1]) + '</div>'; }).join('');
 
@@ -1204,10 +1205,13 @@ p { margin: 0; }
     ["3. Browsing", "done", "f4a7370", "The five tabs and the cards.", ["Continue watching, Movies, Series, Anime, Others on L2 / R2, in a full circle", "Poster cards 4 across", "Top: poster mix, or the focused title's art and details", "⟳ Fetch info corner (online part in stage 6)"]],
     ["4. Player", "done", "965f46e", "One player for movies and episodes.", ["Resumes where you stopped; saved on pause, stop and each minute; watched at 90%", "Progress, Resume / Pause, ‹ Prev / Next ›, Play from start, Mark watched", "Audio, Subtitles, subtitle timing in 50 ms steps both ways (.srt, .vtt)", "Up next with a 10 s countdown; ✎ and ⏻ corners; L2 / R2 ±10 s", "FFmpeg audio for DTS, TrueHD, AC3"]],
     ["5. Series and anime", "done", "df18a0e", "Details → seasons → episodes → play.", ["Season cards 4 across, episode cards 3 across", "✓ watched, progress bar, missing episodes greyed", "Continue watching plays the episode; B lands on its season's episodes", "One-season shows skip the season cards; one-episode shows play like movies"]],
-    ["6. Online, on request", "next", "", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, then fanart.tv / AniList, art at display size; only what's missing is fetched, never the whole library again (D38)", "Find subtitles: OpenSubtitles; the file is saved next to the video, like a local subtitle (D37)", "✎ Fix match with the app's own keyboard on the bottom screen", "Keys are entered in Settings (Start or ⚙ on Browsing), typed or pasted, stored encrypted (D39)"]]
+    ["6. Online, on request", "done", "86c2cf6", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, fanart.tv and AniList; only what's missing (D38, D44)", "Find subtitles: OpenSubtitles, saved next to the video (D37)", "✎ Fix match by name or TMDB ID (D43)", "Tested against stand-in servers: the real services weren't reachable from the build machine"]],
+    ["7. Player extras", "done", "986fe4d", "Everything else the player needed for v1.", ["Playback settings on Start: speed, picture, audio delay, subtitle look, brightness (D45)", "Volume bar with boost; pause when leaving (D40, D41)", "Mark unwatched, scrubbing, headset buttons"]],
+    ["Library extras", "done", "ac18e60", "Finding things without scrolling.", ["X Search, as you type", "Select: A–Z, Recently added, Year, Unwatched only", "R1 Folder browser (D46)"]],
+    ["Gates 1 and 2", "todo", "", "What v1 still needs: the Thor itself.", ["Gate 1: both screens, buttons and touch on the device", "Gate 2: battery against VLC; 95 % of your 100 file names matched"]]
   ];
   document.getElementById("stages").innerHTML = STAGES.map(function (g) {
-    return '<div class="stg"><header><b>' + g[0] + '</b><span class="pill ' + g[1] + '" style="margin:0">' + (g[1] === "done" ? "Done" : "Next") + '</span></header>' +
+    return '<div class="stg"><header><b>' + g[0] + '</b><span class="pill ' + g[1] + '" style="margin:0">' + ({ done: "Done", next: "Next", todo: "Needs the Thor" })[g[1]] + '</span></header>' +
       '<p>' + g[3] + '</p>' + li(g[4]) + (g[2] ? '<div class="commit">commit ' + g[2] + '</div>' : '') + '</div>';
   }).join('');
 
@@ -1222,6 +1226,10 @@ p { margin: 0; }
     ["Series: details and seasons", "series", "The show first, with the episode to continue; season cards below.", "show_top_details", "show_bottom_seasons"],
     ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],
     ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"],
+    ["Playback settings", "movie", "Start in the player: each row changes with ◀ ▶. Audio delay is kept per file; the rest for every film.", null, "player_bottom_settings", "Top screen: the film, as before"],
+    ["Fix match", null, "✎ or Y. Search TMDB by name, or type a TMDB ID; L2 / R2 switch Movie and Series.", "fixmatch_top", "fixmatch_bottom"],
+    ["Search", null, "X on Browsing. Matches show on the top screen as you type; Done lists them as cards.", "search_top", "search_bottom"],
+    ["Folder browser", null, "R1 on Browsing: folders first with how many videos they hold, then videos with their progress.", null, "folders_bottom", "Top screen: the folder path and the focused entry"],
     ["Settings: what a key is for", null, "Start or ⚙ on Browsing. The top screen says what the setting is for and where to get it, never the key itself.", "settings_top", "settings_bottom_list"],
     ["Settings: entering a key", null, "The app's own keyboard: D-pad and A, or touch. Paste puts in a key copied in the browser. Start saves, B cancels.", null, "settings_bottom_editor", "Top screen: the same, headed Editing"]
   ];

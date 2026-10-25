@@ -12,7 +12,7 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 
 ## Status
 
-**v1 is being built in stages.** Stages 1–5 are done: the app runs on both screens, reads your video folder, shows Browsing, opens series and anime by season and episode, and plays movies and episodes. The online parts (stage 6: Fetch info, Find subtitles, Fix match) are next; they need your API keys.
+**v1 is built.** Every v1 feature is in the code and its tests pass on the PC, but nothing has run on a Thor yet, and the online services (TMDB, fanart.tv, AniList, OpenSubtitles) were tested against stand-in servers because the build machine can't reach them. What's left for v1 is the two gates, which need the Thor: Gate 1 (both screens, buttons and touch on the device) and Gate 2 (battery against VLC, and 95 % of your 100 file names matched).
 
 | Stage | What it adds | Status |
 | --- | --- | --- |
@@ -22,12 +22,15 @@ A personal Android video player built for the **AYN Thor Max**'s two screens. It
 | 4. Player | Resume where you stopped, Pause, Play from start, Mark watched, Audio, Subtitles with ±50 ms timing, ‹ Prev / Next ›, Up next, ✎ and ⏻ | Done |
 | 5. Series and anime | Show details, season cards, episode cards (3 across, ✓ watched, progress, missing greyed), continue straight into the episode, one-season shows skip the season cards | Done |
 | Settings | API keys and the OpenSubtitles login (typed or pasted, stored encrypted), video folder, About. Start or ⚙ on Browsing | Done |
-| 6. Online, on request | TMDB / fanart.tv / AniList artwork, OpenSubtitles, Fix match | Next |
+| 6. Online, on request | Fetch info from TMDB (fanart.tv and AniList as fallbacks), only what's missing; Fix match; Find subtitles from OpenSubtitles, saved next to the video | Done |
+| 7. Player extras | Playback settings on Start (speed, picture, audio delay, subtitle look, brightness), volume bar with boost, Mark unwatched, scrubbing, headset buttons, pause when leaving | Done |
+| Library extras | Search, sort and filter, folder browser | Done |
+| Gates 1 and 2 | Measure and test on the Thor; battery against VLC; your 100 file names | Needs the Thor |
 
 | Version | What it adds | Status |
 | --- | --- | --- |
 | v0 | Two-screen test app that measures the Thor; layout mockups | Done (diagnostics page in the app) |
-| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles, subtitle search | In progress |
+| v1 | Library scan, artwork, resume, Continue watching, auto-play next, local subtitles, subtitle search | Built; gates need the Thor |
 | v2 | Backup, launch from frontends, TV output | Planned |
 | v3 | Skip intro, Trakt sync, themes, picture-in-picture | Planned |
 
