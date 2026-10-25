@@ -146,6 +146,7 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         // Reading the SD card is offline, so it still runs by itself (D32).
         vm.browse.rescan()
+        vm.player.toForeground()
     }
 
     /**
@@ -157,8 +158,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        // Leaving the app (Home, a frontend, the screen going off) pauses and saves (D8).
-        vm.player.pause()
+        // Leaving the app (Home, a frontend, the screen going off) pauses, saves and frees the
+        // decoders, so nothing of the player runs in the background (D8, battery rule 1 when idle).
+        vm.player.toBackground()
         super.onStop()
     }
 

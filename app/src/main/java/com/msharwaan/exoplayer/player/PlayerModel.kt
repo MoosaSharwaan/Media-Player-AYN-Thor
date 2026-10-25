@@ -138,6 +138,7 @@ class PlayerModel(
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _ui.update { it.copy(playing = isPlaying) }
             if (isPlaying) startTicking() else { tick(); save() }
+            runSubtitleClock()
         }
 
         override fun onAudioSessionIdChanged(audioSessionId: Int) = volume.onAudioSessionChanged()
@@ -491,13 +492,15 @@ class PlayerModel(
         subtitleJob?.cancel()
         val choice = subtitleChoices.getOrNull(subtitleIndex)
         if (choice !is SubtitleChoice.OwnFile) { if (choice is SubtitleChoice.Track) showMediaCue(); return }
+        // Shown once now; then it only runs while the film plays, so a paused film wakes nothing.
+        _subtitle.value = SubtitleText.at(ownCues, player.currentPosition, _ui.value.subtitleDelayMs.toLong())
+        if (!player.isPlaying) return
         subtitleJob = scope.launch {
-            while (isActive) {
+            while (isActive && player.isPlaying) {
                 val delayMs = _ui.value.subtitleDelayMs.toLong()
                 val pos = player.currentPosition
                 _subtitle.value = SubtitleText.at(ownCues, pos, delayMs)
-                val wait = if (player.isPlaying) (SubtitleText.nextChange(ownCues, pos, delayMs) ?: 1_000L).coerceIn(20L, 1_000L) else 500L
-                delay(wait)
+                delay((SubtitleText.nextChange(ownCues, pos, delayMs) ?: 1_000L).coerceIn(20L, 1_000L))
             }
         }
     }
@@ -571,6 +574,20 @@ class PlayerModel(
         player.pause()
         saveNow()
         file = null
+    }
+
+    /**
+     * The app has left the screen: pause, save, and let go of the decoders, so nothing in the
+     * player wakes while it's in the background. The file and position stay; [toForeground] reloads.
+     */
+    fun toBackground() {
+        pause()
+        if (file != null) player.stop()
+    }
+
+    /** Back on screen: reload the open file where it was, still paused. */
+    fun toForeground() {
+        if (file != null && player.playbackState == Player.STATE_IDLE) player.prepare()
     }
 
     /** Leaving the app, the screen going off or the Thor sleeping: pause and save straight away. */
