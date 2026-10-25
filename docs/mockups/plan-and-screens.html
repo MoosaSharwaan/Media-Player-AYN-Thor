@@ -60,6 +60,7 @@ nav.tabs button:focus-visible, .chip:focus-visible, .btn:focus-visible { outline
 
 main { padding-block: 26px 64px; }
 section.view { display: grid; gap: 22px; }
+section.view[hidden] { display: none; }
 h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 720; font-size: 26px; line-height: 1.1; margin: 0; text-wrap: balance; }
 h3 { font-family: var(--f-display); font-stretch: 90%; font-weight: 680; font-size: 18px; margin: 0; }
 p { margin: 0; }
@@ -186,6 +187,31 @@ p { margin: 0; }
 .v.v1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
 
+/* ---------- build ---------- */
+.stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+@media (max-width: 420px) { .stages { grid-template-columns: minmax(0, 1fr); } }
+.stg { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.stg header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.stg b { font-family: var(--f-display); font-stretch: 85%; font-size: 18px; }
+.stg p { margin: 0; color: var(--muted); font-size: 14px; }
+.stg ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.stg .commit { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.pill.done { color: var(--ok); border: 1px solid currentColor; }
+.pill.next { color: var(--accent); border: 1px solid currentColor; }
+.shots { display: grid; gap: 22px; }
+.shot { display: grid; gap: 10px; min-width: 0; }
+.shot header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.shot h3 { margin: 0; font-family: var(--f-display); font-stretch: 85%; font-size: 19px; }
+.shot p { margin: 0; color: var(--muted); font-size: 14px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1.778fr) minmax(0, 1.148fr); gap: 10px; align-items: start; }
+.pair figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.pair img { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+.pair img.top { aspect-ratio: 16 / 9; }
+.pair img.bottom { aspect-ratio: 1240 / 1080; }
+.pair figcaption { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.pair .empty { border: 1px dashed var(--line); border-radius: 8px; display: grid; place-items: center; color: var(--muted); font-size: 13px; aspect-ratio: 1240 / 1080; padding: 12px; text-align: center; }
+.pair .empty.top { aspect-ratio: 16 / 9; }
+
 /* ---------- rules ---------- */
 .rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 860px) { .rules { grid-template-columns: minmax(0, 1fr); } }
@@ -207,9 +233,9 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player · working draft · Oct 23, 2026</div>
+  <div class="eyebrow">Exo Player · updated Oct 25, 2026 · stages 1–5 of 6 built</div>
   <h1>Both screens, every state, and the plan behind them</h1>
-  <p class="lede">The first mockup option for each screen state, drawn to the Thor's real proportions, with the build plan by category and the draft display and layout rules we still have to agree. Nothing here is decided yet.</p>
+  <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
 
 <nav class="tabs" aria-label="Sections">
@@ -217,6 +243,7 @@ p { margin: 0; }
     <button role="tab" id="tab-screens" aria-controls="screens" aria-selected="true">Screens</button>
     <button role="tab" id="tab-plan" aria-controls="plan" aria-selected="false">Plan by category</button>
     <button role="tab" id="tab-rules" aria-controls="rules" aria-selected="false">Display &amp; layout rules</button>
+    <button role="tab" id="tab-build" aria-controls="build" aria-selected="false">Build</button>
   </div>
 </nav>
 
@@ -263,6 +290,14 @@ p { margin: 0; }
     <div class="gates" id="gates"></div>
     <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
     <div class="cats" id="cats"></div>
+  </section>
+
+  <!-- ================= BUILD ================= -->
+  <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
+    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 is being built in six stages. Each stage is committed to the repo once it compiles and its tests pass. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
+    <div class="stages" id="stages"></div>
+    <div><h2>The real screens</h2><p class="lede" style="margin-top:6px">Top screen on the left, bottom screen on the right, as the app draws them. The ⏻ and ✎ corner buttons are drawn by the bottom window around these screens, so they don't appear here. <b>Compare with mockup</b> opens the same state on the Screens tab.</p></div>
+    <div class="shots" id="shots"></div>
   </section>
 
   <!-- ================= RULES ================= -->
@@ -986,8 +1021,50 @@ p { margin: 0; }
     "When docked to a TV: video on the TV and controls on the bottom screen, or everything on the TV?"
   ].map(function (q) { return '<li>' + q + '</li>'; }).join('');
 
+  // ---------- build ----------
+  var STAGES = [
+    ["1. Shell", "done", "2c4d25c", "Both screens and the controller.", ["Bottom-screen window (Presentation), finds Screen-2 by name", "A forward, B one step back; Back never closes the app by accident", "One-screen fallback: the bottom screen's content as a panel on the right", "Diagnostics page (Select + Start): displays, decoders, keys, dimming, display modes"]],
+    ["2. Library", "done", "fc5a32b", "From a folder of files to titles.", ["Folder picker, no storage permission", "Reads movie, SxxEyy, 1x02, anime and season-folder names (38 test names)", "Subtitles next to a video are linked to it", "Database: files, titles, seasons, episodes, where you stopped"]],
+    ["3. Browsing", "done", "f4a7370", "The five tabs and the cards.", ["Continue watching, Movies, Series, Anime, Others on L2 / R2, in a full circle", "Poster cards 4 across", "Top: poster mix, or the focused title's art and details", "⟳ Fetch info corner (online part in stage 6)"]],
+    ["4. Player", "done", "965f46e", "One player for movies and episodes.", ["Resumes where you stopped; saved on pause, stop and each minute; watched at 90%", "Progress, Resume / Pause, ‹ Prev / Next ›, Play from start, Mark watched", "Audio, Subtitles, subtitle timing in 50 ms steps both ways (.srt, .vtt)", "Up next with a 10 s countdown; ✎ and ⏻ corners; L2 / R2 ±10 s", "FFmpeg audio for DTS, TrueHD, AC3"]],
+    ["5. Series and anime", "done", "df18a0e", "Details → seasons → episodes → play.", ["Season cards 4 across, episode cards 3 across", "✓ watched, progress bar, missing episodes greyed", "Continue watching plays the episode; B lands on its season's episodes", "One-season shows skip the season cards; one-episode shows play like movies"]],
+    ["6. Online, on request", "next", "", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, then fanart.tv / AniList, art at display size", "Find subtitles: OpenSubtitles", "✎ Fix match with the app's own keyboard on the bottom screen", "Waiting for the TMDB, OpenSubtitles and fanart.tv keys"]]
+  ];
+  document.getElementById("stages").innerHTML = STAGES.map(function (g) {
+    return '<div class="stg"><header><b>' + g[0] + '</b><span class="pill ' + g[1] + '" style="margin:0">' + (g[1] === "done" ? "Done" : "Next") + '</span></header>' +
+      '<p>' + g[3] + '</p>' + li(g[4]) + (g[2] ? '<div class="commit">commit ' + g[2] + '</div>' : '') + '</div>';
+  }).join('');
+
+  // Screens rendered by the app's code (Robolectric screenshot tests), next to the mockup state they implement.
+  var SHOTS = [
+    ["Browsing: nothing focused", "browse", "The top screen shows a mix of the tab's posters; the selected tab sits in the centre of the strip.", "browse_top_mix", "browse_bottom_movies"],
+    ["Browsing: a title focused", "browse", "The focused title's art fills the top screen, with its details on the left.", "browse_top_focused", null],
+    ["Continue watching", "browse", "The same, with how far through you are.", "browse_top_continue", null],
+    ["Movie playing", "movie", "Only the picture and its subtitles on top. Subtitle timing set to −150 ms.", "player_top_subtitle", "player_bottom_movie"],
+    ["Paused, and episode controls", "play", "Paused: the title's art and details, never a progress bar. Episodes add ‹ Prev / Next ›; with no subtitles, the Subtitles button offers Find subtitles.", "player_top_paused", "player_bottom_episode"],
+    ["Up next", "ending", "30 s before the end of an episode; A plays now, B cancels.", null, "player_bottom_upnext"],
+    ["Series: details and seasons", "series", "The show first, with the episode to continue; season cards below.", "show_top_details", "show_bottom_seasons"],
+    ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],
+    ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"]
+  ];
+  function shotImg(name, kind) {
+    if (!name) return '<div class="empty ' + kind + '">' + (kind === "top" ? "Top screen: the picture" : "Same as above") + '</div>';
+    return '<figure><img class="' + kind + '" src="shots/' + name + '.jpg" alt="' + (kind === "top" ? "Top" : "Bottom") + ' screen as the app draws it" loading="lazy"><figcaption>' + (kind === "top" ? "Top · 1920×1080" : "Bottom · 1240×1080") + '</figcaption></figure>';
+  }
+  document.getElementById("shots").innerHTML = SHOTS.map(function (x, i) {
+    return '<div class="shot"><header><h3>' + x[0] + '</h3><button class="btn" type="button" data-cmp="' + x[1] + '">Compare with mockup</button></header><p>' + x[2] + '</p>' +
+      '<div class="pair">' + shotImg(x[3], "top") + shotImg(x[4], "bottom") + '</div></div>';
+  }).join('');
+  document.getElementById("shots").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-cmp]");
+    if (!b) return;
+    show(b.getAttribute("data-cmp"));
+    openTab("screens");
+    window.scrollTo(0, 0);
+  });
+
   // ---------- tabs ----------
-  var tabs = ["screens", "plan", "rules"];
+  var tabs = ["screens", "plan", "rules", "build"];
   function openTab(id) {
     if (tabs.indexOf(id) < 0) id = "screens";
     tabs.forEach(function (t) {
