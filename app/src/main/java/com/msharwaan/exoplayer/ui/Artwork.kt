@@ -36,12 +36,12 @@ object ImageCache {
         override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
     }
 
-    suspend fun load(path: String): ImageBitmap? {
-        cache.get(path)?.let { return it }
-        return withContext(Dispatchers.IO) {
-            if (!File(path).exists()) return@withContext null
-            BitmapFactory.decodeFile(path)?.asImageBitmap()?.also { cache.put(path, it) }
-        }
+    suspend fun load(path: String): ImageBitmap? = withContext(Dispatchers.IO) {
+        val file = File(path)
+        if (!file.exists()) return@withContext null
+        // Keyed by the file's time too, so art replaced by Fix match isn't shown from the cache.
+        val key = path + "@" + file.lastModified()
+        cache.get(key) ?: BitmapFactory.decodeFile(path)?.asImageBitmap()?.also { cache.put(key, it) }
     }
 }
 

@@ -12,6 +12,8 @@ sealed interface Route {
     data class Player(val fileId: Long) : Route
     data object Diagnostics : Route
     data object Settings : Route
+    data class FixMatch(val groupKey: String) : Route
+    data class FindSubtitles(val fileId: Long) : Route
 }
 
 /** The back stack. Browse is always at the bottom. */

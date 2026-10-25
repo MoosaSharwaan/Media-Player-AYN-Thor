@@ -49,6 +49,11 @@ class BrowseModel(
     private val _hasFolder = MutableStateFlow(prefs.folder != null)
     val hasFolder: StateFlow<Boolean> = _hasFolder.asStateFlow()
 
+    private val _fetching = MutableStateFlow(false)
+    /** Fetch info is running: ⟳ shows "…". */
+    val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
+    fun setFetching(on: Boolean) { _fetching.value = on }
+
     private val _scanning = MutableStateFlow(false)
     val scanning: StateFlow<Boolean> = _scanning.asStateFlow()
 
@@ -104,6 +109,7 @@ class BrowseModel(
                 if (_focus.value < 0) { _focus.value = 0; return BrowseResult.Used }
                 return focusedCard?.let { BrowseResult.Open(it) } ?: BrowseResult.NotUsed
             }
+            PadAction.Y -> return focusedCard?.let { BrowseResult.FixMatch(it.groupKey) } ?: BrowseResult.NotUsed
             PadAction.B -> {
                 // One step back: leave the cards; the top screen goes back to the poster mix.
                 if (_focus.value < 0) return BrowseResult.NotUsed
@@ -138,4 +144,5 @@ sealed interface BrowseResult {
     data object Used : BrowseResult
     data object NotUsed : BrowseResult
     data class Open(val card: Card) : BrowseResult
+    data class FixMatch(val groupKey: String) : BrowseResult
 }

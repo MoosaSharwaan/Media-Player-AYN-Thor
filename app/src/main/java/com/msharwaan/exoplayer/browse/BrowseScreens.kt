@@ -156,6 +156,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
     val focus by model.focus.collectAsStateWithLifecycle()
     val hasFolder by model.hasFolder.collectAsStateWithLifecycle()
     val scanning by model.scanning.collectAsStateWithLifecycle()
+    val fetching by model.fetching.collectAsStateWithLifecycle()
     val cards = library[tab].orEmpty()
 
     if (!hasFolder) {
@@ -201,7 +202,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
             // ⚙ Settings (also Start) next to ⟳ Fetch info.
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CornerButton("⚙", onClick = onSettings)
-                CornerButton(if (scanning) "…" else "⟳", onClick = onFetchInfo)
+                CornerButton(if (scanning || fetching) "…" else "⟳", onClick = onFetchInfo)
             }
         }
     }

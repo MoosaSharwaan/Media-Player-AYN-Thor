@@ -5,6 +5,7 @@ import com.msharwaan.exoplayer.data.AppDatabase
 import com.msharwaan.exoplayer.library.LibraryPrefs
 import com.msharwaan.exoplayer.library.LibraryScanner
 import com.msharwaan.exoplayer.player.PlaybackHolder
+import com.msharwaan.exoplayer.online.Online
 import com.msharwaan.exoplayer.settings.DisplayPrefs
 import com.msharwaan.exoplayer.settings.Secrets
 import kotlinx.coroutines.CoroutineScope
@@ -23,4 +24,6 @@ class ExoApp : Application() {
     val secrets: Secrets by lazy { Secrets(this) }
     /** Refresh rate per screen, chosen in Settings. */
     val displayPrefs: DisplayPrefs by lazy { DisplayPrefs(this) }
+    /** Fetch info, Fix match and Find subtitles: only when you press them (D32). */
+    val online: Online by lazy { Online(this, db, secrets) }
 }

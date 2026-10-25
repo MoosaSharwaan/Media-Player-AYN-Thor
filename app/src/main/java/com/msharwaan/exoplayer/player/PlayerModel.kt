@@ -239,6 +239,18 @@ class PlayerModel(
 
     private var ownSubtitleFiles: List<SubtitleFile> = emptyList()
 
+    /** Find subtitles (D9): set by the app, which opens the search. */
+    var onFindSubtitles: (Long) -> Unit = {}
+
+    /** A subtitle just downloaded for the open file: add it and switch it on. */
+    fun addSubtitle(sub: SubtitleFile) {
+        if (sub.mediaFileId != file?.id) return
+        ownSubtitleFiles = ownSubtitleFiles + sub
+        refreshSubtitleChoices(player.currentTracks)
+        val index = subtitleChoices.indexOfFirst { it is SubtitleChoice.OwnFile && it.sub.uri == sub.uri }
+        if (index >= 0) { userChoseOff = false; selectSubtitle(index) }
+    }
+
     fun onAction(action: PadAction): Boolean {
         val upNext = _ui.value.upNext
         if (upNext != null) {
@@ -270,7 +282,7 @@ class PlayerModel(
             PlayerButton.FROM_START -> { player.seekTo(0); player.play() }
             PlayerButton.MARK_WATCHED -> markWatched()
             PlayerButton.AUDIO -> cycleAudio()
-            PlayerButton.SUBTITLES -> if (_ui.value.subtitleMissing) onNotice("Find subtitles needs your OpenSubtitles key. It comes in the next build stage.") else cycleSubtitles()
+            PlayerButton.SUBTITLES -> if (_ui.value.subtitleMissing) onFindSubtitles(_ui.value.fileId) else cycleSubtitles()
             PlayerButton.DELAY_MINUS -> shiftSubtitles(-50)
             PlayerButton.DELAY_PLUS -> shiftSubtitles(50)
             PlayerButton.VOLUME_DOWN -> volume.down()

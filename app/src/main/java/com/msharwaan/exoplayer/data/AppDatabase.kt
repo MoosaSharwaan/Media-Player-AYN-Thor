@@ -45,7 +45,7 @@ interface LibraryDao {
     suspend fun clearLocalSubtitles(fileId: Long)
 
     @Insert
-    suspend fun insertSubtitles(subs: List<SubtitleFile>)
+    suspend fun insertSubtitles(subs: List<SubtitleFile>): List<Long>
 
     @Query("SELECT * FROM title_info")
     fun observeTitles(): Flow<List<TitleInfo>>
@@ -61,6 +61,21 @@ interface LibraryDao {
 
     @Query("DELETE FROM title_info WHERE groupKey NOT IN (SELECT DISTINCT groupKey FROM media_file)")
     suspend fun deleteOrphanTitles()
+
+    @Query("SELECT * FROM title_info")
+    suspend fun titles(): List<TitleInfo>
+
+    @Query("SELECT * FROM season_info WHERE groupKey = :groupKey ORDER BY number")
+    suspend fun seasonsOf(groupKey: String): List<SeasonInfo>
+
+    @Query("SELECT * FROM episode_info WHERE groupKey = :groupKey ORDER BY season, number")
+    suspend fun episodesOf(groupKey: String): List<EpisodeInfo>
+
+    @Query("DELETE FROM season_info WHERE groupKey = :groupKey")
+    suspend fun deleteSeasons(groupKey: String)
+
+    @Query("DELETE FROM episode_info WHERE groupKey = :groupKey")
+    suspend fun deleteEpisodes(groupKey: String)
 
     @Query("SELECT * FROM season_info WHERE groupKey = :groupKey ORDER BY number")
     fun observeSeasons(groupKey: String): Flow<List<SeasonInfo>>
@@ -95,7 +110,10 @@ interface LibraryDao {
     @Transaction
     suspend fun replaceSubtitles(fileId: Long, subs: List<SubtitleFile>) {
         clearLocalSubtitles(fileId)
-        if (subs.isNotEmpty()) insertSubtitles(subs)
+        // A subtitle downloaded next to the video is found by the scan too: keep the one row.
+        val downloaded = subtitlesOf(fileId).map { it.uri }.toSet()
+        val fresh = subs.filter { it.uri !in downloaded }
+        if (fresh.isNotEmpty()) insertSubtitles(fresh)
     }
 }
 

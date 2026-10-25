@@ -28,6 +28,9 @@ import com.msharwaan.exoplayer.browse.BrowseTop
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsBottom
 import com.msharwaan.exoplayer.diagnostics.DiagnosticsTop
 import com.msharwaan.exoplayer.nav.Route
+import com.msharwaan.exoplayer.online.FindSubtitlesBottom
+import com.msharwaan.exoplayer.online.FixMatchBottom
+import com.msharwaan.exoplayer.online.FixMatchTop
 import com.msharwaan.exoplayer.player.PlayerBottom
 import com.msharwaan.exoplayer.player.PlayerTop
 import com.msharwaan.exoplayer.player.VideoSurface
@@ -105,7 +108,7 @@ fun BottomRoot(vm: AppViewModel) {
             if (route.isVideo()) {
                 // ✎ Fix match next to ⏻ in the bottom-right corner (decisions D11, D12).
                 Row(Modifier.align(Alignment.BottomEnd).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CornerButton("✎") { vm.fixMatch() }
+                    CornerButton("✎") { vm.openFixMatch() }
                     CornerButton("⏻") { vm.toggleBottomScreen() }
                 }
             }
@@ -121,11 +124,13 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
         is Route.Show -> ShowTop(vm.show)
         Route.Settings -> SettingsTop(vm.settings)
-        is Route.Player -> {
+        // Finding subtitles keeps the film on the top screen.
+        is Route.Player, is Route.FindSubtitles -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
             val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
             PlayerTop(ui, subtitle) { VideoSurface(vm.player.player) }
         }
+        is Route.FixMatch -> FixMatchTop(vm.fixMatch)
     }
 }
 
@@ -135,14 +140,19 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
         when (route) {
             Route.Browse -> BrowseBottom(vm.browse, onOpen = vm::open, onFetchInfo = vm::fetchInfo, onSettings = vm::openSettings)
             Route.Diagnostics -> DiagnosticsBottom(vm.diagnostics)
-            is Route.Show -> ShowBottom(vm.show) { vm.navigator.push(Route.Player(it)) }
+            is Route.Show -> {
+                ShowBottom(vm.show) { vm.navigator.push(Route.Player(it)) }
+                Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.openFixMatch() } }
+            }
+            is Route.FixMatch -> FixMatchBottom(vm.fixMatch)
+            is Route.FindSubtitles -> FindSubtitlesBottom(vm.findSubtitles)
             Route.Settings -> SettingsBottom(vm.settings)
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 val volume by vm.player.volume.percent.collectAsStateWithLifecycle()
                 PlayerBottom(ui, volume, onPress = vm.player::press, onPlayNow = vm.player::playNow, onCancelUpNext = vm.player::cancelUpNext)
                 // One screen: no ⏻ (there is no bottom screen to turn off), ✎ stays.
-                if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.fixMatch() } }
+                if (oneScreen) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) { CornerButton("✎") { vm.openFixMatch() } }
             }
         }
         Notice(vm)

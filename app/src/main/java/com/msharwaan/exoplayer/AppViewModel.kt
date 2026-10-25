@@ -15,6 +15,9 @@ import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.library.Card
 import com.msharwaan.exoplayer.nav.Navigator
 import com.msharwaan.exoplayer.nav.Route
+import com.msharwaan.exoplayer.online.FindSubtitlesModel
+import com.msharwaan.exoplayer.online.FixMatchModel
+import com.msharwaan.exoplayer.online.KeyRejected
 import com.msharwaan.exoplayer.player.PlayerModel
 import com.msharwaan.exoplayer.settings.DisplayPrefs
 import com.msharwaan.exoplayer.settings.Screen
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 /**
  * One state object read by both screens, so the top and bottom windows never disagree.
@@ -78,13 +82,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             id?.let { displayMonitor.display(it) }?.let(DisplayPrefs::ratesOf)
         },
         folder = { exo.prefs.folder },
-        readClipboard = {
-            app.getSystemService(ClipboardManager::class.java)?.primaryClip
-                ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(app)?.toString()
-        },
+        readClipboard = { clipboard() },
         onChooseFolder = { browse.chooseFolder() },
         onNotice = ::showNotice,
     )
+
+    private val clipboard: () -> String? = {
+        app.getSystemService(ClipboardManager::class.java)?.primaryClip
+            ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(app)?.toString()
+    }
+
+    /** ✎ Fix match (D11). */
+    val fixMatch = FixMatchModel(viewModelScope, exo.db, exo.online, clipboard, ::showNotice) { navigator.pop() }
+
+    /** Find subtitles (D9, D37). */
+    val findSubtitles = FindSubtitlesModel(
+        app, viewModelScope, exo.db, exo.online, { exo.prefs.folder }, ::showNotice,
+        onAdded = { player.addSubtitle(it) },
+        onDone = { if (navigator.current is Route.FindSubtitles) navigator.pop() },
+    )
+
+    /** True while Fetch info runs; ⟳ shows "…". */
+    private val _fetching = MutableStateFlow(false)
+    val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
 
     fun onFolderChosen(uri: Uri) {
         browse.onFolderChosen(uri)
@@ -92,6 +112,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     init {
+        player.onFindSubtitles = { navigator.push(Route.FindSubtitles(it)) }
         // A fixed top-screen rate holds during films too; Auto follows the film when seamless.
         viewModelScope.launch { exo.displayPrefs.top.collect { exo.playback.followFilmRate(it == null) } }
         // The Player route opens its file; leaving it stops and saves (D8).
@@ -107,6 +128,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val left = previous
                 if (route is Route.Show && left is Route.Player) show.returnedFrom(left.fileId)
                 if (route == Route.Settings && left != Route.Settings) settings.refresh()
+                if (route is Route.FixMatch) fixMatch.open(route.groupKey)
+                if (route is Route.FindSubtitles) findSubtitles.open(route.fileId)
                 previous = route
                 when {
                     route is Route.Player -> if (player.openFileId != route.fileId) player.open(route.fileId)
@@ -156,14 +179,54 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (navigator.current != Route.Settings) navigator.push(Route.Settings)
     }
 
-    /** ✎ Fix match: pick the right title, or type its TMDB ID (D11). Arrives in stage 6. */
-    fun fixMatch() {
-        showNotice("Fix match uses TMDB search. It comes in the next build stage.")
+    /** ✎ Fix match for what's on screen: the film playing, the show open, or the focused card. */
+    fun openFixMatch() {
+        val key = when (val r = navigator.current) {
+            is Route.Player -> player.ui.value.groupKey.also { player.pause() }
+            is Route.Show -> r.groupKey
+            Route.Browse -> browse.focusedCard?.groupKey
+            else -> null
+        } ?: return showNotice("Pick a title first.")
+        openFixMatch(key)
     }
 
-    /** ⟳ Fetch info: the only way Browsing goes online (D32, D36). Arrives in stage 6. */
+    fun openFixMatch(groupKey: String) {
+        if (groupKey.startsWith("o:")) return showNotice("Others are your own videos: there's nothing to match.")
+        navigator.push(Route.FixMatch(groupKey))
+    }
+
+    /**
+     * ⟳ Fetch info for the tab on screen (D32, D36): only what's missing is fetched (D38).
+     * The only way Browsing goes online.
+     */
     fun fetchInfo() {
-        showNotice("Fetch info needs your TMDB key. It comes in the next build stage.")
+        if (_fetching.value) return showNotice("Already fetching…")
+        val fetch = exo.online.fetchInfo() ?: return showNotice("Add your TMDB API key in Settings first (press Start).")
+        if (!exo.online.isConnected()) return showNotice("No internet connection. Fetch info needs one.")
+        val keys = browse.cards.map { it.groupKey }.filterNot { it.startsWith("o:") }.distinct()
+        if (keys.isEmpty()) return showNotice("Nothing in this tab to fetch info for.")
+        _fetching.value = true
+        browse.setFetching(true)
+        viewModelScope.launch {
+            try {
+                val r = fetch.fetch(keys) { done, total -> if (done < total) showNotice("Fetching info… ${done + 1} of $total") }
+                showNotice(
+                    buildList {
+                        if (r.fetched > 0) add("Fetched ${r.fetched}" + if (r.fetched == 1) " title." else " titles.")
+                        if (r.fetched == 0 && r.notFound.isEmpty() && r.failed.isEmpty()) add("Everything here is up to date.")
+                        if (r.notFound.isNotEmpty()) add("Not found: " + r.notFound.take(3).joinToString(", ") + (if (r.notFound.size > 3) "…" else "") + ". Use ✎ Fix match (Y).")
+                        if (r.failed.isNotEmpty()) add("${r.failed.size} couldn't be fetched; press ⟳ again later.")
+                    }.joinToString(" "),
+                )
+            } catch (e: KeyRejected) {
+                showNotice("TMDB didn't accept your API key. Check it in Settings.")
+            } catch (e: IOException) {
+                showNotice("Fetch info stopped: the connection was lost. Press ⟳ to carry on.")
+            } finally {
+                _fetching.value = false
+                browse.setFetching(false)
+            }
+        }
     }
 
     /** Returns true when the app used the button; false leaves it to the system. */
@@ -185,11 +248,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             Route.Settings -> settings.onAction(action)
             Route.Browse -> if (action == PadAction.START) { openSettings(); true } else when (val r = browse.onAction(action)) {
                 is BrowseResult.Open -> { open(r.card); true }
+                is BrowseResult.FixMatch -> { openFixMatch(r.groupKey); true }
                 BrowseResult.Used -> true
                 BrowseResult.NotUsed -> false
             }
             is Route.Player -> player.onAction(action)
-            is Route.Show -> when (val r = show.onAction(action)) {
+            is Route.FixMatch -> fixMatch.onAction(action)
+            is Route.FindSubtitles -> findSubtitles.onAction(action)
+            is Route.Show -> if (action == PadAction.Y) { openFixMatch(); true } else when (val r = show.onAction(action)) {
                 is ShowModel.Result.Play -> { navigator.push(Route.Player(r.fileId)); true }
                 ShowModel.Result.Used -> true
                 ShowModel.Result.NotUsed -> false
