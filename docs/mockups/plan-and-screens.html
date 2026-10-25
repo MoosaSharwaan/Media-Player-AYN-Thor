@@ -1,0 +1,1266 @@
+<title>Thor Player Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky tab bar; Screens = device drawn to physical scale + notes; Plan = category lanes with version tags; Rules = constraints vs draft rules. */
+:root {
+  --bg: #eceef2;
+  --surface: #ffffff;
+  --ink: #15181d;
+  --muted: #5a6371;
+  --line: #d3d8e0;
+  --accent: #a8670f;
+  --accent-soft: #f6e7cc;
+  --ok: #2f7a4b;
+  --warn: #9a5b00;
+  --shell: #23262b;
+  --shell-hi: #34383f;
+  /* Screen tokens: the app itself is true black in every theme */
+  --scr-bg: #000000;
+  --scr-ink: #f1f2f4;
+  --scr-mute: #8d929b;
+  --scr-dim: #4a4e55;
+  --scr-line: #24272c;
+  --scr-acc: #f2b33d;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0f12; --surface: #15191e; --ink: #e7e9ed; --muted: #98a1ae; --line: #272c34;
+    --accent: #f2b33d; --accent-soft: #3a2c12; --ok: #6cc28e; --warn: #f0b04a;
+    --shell: #1d2025; --shell-hi: #2c3037; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0f12; --surface: #15191e; --ink: #e7e9ed; --muted: #98a1ae; --line: #272c34;
+  --accent: #f2b33d; --accent-soft: #3a2c12; --ok: #6cc28e; --warn: #f0b04a;
+  --shell: #1d2025; --shell-hi: #2c3037; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+header.masthead { padding-block: 28px 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-stretch: 78%; font-weight: 780; font-size: clamp(30px, 5vw, 46px); line-height: 1.02; margin: 6px 0 8px; text-wrap: balance; letter-spacing: -.01em; }
+.lede { max-width: 66ch; color: var(--muted); margin: 0; }
+
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); margin-top: 18px; }
+nav.tabs .wrap { display: flex; gap: 4px; padding-block: 0; overflow-x: auto; }
+nav.tabs button { font: 600 15px/1 var(--f-body); color: var(--muted); background: none; border: 0; padding: 14px 14px 13px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, .chip:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+main { padding-block: 26px 64px; }
+section.view { display: grid; gap: 22px; }
+section.view[hidden] { display: none; }
+h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 720; font-size: 26px; line-height: 1.1; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--f-display); font-stretch: 90%; font-weight: 680; font-size: 18px; margin: 0; }
+p { margin: 0; }
+
+/* ---------- state picker ---------- */
+.states { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 600 13.5px/1 var(--f-body); padding: 9px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip .k { font-family: var(--f-mono); font-size: 11px; opacity: .6; margin-right: 6px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 920px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.device-scroll { overflow-x: auto; padding-bottom: 6px; }
+
+/* ---------- the Thor, drawn to scale (top 6" 16:9, bottom 3.92" 1240×1080 → 56.5% of top width) ---------- */
+/* Control positions come from Wayfinder's Thor map (base 1420×808 units): bottom screen 51.8% of the base width,
+   left stick over D-pad, ABXY over right stick, Select/Start by the screen's top corners, Home/Back at the bottom corners. */
+.thor { min-width: 560px; width: 100%; display: grid; gap: 0; container-type: inline-size; }
+.lid, .deck { background: linear-gradient(180deg, var(--shell-hi), var(--shell)); border-radius: 22px; }
+.lid { padding: 3.6% 4.2%; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
+.shoulders { display: grid; grid-template-columns: 15% 1fr 15%; align-items: center; height: 4.6cqw; }
+.hinge { height: 1.6cqw; margin: 0 4%; background: linear-gradient(180deg, #111316, #2a2d33 60%, #15171a); border-radius: 0 0 8px 8px; align-self: start; }
+.sh { display: flex; flex-direction: column; gap: .35cqw; align-items: center; }
+.deck { position: relative; aspect-ratio: 1420 / 808; border-top-left-radius: 10px; border-top-right-radius: 10px; }
+.screen { position: relative; overflow: hidden; background: var(--scr-bg); color: var(--scr-ink); container-type: inline-size; border-radius: 4px; box-shadow: 0 0 0 2px #050607, 0 0 0 3px #3a3e45; font-family: var(--f-body); }
+.screen.top { aspect-ratio: 1920 / 1080; }
+.screen.bottom { aspect-ratio: 1240 / 1080; }
+.scrlabel { position: absolute; left: 0; top: -1px; transform: translateY(-100%); font: 600 10px/1 var(--f-mono); letter-spacing: .08em; color: #8a909a; padding-bottom: 6px; text-transform: uppercase; }
+.lid .screen-holder { position: relative; }
+.deck .screen-holder { position: absolute; left: 24.12%; top: 4.46%; width: 51.76%; }
+/* controls: placed by centre point */
+.ctl { position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; font: 700 1.25cqw/1 var(--f-mono); color: #868c95; background: #121417; }
+.ctl.on { color: #1a1204; background: var(--scr-acc); box-shadow: 0 0 0 .3cqw rgba(242,179,61,.35); }
+.stick { width: 15.5%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 50% 45%, #2a2e34 0 46%, #121417 47% 100%); box-shadow: inset 0 0 0 .25cqw #0a0b0d; }
+.stick.on { background: radial-gradient(circle at 50% 45%, var(--scr-acc) 0 46%, #121417 47% 100%); }
+.dpad { width: 15.5%; aspect-ratio: 1; background: none; }
+.dpad::before, .dpad::after { content: ""; position: absolute; background: #121417; border-radius: .4cqw; }
+.dpad::before { left: 34%; right: 34%; top: 0; bottom: 0; }
+.dpad::after { top: 34%; bottom: 34%; left: 0; right: 0; }
+.dpad.on::before, .dpad.on::after { background: var(--scr-acc); }
+.dpad span { position: relative; z-index: 1; }
+.face { width: 5.6%; aspect-ratio: 1; border-radius: 50%; }
+.small { width: 3.6%; aspect-ratio: 1; border-radius: 50%; font-size: 1.15cqw; }
+.ayn { width: 6%; height: 1.1cqw; border-radius: 1cqw; font-size: .8cqw; letter-spacing: .08em; }
+.shbtn { width: 82%; height: 1.8cqw; border-radius: .9cqw; font-size: 1.05cqw; position: static; transform: none; }
+.shbtn.l2 { width: 70%; }
+.dpad.on { background: none; box-shadow: none; }
+.ctl[title] { cursor: help; }
+.keymap { width: 100%; border-collapse: collapse; font-size: 14px; }
+.keymap td { padding: 6px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.keymap tr:first-child td { border-top: 0; }
+.keymap td:first-child { width: 96px; padding-right: 10px; white-space: nowrap; }
+.kc { display: inline-block; min-width: 30px; text-align: center; font: 700 11.5px/1 var(--f-mono); padding: 5px 6px; border-radius: 6px; background: var(--ink); color: var(--bg); }
+.keymap tr.sys td { color: var(--muted); }
+.keymap tr.sys .kc { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.scale-note { font: 12px/1.4 var(--f-mono); color: var(--muted); margin-top: 10px; }
+
+/* ---------- on-screen UI (sizes in cqw so they scale with each panel) ---------- */
+.s-fill { position: absolute; inset: 0; }
+.s-col { display: flex; flex-direction: column; }
+.s-row { display: flex; align-items: center; }
+.s-mute { color: var(--scr-mute); }
+.s-acc { color: var(--scr-acc); }
+.s-eyebrow { font: 600 1.25cqw/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--scr-acc); }
+.s-title { font-family: var(--f-display); font-weight: 780; font-stretch: 80%; line-height: .95; letter-spacing: -.01em; }
+.backdrop { position: absolute; inset: 0; }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #000 0%, rgba(0,0,0,.86) 34%, rgba(0,0,0,.25) 70%, rgba(0,0,0,.55) 100%), linear-gradient(0deg, #000 0%, rgba(0,0,0,0) 45%); }
+.poster { flex: none; aspect-ratio: 2 / 3; border-radius: .6cqw; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: .7cqw; }
+.poster span { font: 700 1.05cqw/1.1 var(--f-display); font-stretch: 85%; color: #fff; text-shadow: 0 1px 4px #000; }
+.poster.sel { outline: .35cqw solid var(--scr-acc); outline-offset: .3cqw; }
+.pbar { height: .45cqw; border-radius: 1cqw; background: var(--scr-line); overflow: hidden; }
+.pbar b { display: block; height: 100%; background: var(--scr-acc); }
+
+/* bottom-screen specific (bottom panel is ~56% as wide, so cqw values are ~1.8× larger for the same physical size) */
+.b-pad { position: absolute; inset: 4.5cqw 5cqw; display: flex; flex-direction: column; gap: 3cqw; }
+.b-h { font: 700 4.6cqw/1.1 var(--f-display); font-stretch: 85%; }
+.b-small { font-size: 3cqw; line-height: 1.25; }
+.b-tiny { font: 600 2.4cqw/1.2 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--scr-mute); }
+.b-btn { border-radius: 2cqw; padding: 2.4cqw 3cqw; font: 700 3.6cqw/1.1 var(--f-body); background: #15171b; color: var(--scr-ink); border: .35cqw solid var(--scr-line); display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
+.b-btn.pri { background: var(--scr-acc); color: #1a1204; border-color: var(--scr-acc); }
+.b-btn.focus { border-color: var(--scr-acc); }
+.key { font: 700 2.4cqw/1 var(--f-mono); border: .3cqw solid currentColor; border-radius: 50%; width: 4.4cqw; height: 4.4cqw; display: inline-grid; place-items: center; opacity: .8; flex: none; }
+.b-chips { display: flex; flex-wrap: wrap; gap: 1.6cqw; }
+.b-chip { font: 700 3cqw/1 var(--f-body); padding: 1.8cqw 2.6cqw; border-radius: 6cqw; border: .35cqw solid var(--scr-line); color: var(--scr-ink); }
+.b-chip.on { background: var(--scr-ink); color: #000; border-color: var(--scr-ink); }
+.b-legend { margin-top: auto; display: flex; gap: 3.4cqw; flex-wrap: wrap; font: 600 2.5cqw/1 var(--f-mono); color: var(--scr-mute); }
+.b-legend span { display: inline-flex; align-items: center; gap: 1.2cqw; }
+.b-legend .key { width: 3.8cqw; height: 3.8cqw; font-size: 2.1cqw; }
+.ep { display: grid; grid-template-columns: 5cqw 1fr auto; gap: 2cqw; align-items: center; padding: 1.6cqw 2cqw; border-radius: 1.6cqw; font-size: 3.1cqw; }
+.ep.cur { background: #16181c; box-shadow: inset 0 0 0 .35cqw var(--scr-acc); }
+.ep.miss { color: var(--scr-dim); }
+.ep .n { font: 600 2.8cqw/1 var(--f-mono); color: var(--scr-mute); }
+.ep .r { font: 600 2.5cqw/1 var(--f-mono); color: var(--scr-mute); }
+.ep.miss .n, .ep.miss .r { color: var(--scr-dim); }
+.dimmer { position: absolute; inset: 0; background: rgba(0,0,0,.82); pointer-events: none; transition: opacity .3s; }
+
+/* ---------- notes panel ---------- */
+.notes { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; min-width: 0; }
+.notes .what { color: var(--muted); }
+.notes dl { margin: 0; display: grid; gap: 12px; }
+.notes dt { font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.notes dd { margin: 0; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.qbox { border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 8px; }
+.qbox h4 { margin: 0; font: 700 13px/1.2 var(--f-body); color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+.btn { font: 600 13.5px/1 var(--f-body); padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; justify-self: start; }
+
+/* ---------- plan ---------- */
+.gates { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
+.gates > div { flex: 1 1 140px; padding: 14px 16px; border-right: 1px solid var(--line); min-width: 0; }
+.gates > div:last-child { border-right: 0; }
+.gates .g { background: var(--accent-soft); flex: 0 1 120px; }
+.gates b { display: block; font-family: var(--f-display); font-stretch: 85%; font-size: 18px; }
+.gates small { color: var(--muted); font-size: 13px; line-height: 1.35; display: block; margin-top: 2px; }
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+@media (max-width: 420px) { .cats { grid-template-columns: minmax(0, 1fr); } }
+.cat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.cat p.sub { color: var(--muted); font-size: 14px; }
+.cat ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: s; }
+.cat li { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: baseline; font-size: 14.5px; }
+.cat li::before { counter-increment: s; content: counter(s); font: 600 12px/1 var(--f-mono); color: var(--muted); }
+.v { font: 600 11px/1 var(--f-mono); padding: 4px 7px; border-radius: 6px; border: 1px solid var(--line); white-space: nowrap; }
+.v.v0 { background: var(--accent-soft); border-color: transparent; }
+.v.v1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
+
+/* ---------- status ---------- */
+.st { display: inline-block; font: 600 10.5px/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.st.done { background: var(--ok); color: var(--bg); }
+.st.part { color: var(--warn); border: 1px solid currentColor; }
+.st.todo { color: var(--muted); border: 1px dashed var(--line); }
+.gates .st { margin-top: 8px; white-space: normal; line-height: 1.25; max-width: 100%; }
+.gates .stn { margin-top: 6px; }
+.gates > div.st-todo:not(.g) b { color: var(--muted); }
+.gates > div.st-part { box-shadow: inset 0 3px 0 var(--warn); }
+.gates > div.st-done { box-shadow: inset 0 3px 0 var(--ok); }
+.cat li { grid-template-columns: 22px 1fr auto auto; }
+.cat li.s-todo > span:first-child { color: var(--muted); }
+.cat li .sn { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+.cprog { display: grid; gap: 5px; }
+.cprog span { font: 500 12px/1.2 var(--f-mono); color: var(--muted); }
+.cbar { display: flex; height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.cbar b { background: var(--ok); }
+.cbar i { background: var(--warn); opacity: .7; }
+
+/* ---------- compare ---------- */
+.cmp-key { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); align-items: center; }
+.cmp-key span { display: inline-flex; gap: 6px; align-items: center; }
+.cmp-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.cmp { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 860px; font-size: 14px; }
+.cmp th, .cmp td { padding: 9px 10px; border-top: 1px solid var(--line); text-align: center; vertical-align: middle; }
+.cmp thead th { border-top: 0; font: 700 13px/1.2 var(--f-body); white-space: nowrap; position: sticky; top: 0; background: var(--surface); }
+.cmp thead th.us { color: var(--accent); }
+.cmp th[scope="row"] { text-align: left; font-weight: 600; position: sticky; left: 0; background: var(--surface); min-width: 210px; max-width: 260px; box-shadow: 1px 0 0 var(--line); }
+.cmp th[scope="row"] small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+@media (max-width: 600px) { .cmp th[scope="row"] { min-width: 140px; max-width: 160px; font-size: 13px; } .cmp th[scope="row"] small { display: none; } .cmp { min-width: 720px; } }
+.cmp tr.grp th { text-align: left; font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); padding-top: 12px; position: sticky; left: 0; }
+.cmp td.us { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.c { font-style: normal; display: inline-block; min-width: 24px; font: 700 12.5px/1 var(--f-mono); padding: 4px 6px; border-radius: 6px; white-space: nowrap; }
+.c.y, .c.p, .c.n { font-size: 17px; font-family: var(--f-body); padding: 2px 4px; }
+.c.y { color: var(--ok); }
+.c.p { color: var(--warn); }
+.half { display: inline-block; width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--warn); background: linear-gradient(90deg, var(--warn) 50%, transparent 50%); vertical-align: -2px; }
+.c.a { color: var(--muted); border: 1px solid var(--line); }
+.c.n { color: var(--muted); opacity: .7; }
+.c.ours { background: var(--ok); color: var(--bg); }
+.c.plan { border: 1px solid var(--accent); color: var(--accent); }
+.c.no { color: var(--muted); border: 1px dashed var(--line); }
+.players { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+@media (max-width: 420px) { .players { grid-template-columns: minmax(0, 1fr); } }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.player header { display: grid; gap: 2px; }
+.player b { font-family: var(--f-display); font-stretch: 85%; font-size: 19px; }
+.player .eng { font: 500 12px/1.35 var(--f-mono); color: var(--muted); }
+.player h4 { margin: 0 0 3px; font: 600 11.5px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.player ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.player .take { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 14px; }
+.player .take b { font: 700 13px/1.2 var(--f-body); color: var(--accent); }
+.cmp-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.cmp-sum > div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+.cmp-sum h3 { font-size: 18px; }
+.cmp-sum ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; }
+
+/* ---------- build ---------- */
+.stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+@media (max-width: 420px) { .stages { grid-template-columns: minmax(0, 1fr); } }
+.stg { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.stg header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.stg b { font-family: var(--f-display); font-stretch: 85%; font-size: 18px; }
+.stg p { margin: 0; color: var(--muted); font-size: 14px; }
+.stg ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.stg .commit { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.pill.done { color: var(--ok); border: 1px solid currentColor; }
+.pill.next { color: var(--accent); border: 1px solid currentColor; }
+.pill.todo { color: var(--muted); border: 1px dashed var(--line); }
+.shots { display: grid; gap: 22px; }
+.shot { display: grid; gap: 10px; min-width: 0; }
+.shot header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.shot h3 { margin: 0; font-family: var(--f-display); font-stretch: 85%; font-size: 19px; }
+.shot p { margin: 0; color: var(--muted); font-size: 14px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1.778fr) minmax(0, 1.148fr); gap: 10px; align-items: start; }
+.pair figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+.pair img { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+.pair img.top { aspect-ratio: 16 / 9; }
+.pair img.bottom { aspect-ratio: 1240 / 1080; }
+.pair figcaption { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.pair .empty { border: 1px dashed var(--line); border-radius: 8px; display: grid; place-items: center; color: var(--muted); font-size: 13px; aspect-ratio: 1240 / 1080; padding: 12px; text-align: center; }
+.pair .empty.top { aspect-ratio: 16 / 9; }
+
+/* ---------- rules ---------- */
+.rules { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .rules { grid-template-columns: minmax(0, 1fr); } }
+.rlist { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 4px; min-width: 0; }
+.rule { display: grid; grid-template-columns: 46px 1fr; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); }
+.rule:first-of-type { border-top: 0; }
+.rule .id { font: 600 12px/1.6 var(--f-mono); color: var(--muted); }
+.rule b { display: block; }
+.rule small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.pill { display: inline-block; font: 600 10.5px/1 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; margin-top: 6px; }
+.pill.fixed { color: var(--ok); border: 1px solid currentColor; }
+.pill.prop { color: var(--warn); border: 1px solid currentColor; }
+.pill.dec { color: var(--bg); background: var(--ok); border: 1px solid var(--ok); }
+.pill.conf { color: var(--bg); background: var(--warn); border: 1px solid var(--warn); }
+.openq { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 10px; }
+.openq ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<header class="masthead wrap">
+  <div class="eyebrow">Exo Player v1.0.0 · Oct 25, 2026 · built and tested on a PC; gates need the Thor</div>
+  <h1>Both screens, every state, and the plan behind them</h1>
+  <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist">
+    <button role="tab" id="tab-screens" aria-controls="screens" aria-selected="true">Screens</button>
+    <button role="tab" id="tab-plan" aria-controls="plan" aria-selected="false">Plan by category</button>
+    <button role="tab" id="tab-rules" aria-controls="rules" aria-selected="false">Display &amp; layout rules</button>
+    <button role="tab" id="tab-build" aria-controls="build" aria-selected="false">Build</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <!-- ================= SCREENS ================= -->
+  <section class="view" id="screens" role="tabpanel" aria-labelledby="tab-screens">
+    <div class="states" id="statePicker" aria-label="Screen state"></div>
+    <div class="stage">
+      <div>
+        <div class="device-scroll">
+          <div class="thor" aria-label="AYN Thor mockup">
+            <div class="lid"><div class="screen-holder"><div class="scrlabel">Top · 6″ · 1920×1080</div><div class="screen top" id="topScreen"></div></div></div>
+            <div class="shoulders">
+              <div class="sh"><span class="ctl shbtn l2" data-k="L2">L2</span><span class="ctl shbtn" data-k="L1">L1</span></div>
+              <div class="hinge"></div>
+              <div class="sh"><span class="ctl shbtn l2" data-k="R2">R2</span><span class="ctl shbtn" data-k="R1">R1</span></div>
+            </div>
+            <div class="deck">
+              <div class="screen-holder"><div class="screen bottom" id="bottomScreen"></div></div>
+              <span class="ctl small" data-k="SELECT" style="left:17.96%;top:7.18%">▢</span>
+              <span class="ctl small" data-k="START" style="left:82.04%;top:7.18%">▷</span>
+              <span class="ctl stick" data-k="L3" style="left:10.42%;top:26.98%"><span>L3</span></span>
+              <span class="ctl dpad" data-k="DPAD" style="left:10.42%;top:61.88%"><span>✛</span></span>
+              <span class="ctl face" data-k="X" style="left:89.58%;top:16.58%">X</span>
+              <span class="ctl face" data-k="Y" style="left:83.66%;top:26.98%">Y</span>
+              <span class="ctl face" data-k="A" style="left:95.5%;top:26.98%">A</span>
+              <span class="ctl face" data-k="B" style="left:89.58%;top:37.38%">B</span>
+              <span class="ctl stick" data-k="R3" style="left:89.58%;top:61.88%"><span>R3</span></span>
+              <span class="ctl small" data-k="HOME" style="left:15.49%;top:86.63%">⌂</span>
+              <span class="ctl small" data-k="BACK" style="left:84.51%;top:86.63%">↺</span>
+              <span class="ctl ayn" data-k="AYN" style="left:50%;top:91.5%">AYN</span>
+            </div>
+          </div>
+        </div>
+        <p class="scale-note">Drawn to physical scale: the bottom panel is 56.5% as wide as the top. Text of the same physical size takes up about 1.8× more of the bottom panel's width. Control positions follow the Thor's real layout; buttons used in this state are lit. L1/L2 and R1/R2 sit on the back edge, L2/R2 behind L1/R1.</p>
+      </div>
+      <aside class="notes" id="notes" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- ================= PLAN ================= -->
+  <section class="view" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+    <div><h2>Versions and gates</h2><p class="lede" style="margin-top:6px">Each version ends at a gate. The next one starts only when the gate passes.</p></div>
+    <div class="gates" id="gates"></div>
+    <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
+    <div class="legend"><span class="st done">Built</span> in the code, with its tests passing <span class="st part">Partly</span> some of it built; the note says what's left <span class="st todo">Not yet</span> not started. Nothing has run on a Thor yet, so "Built" means built and tested on the PC, not proven on the device.</div>
+    <div class="cats" id="cats"></div>
+
+    <div id="compare"><h2>How other players compare</h2><p class="lede" style="margin-top:6px">Six Android players side by side with Exo Player, feature by feature. For Exo Player the cell says where the feature stands: built, the build stage it's in, or the version it's planned for. For the others it's what each app offers out of the box, from its published features; nothing here was tested side by side.</p></div>
+    <div class="cmp-key"><span><i class="c y">✓</i> Yes</span><span><i class="c p"><span class="half"></span></i> Partly</span><span><i class="c a">+</i> Through an add-on</span><span><i class="c n">—</i> No</span><span><i class="c ours">Built</i> Exo Player: done</span><span><i class="c plan">Stage 6</i> Exo Player: planned</span></div>
+    <div class="cmp-scroll"><table class="cmp" id="cmpTable"></table></div>
+    <div><h3 style="font-size:21px">The players</h3><p class="lede" style="margin-top:4px">What each one is, what it does better than us, and what we do that it doesn't.</p></div>
+    <div class="players" id="players"></div>
+    <div class="cmp-sum" id="cmpSum"></div>
+  </section>
+
+  <!-- ================= BUILD ================= -->
+  <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
+    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed. Every v1 feature is now built; the gates need the Thor. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
+    <div class="stages" id="stages"></div>
+    <div><h2>The real screens</h2><p class="lede" style="margin-top:6px">Top screen on the left, bottom screen on the right, as the app draws them. The ⏻ and ✎ corner buttons are drawn by the bottom window around these screens, so they don't appear here. <b>Compare with mockup</b> opens the same state on the Screens tab.</p></div>
+    <div class="shots" id="shots"></div>
+  </section>
+
+  <!-- ================= RULES ================= -->
+  <section class="view" id="rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
+    <div><h2>Display and layout rules</h2><p class="lede" style="margin-top:6px">On the left: limits that come from the hardware and research, which we can't change. On the right: draft rules for us to accept, change or drop, one by one.</p></div>
+    <div class="rules">
+      <div class="rlist" id="fixedRules"><h3>Fixed by the Thor</h3></div>
+      <div class="rlist" id="draftRules"><h3>Draft rules to decide</h3></div>
+    </div>
+    <div class="openq"><h3>Open layout questions</h3><ul id="openQs"></ul></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  // ---------- shared mock content ----------
+  function key(k) { return '<span class="key">' + k + '</span>'; }
+  function legend(items) { return '<div class="b-legend">' + items.map(function (i) { return '<span>' + key(i[0]) + i[1] + '</span>'; }).join('') + '</div>'; }
+
+  // mk(title, hue, progress %, meta line, plot, resume note, art key).
+  // Art: art-local/ holds posters you supplied for this private mockup (git-ignored); a missing file falls back to the colour.
+  function mk(t, h, p, m, d, r, a) { return { t: t, h: h, p: p, m: m || "", d: d || "", r: r, a: a, g: "linear-gradient(160deg,hsl(" + h + ",42%,58%),hsl(" + h + ",48%,26%) 48%,hsl(" + h + ",55%,6%))" }; }
+  function art(it) { return it.a ? "url(art-local/posters/" + it.a + ".jpg) center/cover no-repeat, " + it.g : it.g; }
+  function bdrop(a) { return "url(art-local/backdrops/" + a + ".jpg) center/cover no-repeat, #000"; }
+  function wide(a) { return "url(art-local/wide/" + a + ".jpg) center/cover no-repeat, #000"; }
+  function frame(a) { return "url(art-local/frames/" + a + ".jpg) center/cover no-repeat, #000"; }
+  var T = {
+    god:  mk("The Godfather", 30, 0, "1972 · 2 h 55 m · Crime, Drama", "The ageing head of a mafia family hands control of his empire to his reluctant youngest son.", 0, "god"),
+    par:  mk("Parasite", 140, 0, "2019 · 2 h 12 m · Thriller, Drama", "A poor family schemes its way into working for a wealthy household.", 0, "par"),
+    phm:  mk("Project Hail Mary", 200, 0, "2026 · Sci-fi, Adventure", "A science teacher wakes alone on a spaceship with no memory, on a mission to save Earth from a dimming sun.", 0, "phm"),
+    fc:   mk("Fight Club", 340, 0, "1999 · 2 h 19 m · Drama, Thriller", "An insomniac office worker and a soap maker start an underground fight club.", 0, "fc"),
+    tdk:  mk("The Dark Knight", 220, 0, "2008 · 2 h 32 m · Action, Crime", "Batman faces the Joker, a criminal who wants to plunge Gotham into anarchy.", 0, "tdk"),
+    lotr: mk("The Return of the King", 35, 0, "2003 · 3 h 21 m · Fantasy, Adventure", "Frodo and Sam near Mount Doom while Aragorn leads the last stand against Sauron.", 0, "lotr"),
+    pulp: mk("Pulp Fiction", 10, 0, "1994 · 2 h 34 m · Crime", "The lives of two hitmen, a boxer and a gangster's wife cross in Los Angeles.", 0, "pulp"),
+    int:  mk("Interstellar", 200, 0, "2014 · 2 h 49 m · Sci-fi, Drama", "Explorers travel through a wormhole looking for a new home for humanity.", 0, "int"),
+    house:mk("House", 210, 0, "2004–2012 · Series · Drama, Medical · 8 seasons · 177 episodes", "A brilliant, difficult doctor leads a team that takes on the cases no one else can solve.", 0, "house"),
+    bl:   mk("The Blacklist", 0, 0, "2013–2023 · Series · Crime, Thriller · 10 seasons · 218 episodes", "A wanted criminal surrenders to the FBI and offers to help catch the people on his list.", 0, "bl"),
+    bb:   mk("Breaking Bad", 95, 0, "2008–2013 · Series · Crime, Drama · 5 seasons · 62 episodes", "A high-school chemistry teacher with cancer starts making meth to secure his family's future.", 0, "bb"),
+    grey: mk("Grey's Anatomy", 250, 0, "2005– · Series · Medical drama · 21 seasons · 448 episodes", "The personal and working lives of surgeons at a Seattle hospital.", 0, "grey"),
+    dex:  mk("Dexter", 0, 0, "2006–2013 · Series · Crime, Drama · 8 seasons · 96 episodes", "A Miami police blood-spatter analyst lives a secret life hunting killers.", 0, "dex"),
+    mf:   mk("Modern Family", 45, 0, "2009–2020 · Series · Comedy · 11 seasons · 250 episodes", "Three branches of one big family get through everyday life in Los Angeles.", 0, "mf"),
+    rm:   mk("Rick and Morty", 170, 0, "2013– · Series · Animation, Sci-fi comedy · 8 seasons · 81 episodes", "A reckless scientist drags his grandson on dangerous trips across the multiverse.", 0, "rm"),
+    ment: mk("The Mentalist", 40, 0, "2008–2015 · Series · Crime, Drama · 7 seasons · 151 episodes", "A former fake psychic helps the California Bureau of Investigation solve murders.", 0, "ment"),
+    aot:  mk("Attack on Titan", 190, 0, "2013–2023 · Anime series · Action, Drama · 4 seasons · 89 episodes", "Humanity fights to survive behind walls against giant man-eating Titans.", 0, "aot"),
+    fri:  mk("Frieren", 120, 0, "2023 · Anime series · Fantasy, Adventure · 1 season · 28 episodes", "An elf mage who outlives her old party sets out to understand the humans she travelled with.", 0, "fri"),
+    op:   mk("One Piece", 30, 0, "1999– · Anime series · Adventure · 1,100+ episodes", "Luffy and his crew sail the Grand Line in search of the legendary treasure.", 0, "op"),
+    bc:   mk("Black Clover", 280, 0, "2017–2021 · Anime series · Fantasy, Action · 4 seasons · 170 episodes", "Asta, born without magic in a world where everyone has it, sets out to become the Wizard King.", 0, "bc"),
+    beb:  mk("Cowboy Bebop", 15, 0, "1998 · Anime series · Sci-fi, Noir · 26 episodes", "A crew of bounty hunters chases targets across the solar system in 2071.", 0, "beb"),
+    fma:  mk("Fullmetal Alchemist", 40, 0, "2003–2004 · Anime series · Fantasy, Adventure · 51 episodes", "Two brothers search for the Philosopher's Stone to restore their bodies after an alchemy ritual goes wrong.", 0, "fma"),
+    vio:  mk("Violet Evergarden", 205, 0, "2018 · Anime series · Drama, Fantasy · 13 episodes", "A former child soldier becomes a letter writer and learns what the words she was given mean.", 0, "vio"),
+    hxh:  mk("Hunter x Hunter", 25, 0, "2011–2014 · Anime series · Adventure, Action · 148 episodes", "Gon sets out to become a Hunter and find the father who left him.", 0, "hxh")
+  };
+  function prog(it, p, r) { return mk(it.t, it.h, p, it.m, it.d, r, it.a); }
+  var TABS = [
+    { n: "Continue watching", sub: "8 in progress", items: [prog(T.bb, 60, "S02E05 Breakage · 28 min left"), prog(T.fri, 20, "Episode 12 · 19 min left"), prog(T.int, 43, "1 h 36 m left"),
+      prog(T.bl, 35, "S03E10 · 27 min left"), prog(T.op, 70, "Episode 1050 · 7 min left"), prog(T.dex, 55, "S04E12 · 23 min left"), prog(T.phm, 15, "2 h 10 m left"), prog(T.rm, 80, "S05E03 · 4 min left")] },
+    { n: "Movies", sub: "8 movies", items: [T.god, T.par, T.phm, T.fc, T.tdk, T.lotr, T.pulp, T.int] },
+    { n: "Series", sub: "8 shows", items: [T.house, T.bl, T.bb, T.grey, T.dex, T.mf, T.rm, T.ment] },
+    { n: "Anime", sub: "8 shows", items: [T.aot, T.fri, T.op, T.bc, T.beb, T.fma, T.vio, T.hxh] },
+    { n: "Others", sub: "Nothing here yet", items: [] }
+  ];
+  // Movie screen state (mockup only)
+  var mv = { paused: true, sub: 0, delay: 0, off: false };
+  var SUBS = [{ label: "English · SRT ▾", on: true }, { label: "Off ▾", on: false }, { label: "None in file · Find subtitles", on: false, find: true }];
+  // Corner buttons on every video screen: ✎ Fix match and ⏻ bottom screen off/on. While off, only ⏻ shows.
+  function corner(off) {
+    var power = '<div data-act="power" title="Bottom screen off / on" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;cursor:pointer;font:700 3.6cqw/1 var(--f-body);border:.35cqw solid ' + (off ? '#1c1e22;color:#3a3d43' : 'var(--scr-line);color:var(--scr-mute)') + '">⏻</div>';
+    if (off) return power;
+    return '<div title="Fix match: pick the right title, or set the TMDB ID" style="position:absolute;right:12.6cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;font:700 3.4cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute)">✎</div>' + power;
+  }
+  function offScreen() { return '<div class="s-fill" style="background:#000"></div>' + corner(true); }
+
+  // ---------- one player screen for movies and episodes (D8, D13) ----------
+  // m: { frame, wide, poster, title, meta, desc, credit, pos, left, pct }
+  function playerTop(m) {
+    if (!mv.paused) return '<div class="s-fill" style="background:' + m.frame + '"></div>';
+    return '<div class="backdrop" style="background:' + m.wide + '"></div>' +
+      '<div class="s-fill" style="display:grid;grid-template-columns:' + (m.poster ? '20cqw ' : '') + '1fr;gap:4cqw;padding:5cqw">' +
+        (m.poster ? '<div class="poster" style="width:20cqw;align-self:center;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);background:' + m.poster + '"></div>' : '') +
+        '<div class="s-col" style="gap:1.3cqw;min-width:0;justify-content:center;max-width:52cqw">' +
+          '<div class="s-title" style="font-size:6cqw">' + m.title + '</div>' +
+          '<div class="s-mute" style="font-size:1.45cqw">' + m.meta + '</div>' +
+          '<div style="font-size:1.55cqw;line-height:1.4;color:#d6d8dc">' + m.desc + '</div>' +
+          (m.credit ? '<div class="s-mute" style="font-size:1.3cqw">' + m.credit + '</div>' : '') +
+        '</div>' +
+      '</div>';
+  }
+  function playerBottom(m) {
+    if (mv.off) return offScreen();
+    var sub = SUBS[mv.sub], d = mv.delay;
+    return '<div class="b-pad" style="gap:2.4cqw;bottom:13cqw">' +
+      '<div class="s-col" style="gap:1.2cqw"><div class="pbar" style="height:1cqw"><b style="width:' + m.pct + '%"></b></div>' +
+        '<div class="s-row" style="justify-content:space-between;font:600 2.6cqw/1 var(--f-mono)"><span>' + m.pos + '</span><span class="s-mute">' + m.left + '</span></div></div>' +
+      (m.ep ? '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw">' +
+        '<div class="b-btn" data-act="prev" title="Previous episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.first ? ';opacity:.35' : '') + '">‹ Prev</div>' : '') +
+      '<div class="b-btn pri focus" data-act="toggle" style="cursor:pointer"><span>' + (mv.paused ? '▶  Resume' : '❚❚  Pause') + '</span>' + key("A") + '</div>' +
+      (m.ep ? '<div class="b-btn" data-act="next" title="Next episode" style="cursor:pointer;justify-content:center;min-width:12cqw' + (m.ep.last ? ';opacity:.35' : '') + '">Next ›</div></div>' : '') +
+      '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center">' +
+        '<div class="b-btn" style="justify-content:center;min-width:10cqw">−</div>' +
+        '<div class="s-col" style="gap:1cqw"><div class="s-row" style="justify-content:space-between"><span class="b-tiny">Volume</span><span style="font:700 2.6cqw/1 var(--f-mono)">65 %</span></div>' +
+          '<div class="pbar" style="height:1.2cqw;position:relative"><b style="width:52%"></b><i style="position:absolute;left:80%;top:0;bottom:0;width:.4cqw;background:var(--scr-ink)"></i></div></div>' +
+        '<div class="b-btn" style="justify-content:center;min-width:10cqw">+</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
+        '<div class="b-btn"><span>Play from start</span></div>' +
+        '<div class="b-btn"><span>Mark watched</span>' + key("Y") + '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2cqw">' +
+        '<div class="b-btn" style="flex-direction:column;align-items:flex-start;gap:1cqw"><span class="b-tiny">Audio</span><span>English · 5.1</span></div>' +
+        '<div class="b-btn" data-act="sub" style="flex-direction:column;align-items:flex-start;gap:1cqw;cursor:pointer' + (sub.find ? ';border-color:var(--scr-acc)' : '') + '"><span class="b-tiny">Subtitles</span><span>' + sub.label + '</span></div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:auto 1fr auto;gap:2cqw;align-items:center' + (sub.on ? '' : ';opacity:.35') + '">' +
+        '<div class="b-btn" data-act="dminus" style="cursor:pointer;justify-content:center;min-width:16cqw">− 50 ms</div>' +
+        '<div style="text-align:center"><div class="b-tiny">Subtitle timing</div><div style="font:700 3.4cqw/1.3 var(--f-mono)">' + (d > 0 ? "+" : "") + d + ' ms</div></div>' +
+        '<div class="b-btn" data-act="dplus" style="cursor:pointer;justify-content:center;min-width:16cqw">+ 50 ms</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["B", "Back"]]) + '</div>' + corner(false) +
+    '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
+  }
+  var MOVIE = { frame: frame("int"), wide: wide("int"), poster: art(T.int), title: "Interstellar", meta: "2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7",
+    desc: "Explorers travel through a wormhole looking for a new home for humanity.", credit: "Directed by Christopher Nolan · Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+    pos: "1:12:04", left: "−1:36:56", pct: 43 };
+  // Opening any movie from Browsing fills this screen with that title.
+  function movieFrom(it) { return { frame: it.a === "int" ? frame("int") : wide(it.a), wide: wide(it.a), poster: art(it), title: it.t, meta: it.m, desc: it.d, credit: "",
+    pos: it.p ? "0:48:10" : "0:00:00", left: it.p ? "−1:12:30" : "", pct: it.p || 0 }; }
+
+  // ---------- Series and anime: seasons and episodes (stand-in art: crops of the show's art; the app uses TMDB season posters and episode stills) ----------
+  // Breaking Bad has real season and episode titles; other shows get generated seasons from their episode counts.
+  var BB_SEASONS = [
+    { n: 1, y: "2008", eps: 7,  hue: 0,   d: "Walter White, newly diagnosed with cancer, starts cooking meth with his former student Jesse Pinkman." },
+    { n: 2, y: "2009", eps: 13, hue: 30,  d: "Walt and Jesse try to build a business of their own while Walt's lies at home get harder to keep." },
+    { n: 3, y: "2010", eps: 13, hue: 160, d: "Walt goes to work for Gus Fring as cartel cousins arrive in Albuquerque looking for revenge." },
+    { n: 4, y: "2011", eps: 13, hue: 200, d: "Trapped in Gus's superlab, Walt looks for a way out before Gus decides he no longer needs him." },
+    { n: 5, y: "2012–2013", eps: 16, hue: 300, d: "Walt builds an empire of his own while Hank closes in on the truth." }
+  ];
+  var S2EPS = [
+    ["Seven Thirty-Seven", "Walt and Jesse realise how dangerous Tuco is and look for a way out.", "w"],
+    ["Grilled", "Tuco holds Walt and Jesse at a remote desert house as Hank closes in.", "w"],
+    ["Bit by a Dead Bee", "Walt and Jesse make up stories to explain where they have been.", "w"],
+    ["Down", "Walt's family keeps its distance, and Jesse loses his home.", "w"],
+    ["Breakage", "Walt and Jesse set up their own distribution, and Jesse hires dealers.", 60],
+    ["Peekaboo", "Jesse goes to collect a debt and finds more than he expected.", 0],
+    ["Negro y Azul", "Rumours about Jesse spread, and Hank struggles with a new post in El Paso.", "m"],
+    ["Better Call Saul", "When Badger is arrested, Walt and Jesse hire a shady lawyer, Saul Goodman.", 0],
+    ["4 Days Out", "Walt and Jesse take the RV into the desert for a long cook that goes wrong.", 0],
+    ["Over", "Walt throws a party to celebrate good news about his health.", 0],
+    ["Mandala", "Saul introduces Walt to a careful new distributor.", 0],
+    ["Phoenix", "Walt misses an important family moment while he finishes a deal.", 0],
+    ["ABQ", "Walt faces the fallout as disaster strikes over Albuquerque.", 0]
+  ];
+  var SHOW = T.bb, SEASONS = BB_SEASONS, PROG = { si: 1, ei: 4, pct: 60, left: "28 min left" };
+  // Opens a show: Breaking Bad's real data, or seasons built from "N seasons · M episodes" in its details.
+  function openShow(it) {
+    SHOW = it;
+    var r = it.r || "", m;
+    if (it.a === "bb") { SEASONS = BB_SEASONS; PROG = { si: 1, ei: 4, pct: 60, left: "28 min left" }; return; }
+    var ns = +((it.m.match(/(\d+) seasons?/) || [])[1] || 1), total = +(((it.m.match(/([\d,]+)\+? episodes/) || [])[1] || "12").replace(/,/g, ""));
+    var per = Math.ceil(total / ns), year = it.m.split(" · ")[0];
+    SEASONS = [];
+    for (var k = 0; k < ns; k++) SEASONS.push({ n: k + 1, y: year, eps: k === ns - 1 ? total - per * (ns - 1) : per, hue: k * 55, d: "Season summary comes from TMDB." });
+    PROG = null;
+    if ((m = r.match(/S(\d+)E(\d+)/))) PROG = { si: +m[1] - 1, ei: +m[2] - 1 };
+    else if ((m = r.match(/(?:Episode|Session) (\d+)/))) PROG = { si: 0, ei: +m[1] - 1 };
+    if (PROG) { PROG.pct = it.p; PROG.left = r.split(" · ").pop(); }
+  }
+  function episodes(si) {
+    var S0 = SEASONS[si], list = [];
+    for (var i = 0; i < S0.eps; i++) {
+      var e;
+      if (SEASONS === BB_SEASONS) e = si === 1 ? S2EPS[i] : ["Episode " + (i + 1), "Episode summary comes from TMDB.", si === 0 ? "w" : 0];
+      else e = ["Episode " + (i + 1), "Episode summary comes from TMDB.", !PROG ? 0 : si < PROG.si || (si === PROG.si && i < PROG.ei) ? "w" : (si === PROG.si && i === PROG.ei ? PROG.pct : 0)];
+      list.push({ n: i + 1, t: e[0], d: e[1], st: e[2] });
+    }
+    return list;
+  }
+  function epLen() { return /Anime/.test(SHOW.m) ? "24 min" : "47 min"; }
+  function epLabel(si, n) { return (SEASONS.length > 1 ? "Season " + SEASONS[si].n + ", " : "") + "Episode " + n; }
+  function seasonArt(si) { return 'background:' + art(SHOW) + ';filter:hue-rotate(' + SEASONS[si].hue + 'deg) saturate(1.1)'; }
+  function stillArt(si, i) { return 'background:url(art-local/wide/' + SHOW.a + '.jpg) ' + ((i * 37) % 100) + '% ' + ((i * 53) % 100) + '%/165% auto no-repeat, #111;filter:hue-rotate(' + SEASONS[si].hue + 'deg)'; }
+  var sv = { lvl: "seasons", sf: -1, season: 1, ef: -1 };
+
+  function detailText(title, meta, desc, extra) {
+    return '<div class="s-fill" style="background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.82) 30%,rgba(0,0,0,.4) 50%,rgba(0,0,0,0) 72%)"></div>' +
+      '<div style="position:absolute;left:5cqw;top:0;bottom:0;width:40cqw;display:flex;flex-direction:column;justify-content:center;gap:1.4cqw;text-shadow:0 .15cqw .6cqw rgba(0,0,0,.8)">' +
+        '<div class="s-title" style="font-size:6cqw">' + title + '</div>' +
+        '<div class="s-mute" style="font-size:1.6cqw">' + meta + '</div>' +
+        '<div style="font-size:1.6cqw;line-height:1.45;color:#d6d8dc">' + desc + '</div>' + (extra || '') +
+      '</div>';
+  }
+  function seriesTop() {
+    if (sv.lvl === "seasons" && sv.sf < 0) {
+      var nx = PROG ? '<div style="font-size:1.4cqw">Next up: <b>' + (SEASONS.length > 1 ? "S" + SEASONS[PROG.si].n + " · " : "") + "E" + (PROG.ei + 1) + " " + episodes(PROG.si)[PROG.ei].t + '</b>, ' + PROG.left + '</div>' : '';
+      return '<div class="s-fill" style="background:' + wide(SHOW.a) + '"></div>' + detailText(SHOW.t, SHOW.m, SHOW.d, nx);
+    }
+    if (sv.lvl === "seasons" || sv.ef < 0) {
+      var si = sv.lvl === "seasons" ? sv.sf : sv.season, S0 = SEASONS[si];
+      return '<div class="s-fill" style="background:' + wide(SHOW.a) + ';filter:hue-rotate(' + S0.hue + 'deg)"></div>' +
+        '<div style="position:absolute;right:5cqw;top:5cqw;bottom:5cqw;aspect-ratio:2/3;border-radius:.8cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.6);' + seasonArt(si) + '"></div>' +
+        detailText(SEASONS.length > 1 ? "Season " + S0.n : SHOW.t, SHOW.t + " · " + S0.y + " · " + S0.eps + " episodes", SEASONS.length > 1 ? S0.d : SHOW.d);
+    }
+    var e = episodes(sv.season)[sv.ef];
+    return '<div class="s-fill" style="' + stillArt(sv.season, sv.ef) + '"></div>' +
+      detailText(e.t, epLabel(sv.season, e.n) + " · " + epLen(), e.d,
+        typeof e.st === "number" && e.st ? '<div class="s-row" style="gap:1.2cqw;font-size:1.4cqw"><div class="pbar" style="width:16cqw;height:.55cqw"><b style="width:' + e.st + '%"></b></div><span>' + (PROG ? PROG.left : '') + '</span></div>' : (e.st === "m" ? '<div class="s-mute" style="font-size:1.4cqw">Not on the SD card</div>' : ''));
+  }
+  function scrollGrid(cards, cols, rowH, focus) {
+    var row = focus < 0 ? 0 : Math.floor(focus / cols), shift = Math.max(0, row - 1) * rowH;
+    return '<div style="position:absolute;left:0;right:0;top:12cqw;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 88%,transparent);mask-image:linear-gradient(180deg,#000 88%,transparent)">' +
+      '<div style="position:absolute;left:5cqw;right:5cqw;top:1.4cqw;display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:2.2cqw;transform:translateY(' + (-shift) + 'cqw)">' + cards + '</div></div>';
+  }
+  function seriesBottom() {
+    var head = '<div style="position:absolute;left:5cqw;right:5cqw;top:4.5cqw;display:flex;align-items:center;justify-content:space-between">' +
+      '<div class="b-h">' + (sv.lvl === "seasons" || SEASONS.length === 1 ? SHOW.t : "Season " + SEASONS[sv.season].n) + '</div>' +
+      '<div class="b-legend" style="margin:0">' + (sv.lvl === "seasons" ? '<span>' + key("A") + 'Open</span>' : '<span>' + key("A") + 'Play</span>') + '<span>' + key("B") + 'Back</span></div></div>';
+    if (sv.lvl === "seasons") {
+      var cards = SEASONS.map(function (S0, i) {
+        return '<div data-sc="' + i + '" style="cursor:pointer;position:relative;aspect-ratio:2/3;border-radius:1.2cqw;overflow:hidden' + (i === sv.sf ? ';outline:.7cqw solid var(--scr-acc);outline-offset:.6cqw' : '') + '">' +
+          '<div style="position:absolute;inset:0;' + seasonArt(i) + '"></div>' +
+          '<div style="position:absolute;left:0;right:0;bottom:0;padding:5cqw 1.6cqw 1.4cqw;background:linear-gradient(0deg,rgba(0,0,0,.9),rgba(0,0,0,0))"><div style="font:700 2.8cqw/1.1 var(--f-display);font-stretch:85%">Season ' + S0.n + '</div><div style="font:600 2cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + S0.eps + ' episodes</div></div></div>';
+      }).join('');
+      return head + scrollGrid(cards, 4, 19.6 * 1.5 + 2.2, sv.sf);
+    }
+    var eps = episodes(sv.season);
+    var cards = eps.map(function (e, i) {
+      var miss = e.st === "m";
+      return '<div data-ec="' + i + '" style="cursor:pointer;' + (miss ? 'opacity:.4' : '') + '">' +
+        '<div style="position:relative;aspect-ratio:16/9;border-radius:1.2cqw;overflow:hidden' + (i === sv.ef ? ';outline:.7cqw solid var(--scr-acc);outline-offset:.6cqw' : '') + '">' +
+          '<div style="position:absolute;inset:0;' + stillArt(sv.season, i) + '"></div>' +
+          '<span style="position:absolute;left:1.2cqw;top:1.2cqw;font:700 2.2cqw/1 var(--f-mono);background:rgba(0,0,0,.65);padding:.8cqw 1.2cqw;border-radius:.8cqw">' + e.n + '</span>' +
+          (e.st === "w" ? '<span style="position:absolute;right:1.2cqw;top:1.2cqw;font:700 2.2cqw/1 var(--f-body);background:var(--scr-acc);color:#1a1204;padding:.8cqw 1.2cqw;border-radius:.8cqw">✓</span>' : '') +
+          (typeof e.st === "number" && e.st ? '<div class="pbar" style="position:absolute;left:1.2cqw;right:1.2cqw;bottom:1cqw;height:.8cqw"><b style="width:' + e.st + '%"></b></div>' : '') +
+        '</div>' +
+        '<div style="font:700 2.3cqw/1.25 var(--f-body);margin-top:1cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + e.t + '</div>' +
+        '<div style="font:600 1.9cqw/1.3 var(--f-mono);color:var(--scr-mute)">' + (miss ? "Not on card" : epLen()) + '</div></div>';
+    }).join('');
+    return head + scrollGrid(cards, 3, 28.5 * 9 / 16 + 8 + 2.2, sv.ef);
+  }
+  var EPISODE = null;
+  function episodePlayer(si, i) {
+    var e = episodes(si)[i];
+    return { frame: SHOW.a === "bb" && i === 4 && si === 1 ? frame("bb") : wide(SHOW.a), wide: wide(SHOW.a), poster: "", title: e.t,
+      meta: SHOW.t + " · " + epLabel(si, e.n) + " · " + epLen(), desc: e.d, credit: "",
+      pos: typeof e.st === "number" && e.st ? "18:42" : "0:00", left: typeof e.st === "number" && e.st ? "−" + (PROG && PROG.left ? PROG.left.replace(" left", "") : "28:28") : "−47:00", pct: typeof e.st === "number" ? e.st : 0,
+      ep: { si: si, i: i, first: i === 0, last: i === episodes(si).length - 1 } };
+  }
+  EPISODE = episodePlayer(1, 4);
+  var browseTab = 0, focusIdx = -1; // -1: nothing focused yet, so the top screen shows the poster mix
+  var COLS = 4;
+
+  // Bottom screen: cards for every title in the tab, 4 across, scrolling so the focused row stays in view.
+  function browseCards() {
+    var items = TABS[browseTab].items, row = focusIdx < 0 ? 0 : Math.floor(focusIdx / COLS);
+    if (!items.length) return '<div style="position:absolute;left:5cqw;right:5cqw;top:15cqw;bottom:5cqw;display:grid;place-items:center;text-align:center;font-size:3.2cqw;line-height:1.4;color:var(--scr-mute)">Nothing in Others yet.</div>';
+    var cardW = 19.6, gap = 2.2, rowH = cardW * 1.5 + gap, shift = Math.max(0, row - 1) * rowH;
+    var cards = items.map(function (it, i) {
+      return '<div class="poster' + (i === focusIdx ? ' sel' : '') + '" data-card="' + i + '" style="width:auto;border-radius:1.2cqw;padding:1.4cqw;cursor:pointer;background:' + art(it) + (i === focusIdx ? ';outline-width:.7cqw;outline-offset:.6cqw' : '') + '">' +
+        (it.a ? '' : '<span style="font-size:2.2cqw">' + it.t + '</span>') +
+        (it.p ? '<div class="pbar" style="position:absolute;left:1.4cqw;right:1.4cqw;bottom:1cqw;height:.8cqw"><b style="width:' + it.p + '%"></b></div>' : '') + '</div>';
+    }).join('');
+    return '<div style="position:absolute;left:0;right:0;top:15cqw;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 88%,transparent);mask-image:linear-gradient(180deg,#000 88%,transparent)">' +
+      '<div style="position:absolute;left:5cqw;right:5cqw;top:1.4cqw;display:grid;grid-template-columns:repeat(' + COLS + ',1fr);gap:' + gap + 'cqw;transform:translateY(' + (-shift) + 'cqw)">' + cards + '</div>' +
+    '</div>';
+  }
+
+  // Top screen once you move through the cards: the focused title's poster, details and plot.
+  // Top screen for the focused title: key art filling the screen, title, year and plot over it on the left.
+  // Art: a 16:9 crop of the poster for now; real backdrops (TMDB) would fit the screen better still.
+  function browseDetail() {
+    var it = TABS[browseTab].items[focusIdx], h = it.h, m = it.m.split(" · ");
+    var ground = it.a ? wide(it.a) : 'radial-gradient(110% 90% at 72% 35%,hsl(' + h + ',45%,52%) 0%,hsl(' + h + ',50%,24%) 38%,hsl(' + h + ',55%,8%) 70%,#000 100%)';
+    return '<div class="s-fill" style="background:' + ground + '"></div>' +
+      '<div class="s-fill" style="background:linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.82) 30%,rgba(0,0,0,.4) 50%,rgba(0,0,0,0) 72%),linear-gradient(0deg,rgba(0,0,0,.55),rgba(0,0,0,0) 40%)"></div>' +
+      '<div style="position:absolute;left:5cqw;top:0;bottom:0;width:40cqw;display:flex;flex-direction:column;justify-content:center;gap:1.4cqw;text-shadow:0 .15cqw .6cqw rgba(0,0,0,.8)">' +
+        '<div class="s-title" style="font-size:6.4cqw;text-shadow:0 .3cqw 1.5cqw rgba(0,0,0,.6)">' + it.t + '</div>' +
+        '<div style="font-size:1.6cqw"><b style="font-size:2.2cqw">' + m[0] + '</b>' + m.slice(1).map(function (x) { return '<span class="s-mute"> · </span><span class="s-mute" style="white-space:nowrap">' + x + '</span>'; }).join('') + '</div>' +
+        '<div style="font-size:1.6cqw;line-height:1.45;color:#d6d8dc">' + it.d + '</div>' +
+        (it.r ? '<div class="s-row" style="gap:1.2cqw;margin-top:.4cqw;font-size:1.4cqw"><div class="pbar" style="width:16cqw;height:.55cqw"><b style="width:' + it.p + '%"></b></div><span>' + it.r + '</span></div>' : '') +
+      '</div>';
+  }
+
+  // ---------- states ----------
+  var S = [
+    {
+      id: "browse", label: "Browsing",
+      top: function () {
+        // Display only: a poster mix of everything in the current tab. No focus, no selection, no touch.
+        if (focusIdx >= 0) return browseDetail();
+        var t = TABS[browseTab], n = t.items.length, rows = "";
+        if (!n) return '<div class="s-fill" style="background:radial-gradient(90% 80% at 50% 40%,#16181c,#000 70%)"></div>' +
+          '<div style="position:absolute;left:4.5cqw;bottom:4cqw" class="s-col"><div class="s-eyebrow">' + t.sub + '</div><div class="s-title" style="font-size:6cqw;margin-top:.6cqw">' + t.n + '</div>' +
+          '<div class="s-mute" style="font-size:1.6cqw;margin-top:1cqw;max-width:50cqw">Videos that aren\'t films, series or anime land here: concerts, home videos, clips.</div></div>';
+        for (var r = 0; r < 3; r++) {
+          var tiles = "";
+          for (var c = 0; c < 9; c++) {
+            var it = t.items[(c + r * 3) % n];
+            tiles += '<div class="poster" style="width:12.5cqw;border-radius:.3cqw;background:' + art(it) + '">' + (it.a ? '' : '<span>' + it.t + '</span>') +
+              (it.p ? '<div class="pbar" style="position:absolute;left:.7cqw;right:.7cqw;bottom:.5cqw;height:.4cqw"><b style="width:' + it.p + '%"></b></div>' : '') + '</div>';
+          }
+          rows += '<div class="s-row" style="gap:.35cqw;flex:none;transform:translateX(' + (r === 1 ? -6.4 : -.6) + 'cqw)">' + tiles + '</div>';
+        }
+        return '<div class="s-fill s-col" style="gap:.35cqw;overflow:hidden">' + rows + '</div>' +
+          '<div class="s-fill" style="background:linear-gradient(0deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.55) 34%,rgba(0,0,0,.12) 70%,rgba(0,0,0,.3) 100%)"></div>' +
+          '<div style="position:absolute;left:4.5cqw;bottom:4cqw" class="s-col">' +
+            '<div class="s-eyebrow">' + t.sub + '</div>' +
+            '<div class="s-title" style="font-size:6cqw;margin-top:.6cqw">' + t.n + '</div>' +
+          '</div>';
+      },
+      bottom: function () {
+        // One line that runs past both edges; the selected tab sits in the centre and the ring repeats on each side.
+        var n = TABS.length, strip = "";
+        for (var o = -n; o <= n; o++) {
+          var i = ((browseTab + o) % n + n) % n;
+          strip += '<span class="b-chip' + (o === 0 ? ' on' : '') + '" data-tab="' + i + '"' + (o === 0 ? ' data-center="1"' : '') + ' style="cursor:pointer;flex:none;white-space:nowrap">' + TABS[i].n + '</span>';
+        }
+        return '<div style="position:absolute;left:0;right:0;top:4.5cqw;height:9cqw;overflow:hidden">' +
+            '<div class="tabstrip" style="position:absolute;top:0;left:0;display:flex;gap:1.6cqw;white-space:nowrap">' + strip + '</div>' +
+            '<div style="position:absolute;inset:0 auto 0 0;width:13cqw;background:linear-gradient(90deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
+            '<div style="position:absolute;inset:0 0 0 auto;width:13cqw;background:linear-gradient(270deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
+          '</div>' +
+          browseCards() +
+          // ⟳ Fetch info for this tab: the only way Browsing goes online (D32, D36)
+          '<div title="Fetch info for this tab: artwork, plots and episode lists (goes online)" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;background:#000;font:700 3.8cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute);box-shadow:0 0 0 1.2cqw rgba(0,0,0,.7)">⟳</div>';
+      },
+      notes: {
+        what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Try it: L2 / R2 or a tap switches tabs; the arrow keys, the D-pad on the drawing or a tap on a card moves through the cards; B or Esc leaves them.",
+        top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "On a new tab: a poster mix of everything in it, with the tab's name and size <b>(decided)</b>", "Once you move through the cards: the focused title's poster, details and plot; for Continue watching, where you stopped <b>(decided)</b>"],
+        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>", "⟳ in the bottom-right corner: Fetch info for this tab (artwork, plots, episode lists). The only way Browsing goes online <b>(decided)</b>"],
+        q: ["Card shape: tall posters (shown) or square cards like the Thor's own launcher? How many across?", "Should the cards show the title under the art, or art only?", "When you switch tabs, does each tab remember the card you were on?","How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
+      }
+    },
+    {
+      id: "movie", label: "Movie",
+      top: function () { return playerTop(MOVIE); },
+      bottom: function () { return playerBottom(MOVIE); },
+      notes: {
+        what: "Opening a movie plays it straight away, from where you stopped. This one screen is both playing and paused; tap Pause / Resume on the bottom screen to see both top screens. Tap Subtitles to cycle its states, the timing buttons to shift subtitles, and ⏻ to turn the bottom screen off and on.",
+        top: ["Playing: the film only <b>(decided)</b>", "Paused: the title's art and details, like Browsing; never a progress bar or anything else over the picture <b>(decided)</b>"],
+        bottom: ["Progress bar with time played and time left, above Resume <b>(decided)</b>", "Resume / Pause, then Play from start and Mark watched in the same style <b>(decided)</b>", "Subtitles: choose a track; if the file has none, Find subtitles fetches them from OpenSubtitles (v1) <b>(decided)</b>", "Subtitle timing right under it: −50 ms / +50 ms <b>(decided)</b>", "A small ⏻ button in the bottom-right corner turns this screen off; it stays visible while the screen is off, and only ⏻ turns it back on <b>(decided)</b>", "With the bottom screen off, the top screen stays clean: the film only, nothing over it; A, L2 and R2 still work, and pausing shows the title's art as usual. Same for movies and episodes <b>(decided)</b>", "Fix match is a small ✎ button next to ⏻, not a full-width field; it hides while the screen is off <b>(decided)</b>"],
+        q: []
+      }
+    },
+    {
+      id: "series", label: "Series",
+      top: function () { return seriesTop(); },
+      bottom: function () { return seriesBottom(); },
+      notes: {
+        what: "Opening any series or anime from Browsing (tap a card twice, or Enter / A). Breaking Bad has real season and episode titles; the others get seasons built from their episode counts. Tap a season card to focus it, again or A to open it; tap an episode to see it on top, again or A to play it. B or Esc goes back one step. Cowboy Bebop, Frieren and other one-season shows open straight on their episodes.",
+        top: ["First: the series' art and details <b>(decided)</b>", "Season card focused or opened: that season's art and description <b>(decided)</b>", "Episode card focused: that episode's still and description <b>(decided)</b>"],
+        bottom: ["Season cards with each season's artwork, like the series cards in Browsing <b>(decided)</b>", "Opening a season shows its episodes as cards; watched ones ticked, the current one with a progress bar, missing ones greyed <b>(decided)</b>", "Opening an episode plays it on the same screen as movies <b>(decided)</b>", "Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment <b>(decided)</b>", "Episode cards 3 across <b>(decided)</b>", "A show with one season skips the season cards and opens on its episodes <b>(decided)</b>"],
+        q: ["Opening a show from the Series or Anime tab (not Continue watching): series details first, as now?"]
+      }
+    },
+    {
+      id: "play", label: "Episode playing",
+      top: function () { return playerTop(EPISODE); },
+      bottom: function () { return playerBottom(EPISODE); },
+      notes: {
+        what: "An episode playing: exactly the same screen as a movie. Tap Pause / Resume to see the paused top screen with the episode's art and description.",
+        top: ["Playing: the episode only; paused: its art and description <b>(decided)</b>"],
+        bottom: ["Same layout as the Movie screen: progress, Resume / Pause, Play from start, Mark watched, Audio, Subtitles, timing, ✎ and ⏻ <b>(decided)</b>", "Plus ‹ Prev and Next › episode buttons on either side of Resume; no L1 / R1 for this <b>(decided)</b>", "Continuing a series (from Continue watching) lands here directly; B goes to that season's episode cards <b>(decided)</b>", "Redraws once a second; dims after 10 s untouched"],
+        dim: true,
+        q: ["How dark is \"dimmed\": a black layer at 80%, or the panel almost off?"]
+      }
+    },
+    {
+      id: "ending", label: "Episode ending",
+      top: function () {
+        var c = ["Created by", "Vince Gilligan", "", "Starring", "Bryan Cranston", "Aaron Paul", "", "Music by", "Dave Porter"];
+        return '<div class="s-fill" style="background:#000"></div>' +
+          '<div class="s-fill s-col" style="align-items:center;justify-content:center;gap:.5cqw;font-size:1.6cqw;color:#cfd2d6">' +
+            c.map(function (l) { return l ? '<div style="' + (/by|Starring/.test(l) ? 'color:#7d828a;font-size:1.2cqw;letter-spacing:.1em;text-transform:uppercase' : '') + '">' + l + '</div>' : '<div style="height:1.4cqw"></div>'; }).join('') +
+          '</div>';
+      },
+      bottom: function () {
+        if (mv.off) return offScreen();
+        return '<div class="b-pad">' +
+          '<div class="b-tiny">Up next</div>' +
+          '<div class="s-row" style="gap:3cqw;align-items:stretch">' +
+            '<div style="width:42cqw;aspect-ratio:16/9;border-radius:2cqw;background:' + frame("bb") + '"></div>' +
+            '<div class="s-col" style="gap:1.2cqw;justify-content:center"><div class="b-tiny" style="color:var(--scr-acc)">S02E06 · 47 min</div><div class="b-h">Peekaboo</div><div class="b-small s-mute">Jesse goes to collect a debt and finds more than he expected.</div></div>' +
+          '</div>' +
+          '<div class="s-row" style="gap:3cqw">' +
+            '<svg viewBox="0 0 40 40" style="width:12cqw;flex:none" aria-label="7 seconds left"><circle cx="20" cy="20" r="17" fill="none" stroke="#24272c" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#f2b33d" stroke-width="4" stroke-dasharray="74.8 106.8" transform="rotate(-90 20 20)" stroke-linecap="round"/><text x="20" y="25" text-anchor="middle" fill="#f1f2f4" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600">7</text></svg>' +
+            '<div class="b-btn pri" style="flex:1"><span>Play now</span>' + key("A") + '</div>' +
+            '<div class="b-btn" style="flex:1"><span>Cancel</span>' + key("B") + '</div>' +
+          '</div>' +
+        '</div>' + corner(false);
+      },
+      notes: {
+        what: "The credits have started. The film keeps playing on top while the bottom screen counts down to the next episode.",
+        top: ["Credits keep playing untouched <b>(decided)</b>"],
+        bottom: ["Up next card: still, title, length, one-line plot <b>(decided)</b>", "10 s countdown; Play now (A) or Cancel (B) <b>(decided)</b>", "Corner buttons: ✎ Fix match and ⏻ <b>(decided)</b>"],
+        ctrl: "A plays now. B cancels and lets the credits run. One button either way.",
+        q: ["When does the countdown start: at the credits marker, or 30 s before the end?", "After Cancel, what happens when the episode ends: back to the episode list?"]
+      }
+    },
+    {
+      id: "single", label: "No bottom screen",
+      top: function () {
+        return '<div class="s-fill" style="background:' + frame("int") + '"></div>' +
+          '<div class="s-fill" style="background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 62%,rgba(0,0,0,.85))"></div>' +
+          '<div style="position:absolute;left:4cqw;top:3cqw;font-size:1.5cqw"><span class="s-mute">Movie</span> <b>Interstellar</b></div>' +
+          '<div style="position:absolute;right:4cqw;top:3cqw;font:600 1.2cqw/1 var(--f-mono);color:var(--scr-mute)">X Tracks · B Back</div>' +
+          '<div style="position:absolute;left:4cqw;right:4cqw;bottom:3.4cqw" class="s-col">' +
+            '<div class="pbar" style="height:.55cqw"><b style="width:43%"></b></div>' +
+            '<div class="s-row" style="justify-content:space-between;margin-top:1cqw;font:600 1.3cqw/1 var(--f-mono)"><span>1:12:04</span>' +
+              '<span class="s-row" style="gap:3cqw;font-size:2cqw;color:#fff">⟲10 &nbsp; ❚❚ &nbsp; 10⟳ &nbsp; ›</span><span class="s-mute">−1:36:56</span></div>' +
+          '</div>';
+      },
+      bottom: function () {
+        return '<div class="s-fill" style="background:repeating-linear-gradient(45deg,#08090a 0 2cqw,#0c0d0f 2cqw 4cqw);display:grid;place-items:center;text-align:center;font:600 2.6cqw/1.4 var(--f-mono);color:#3a3d43">No bottom display<br>(phone, or the panel is missing)</div>';
+      },
+      notes: {
+        what: "Only when there is no bottom screen at all: a phone, a ROM where the second display doesn't show up, or the panel is missing. Then the controls have nowhere else to go, so they appear over the video like any phone player. Turning the bottom screen off with ⏻ is different: the top screen stays clean (see Movie and Episode playing).",
+        top: ["Controls fade in over the video on any button and fade out after 3 s", "Menus and episode list open as a side sheet over the video"],
+        bottom: ["There is no bottom screen in this case", "The app switches here automatically when the second display is missing, and back when it appears", "Menus (subtitles, audio, episodes) slide in as a panel from the right <b>(decided)</b>", "Docked to a TV (v2): this layout plays on the TV and the Thor's bottom screen turns off; a setting keeps controls on the bottom screen instead <b>(decided)</b>"],
+        q: []
+      }
+    }
+  ];
+
+  // ---------- button maps (proposed; Nintendo face layout: A right, B bottom) ----------
+  var NAMES = { DPAD: "D-pad", L3: "Left stick", R3: "Right stick", SELECT: "Select", START: "Start", HOME: "Home", BACK: "Back", AYN: "AYN" };
+  var COMMON = { HOME: "Android home (system, not ours)", AYN: "AYN menu; hold = AYN's bottom-off (system, not ours)", BACK: "Same as B" };
+  var KEYS = {
+    browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)", DPAD: "Move through the cards; the top screen shows the focused title (decided)", L3: "Same as D-pad (proposed)", A: "Open the focused title; a movie starts playing straight away, from where you stopped (decided)", B: "Leave the cards; the top screen goes back to the poster mix (decided)" },
+    movie:  { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to browsing", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Subtitles 50 ms earlier (proposed)", R1: "Subtitles 50 ms later (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
+    series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)" },
+    play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to this season's episode cards (decided)", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, aspect, audio delay)" },
+    ending: { A: "Play next episode now (decided)", B: "Cancel the countdown and keep watching the credits (decided)", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
+    single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
+  };
+  var LABEL = { DPAD: "✛ D-pad", L3: "L3 stick", R3: "R3 stick", SELECT: "▢ Select", START: "▷ Start", HOME: "⌂ Home", BACK: "↺ Back" };
+  var ORDER = ["A", "B", "X", "Y", "DPAD", "L3", "R3", "L1", "R1", "L2", "R2", "SELECT", "START", "BACK", "HOME", "AYN"];
+  function keymap(id) {
+    var k = KEYS[id] || {};
+    var rows = ORDER.filter(function (c) { return k[c] || COMMON[c]; }).map(function (c) {
+      var sys = !k[c];
+      return '<tr' + (sys ? ' class="sys"' : '') + '><td><span class="kc">' + (LABEL[c] || c) + '</span></td><td>' + (k[c] || COMMON[c]) + '</td></tr>';
+    });
+    return '<table class="keymap">' + rows.join('') + '</table>';
+  }
+  function lightKeys(id) {
+    var k = KEYS[id] || {};
+    Array.prototype.forEach.call(document.querySelectorAll(".thor .ctl"), function (el) {
+      var c = el.getAttribute("data-k"), on = !!k[c];
+      el.classList.toggle("on", on);
+      el.setAttribute("title", (NAMES[c] || c) + ": " + (k[c] || COMMON[c] || "Not used here"));
+    });
+  }
+
+  var top = document.getElementById("topScreen"), bottom = document.getElementById("bottomScreen"), notes = document.getElementById("notes"), picker = document.getElementById("statePicker");
+
+  function li(a) { return '<ul>' + a.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; }
+  function show(id) {
+    var s = S.filter(function (x) { return x.id === id; })[0] || S[0];
+    cur = s.id;
+    top.innerHTML = s.top(); bottom.innerHTML = s.bottom();
+    if (s.id === "browse") centerTabs();
+    var n = s.notes;
+    notes.innerHTML = '<h2>' + s.label + '</h2><p class="what">' + n.what + '</p>' +
+      '<dl><div><dt>Top screen</dt><dd>' + li(n.top) + '</dd></div><div><dt>Bottom screen</dt><dd>' + li(n.bottom) + '</dd></div><div><dt>Buttons (proposed)</dt><dd>' + keymap(s.id) + '</dd></div></dl>' +
+      (n.dim ? '<button class="btn" id="dimBtn" type="button" aria-pressed="false">Preview the dimmed bottom screen</button>' : '') +
+      (n.q && n.q.length ? '<div class="qbox"><h4>To decide for this state</h4>' + li(n.q) + '</div>' : '');
+    lightKeys(s.id);
+    Array.prototype.forEach.call(picker.children, function (b) { b.setAttribute("aria-pressed", b.dataset.id === s.id ? "true" : "false"); });
+    var d = document.getElementById("dimBtn");
+    if (d) d.addEventListener("click", function () {
+      var on = d.getAttribute("aria-pressed") !== "true"; d.setAttribute("aria-pressed", on);
+      document.getElementById("dimmer").style.opacity = on ? 1 : 0;
+      d.textContent = on ? "Show the bottom screen awake" : "Preview the dimmed bottom screen";
+    });
+    try { localStorage.setItem("thor-state", s.id); } catch (e) {}
+  }
+  // Browsing: tap a tab on the bottom screen, or press L2 / R2 on the drawing
+  var cur = "browse";
+  function centerTabs() {
+    var strip = bottom.querySelector(".tabstrip"), c = strip && strip.querySelector("[data-center]");
+    if (!c) return;
+    strip.style.transform = "translateX(" + (bottom.clientWidth / 2 - (c.offsetLeft + c.offsetWidth / 2)) + "px)";
+  }
+  function redrawCur() {
+    var st = S.filter(function (x) { return x.id === cur; })[0];
+    top.innerHTML = st.top(); bottom.innerHTML = st.bottom(); if (cur === "browse") centerTabs();
+  }
+  // A on the Series screen: open the focused season, or play the focused episode
+  function seriesA() {
+    if (sv.lvl === "seasons") { if (sv.sf < 0) sv.sf = PROG ? PROG.si : 0; sv.season = sv.sf; sv.lvl = "episodes"; sv.ef = -1; redrawCur(); return; }
+    if (sv.ef < 0) return;
+    if (episodes(sv.season)[sv.ef].st === "m") return; // not on the card: nothing to play
+    EPISODE = episodePlayer(sv.season, sv.ef); mv.paused = false; mv.off = false; show("play");
+  }
+  function seriesB() {
+    if (sv.lvl === "episodes" && SEASONS.length === 1) { show("browse"); return; }
+    if (sv.lvl === "episodes") { sv.lvl = "seasons"; sv.sf = sv.season; sv.ef = -1; redrawCur(); return; }
+    if (sv.sf >= 0) { sv.sf = -1; redrawCur(); return; }
+    show("browse");
+  }
+  function seriesMove(dx, dy) {
+    var cols = sv.lvl === "seasons" ? 4 : 3, n = sv.lvl === "seasons" ? SEASONS.length : episodes(sv.season).length;
+    var f = sv.lvl === "seasons" ? sv.sf : sv.ef;
+    f = f < 0 ? 0 : f + dx + dy * cols; if (f < 0 || f >= n) return;
+    if (sv.lvl === "seasons") sv.sf = f; else sv.ef = f; redrawCur();
+  }
+  // A on a Browsing card: movies (and anime films) play straight away; Breaking Bad opens the Series screen
+  function browseA() {
+    if (focusIdx < 0) return;
+    var it = TABS[browseTab].items[focusIdx];
+    if (/Series|Anime series/.test(it.m)) {
+      openShow(it);
+      // Continuing a show: play the episode you're on straight away; Back leads to its season's episode cards
+      if (it.r && PROG) {
+        EPISODE = episodePlayer(PROG.si, PROG.ei);
+        sv = { lvl: "episodes", sf: PROG.si, season: PROG.si, ef: PROG.ei };
+        mv.paused = false; mv.off = false; show("play"); return;
+      }
+      sv = { lvl: SEASONS.length === 1 ? "episodes" : "seasons", sf: -1, season: 0, ef: -1 };
+      show("series"); return;
+    }
+    // Movies, anime films and everything in Others play straight away
+    MOVIE = movieFrom(it); mv.paused = false; mv.off = false; show("movie");
+  }
+  function redrawBrowse() { top.innerHTML = S[0].top(); bottom.innerHTML = S[0].bottom(); centerTabs(); }
+  function setTab(i) { browseTab = (i + TABS.length) % TABS.length; focusIdx = -1; redrawBrowse(); }
+  function moveFocus(dx, dy) {
+    var n = TABS[browseTab].items.length;
+    if (!n) return;
+    if (focusIdx < 0) { focusIdx = 0; redrawBrowse(); return; }
+    var i = focusIdx + dx + dy * COLS;
+    if (i >= 0 && i < n) { focusIdx = i; redrawBrowse(); }
+  }
+  document.addEventListener("keydown", function (e) {
+    if (document.getElementById("screens").hidden) return;
+    var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (cur === "browse") {
+      if (m) { e.preventDefault(); moveFocus(m[0], m[1]); }
+      if (e.key === "Enter") { e.preventDefault(); browseA(); }
+      if (e.key === "Escape" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
+    } else if (cur === "series") {
+      if (m) { e.preventDefault(); seriesMove(m[0], m[1]); }
+      if (e.key === "Enter") { e.preventDefault(); seriesA(); }
+      if (e.key === "Escape") seriesB();
+    } else if (cur === "play" || cur === "movie") {
+      if (e.key === "Escape") { if (cur === "play") { sv.lvl = "episodes"; show("series"); } else show("browse"); }
+      if (e.key === "Enter") { e.preventDefault(); mv.paused = !mv.paused; redrawCur(); }
+    }
+  });
+  window.addEventListener("resize", centerTabs);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(centerTabs);
+  bottom.addEventListener("click", function (e) {
+    if (cur === "ending" && e.target.closest && e.target.closest("[data-act=power]")) { mv.off = !mv.off; redrawCur(); return; }
+    if ((cur === "movie" || cur === "play") && e.target.closest) {
+      var act = e.target.closest("[data-act]"); if (!act) return;
+      var k = act.getAttribute("data-act");
+      if (k === "toggle") mv.paused = !mv.paused;
+      if (k === "sub") mv.sub = (mv.sub + 1) % SUBS.length;
+      if (k === "dminus" && SUBS[mv.sub].on) mv.delay -= 50;
+      if (k === "dplus" && SUBS[mv.sub].on) mv.delay += 50;
+      if (k === "power") mv.off = !mv.off;
+      if ((k === "prev" || k === "next") && EPISODE && EPISODE.ep) {
+        var list = episodes(EPISODE.ep.si), j = EPISODE.ep.i, step = k === "next" ? 1 : -1;
+        do { j += step; } while (j >= 0 && j < list.length && list[j].st === "m"); // skip episodes not on the card
+        if (j >= 0 && j < list.length) { EPISODE = episodePlayer(EPISODE.ep.si, j); sv = { lvl: "episodes", sf: EPISODE.ep.si, season: EPISODE.ep.si, ef: j }; }
+      }
+      redrawCur();
+      return;
+    }
+    if (cur === "series" && e.target.closest) {
+      var sc = e.target.closest("[data-sc]"), ec = e.target.closest("[data-ec]");
+      if (sc) { var i = +sc.getAttribute("data-sc"); if (sv.sf === i) seriesA(); else { sv.sf = i; redrawCur(); } }
+      if (ec) { var j = +ec.getAttribute("data-ec"); if (sv.ef === j) seriesA(); else { sv.ef = j; redrawCur(); } }
+      return;
+    }
+    if (cur !== "browse" || !e.target.closest) return;
+    var t = e.target.closest("[data-tab]"), c = e.target.closest("[data-card]");
+    if (t) setTab(+t.getAttribute("data-tab"));
+    if (c) { var ci = +c.getAttribute("data-card"); if (ci === focusIdx) browseA(); else { focusIdx = ci; redrawBrowse(); } }
+  });
+  document.querySelector(".thor").addEventListener("click", function (e) {
+    var k = e.target.closest ? e.target.closest(".ctl") : null;
+    if (!k) return;
+    var c = k.getAttribute("data-k");
+    // A = one step forward, B = one step back, on every screen (D20)
+    if (cur === "play" && c === "B") { sv.lvl = "episodes"; show("series"); return; }
+    if (cur === "movie" && c === "B") { show("browse"); return; }
+    if ((cur === "play" || cur === "movie") && c === "A") { mv.paused = !mv.paused; redrawCur(); return; }
+    if (cur === "ending" && c === "A") { show("play"); return; }
+    if (cur === "ending" && c === "B") { show("play"); return; }
+    if (cur === "series") {
+      if (c === "A") seriesA();
+      if (c === "B") seriesB();
+      if (c === "DPAD" || c === "L3") seriesMove(1, 0);
+      return;
+    }
+    if (cur !== "browse") return;
+    if (c === "A") browseA();
+    if (c === "L2") setTab(browseTab - 1);
+    if (c === "R2") setTab(browseTab + 1);
+    if (c === "DPAD" || c === "L3") moveFocus(1, 0);
+    if (c === "B" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
+  });
+
+  S.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.dataset.id = s.id;
+    b.innerHTML = '<span class="k">' + (i + 1) + '</span>' + s.label;
+    b.addEventListener("click", function () { show(s.id); });
+    picker.appendChild(b);
+  });
+  var start = "browse"; try { start = localStorage.getItem("thor-state") || "browse"; } catch (e) {}
+  show(start);
+
+  // ---------- plan ----------
+  // [id, name, what, is a gate, status (done | part | todo), status note]
+  var gates = [
+    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Measuring needs the Thor"],
+    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "todo", "Needs the Thor"],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Every v1 feature is built and tested on the PC; what's left is the gates, which need the Thor"],
+    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "Needs the Thor and your 100 file names"],
+    ["v2", "Comfort", "Backup, frontends, TV output, sleep timer", 0, "todo", ""],
+    ["G3", "Gate 3", "No battery regression", 1, "todo", ""],
+    ["v3", "Extras", "Skip intro, Trakt, themes, PiP", 0, "todo", ""]
+  ];
+  var STATUS = { done: "Built", part: "In progress", todo: "Not started" };
+  document.getElementById("gates").innerHTML = gates.map(function (g) {
+    var label = g[3] ? { done: "Passed", part: "Testing", todo: "Not passed yet" }[g[4]] : STATUS[g[4]];
+    return '<div class="' + (g[3] ? 'g ' : '') + 'st-' + g[4] + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small>' +
+      '<span class="st ' + g[4] + '">' + label + '</span>' + (g[5] ? '<small class="stn">' + g[5] + '</small>' : '') + '</div>';
+  }).join('');
+
+  var cats = [
+    { t: "Two-screen foundation", s: "Prove and measure the Thor before building screens.", steps: [
+      ["Find the bottom panel by name and flags; skip virtual and TV displays", "v0", "done"],
+      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0", "done"],
+      ["Video in a SurfaceView on the top screen", "v0", "done"],
+      ["Single-screen fallback when the bottom display disappears", "v0", "done", "The bottom screen’s content moves into a panel on the right"],
+      ["Move to the top screen if launched on the bottom", "v0", "done"],
+      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0", "part", "The measuring page is built (Select + Start); the readings need the Thor"],
+      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0", "part", "Playback is kept outside the screens so it shouldn’t restart; untested on the Thor"] ] },
+    { t: "Layout & design", s: "Decide how both screens look before any screen is built.", steps: [
+      ["Mockup options for every state (this page is option 1)", "v0", "done"],
+      ["Agree the display and layout rules", "v0", "done", "R1–R12 decided"],
+      ["Choose a layout per state on the real Thor", "v0", "todo", "Needs the Thor"],
+      ["Final button map, including bottom-screen-off combo", "v0", "part", "Buttons mapped; ⏻ on screen works; no button combo yet"],
+      ["Themes: true-black default plus accent colours", "v3", "part", "True black built; accent colours not yet"] ] },
+    { t: "Library & matching", s: "From a folder of files to posters and seasons.", steps: [
+      ["Pick the SD card folder once (folder picker)", "v1", "done"],
+      ["Scan, then rescan only changed folders", "v1", "part", "Only changed files are read again, but every folder is still listed"],
+      ["Filename parser, tested on 100 real names", "v1", "part", "Built and tested on 38 names; needs your 100"],
+      ["Match on TMDB; download posters, backdrops, logos", "v1", "done", "Only what's missing (D38); no logos yet, since nothing shows them. Tested against a stand-in server"],
+      ["Group Show › Season › Episode; list missing episodes", "v1", "done"],
+      ["Fix a match by hand; survives rescans", "v1", "done", "✎ or Y; by name or TMDB ID (D43)"],
+      ["Folder browser; search, sort, filter", "v1", "done", "X Search, Select order, R1 Folders (D46)"],
+      ["Settings: API keys (typed or pasted, stored encrypted), refresh rate per screen, video folder, About", "v1", "done"],
+      ["Pause and save when leaving the app, power off or lid (D40)", "v1", "done"] ] },
+    { t: "Playback", s: "Everything that happens once you press Play.", steps: [
+      ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1", "done"],
+      ["Notices for software decoding and unsupported audio", "v1", "done"],
+      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "All built except chapters (ExoPlayer doesn't read MKV chapters) and the touch lock (dropped: ⏻ covers it) (D47)"],
+      ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "done", "Audio delay in Playback settings (Start)"],
+      ["Resume; watched at 90%; auto-play next with countdown", "v1", "done"],
+      ["Sleep timer, background audio, night mode, Bluetooth delay", "v2", "todo"],
+      ["Playlists and queue; TV output when docked", "v2", "todo"],
+      ["Picture-in-picture; skip intro", "v3", "todo"] ] },
+    { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
+      ["Load .srt, .ass, .vtt next to the video automatically", "v1", "done"],
+      ["Basic styling: size, colour, outline, position", "v1", "done", "Size, position, dark box (D45)"],
+      ["OpenSubtitles search by file hash; save next to the video", "v1", "done", "Tested against a stand-in server"],
+      ["Full ASS styling (libass renderer)", "v2", "todo"] ] },
+    { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
+      ["Watch sessions recorded; saves on pause, stop and once a minute", "v1", "done"],
+      ["Continue watching row", "v1", "done"],
+      ["Stats screen and CSV export: not needed for now", "Later", "todo"],
+      ["Backup and restore in one file", "v2", "todo"],
+      ["Trakt two-way sync (optional)", "v3", "todo"] ] },
+    { t: "Frontends", s: "Open from RetroHrai!, Cocoon or ES-DE.", steps: [
+      ["Accept \"open this video\" from other apps", "v2", "todo"],
+      ["Move to the top screen when opened on the bottom", "v2", "done", "Built early, in stage 1"],
+      ["Sample ES-DE custom system and Cocoon setup notes", "v2", "todo"] ] },
+    { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
+      ["True black everywhere; bottom screen redraws once a second", "v0", "done"],
+      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Auto does this (film rate only when seamless); Settings can also fix a rate per screen (D42). Check on the Thor"],
+      ["No background work during playback", "v1", "done", "Leaving the app pauses the film and frees its decoders; only a Fetch info you started carries on, with a notification (D48)"],
+      ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
+      ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
+    { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
+      ["Unit tests: parser, stats maths, overrides", "v1", "part", "74 tests, overrides included; stats maths waits for the stats screen"],
+      ["Emulator with a simulated 1240×1080 second screen", "v0", "part", "No emulator here: screenshot tests draw the screens at the Thor’s sizes instead"],
+      ["Your phone: decoding, subtitles, Bluetooth controller", "v1", "todo"],
+      ["Thor: both screens, buttons, battery", "v0", "todo", "Needs the Thor"] ] }
+  ];
+  var STEP = { done: "Built", part: "Partly", todo: "Not yet" };
+  document.getElementById("cats").innerHTML = cats.map(function (c) {
+    var n = c.steps.length;
+    var done = c.steps.filter(function (s) { return s[2] === "done"; }).length, part = c.steps.filter(function (s) { return s[2] === "part"; }).length;
+    return '<article class="cat"><div><h3>' + c.t + '</h3><p class="sub">' + c.s + '</p></div>' +
+      '<div class="cprog"><div class="cbar" role="img" aria-label="' + done + ' built, ' + part + ' partly, of ' + n + '"><b style="width:' + (done / n * 100) + '%"></b><i style="width:' + (part / n * 100) + '%"></i></div>' +
+      '<span>' + done + ' of ' + n + ' built' + (part ? ' · ' + part + ' partly' : '') + '</span></div><ol>' +
+      c.steps.map(function (s) {
+        return '<li class="s-' + s[2] + '"><span>' + s[0] + (s[3] ? '<small class="sn">' + s[3] + '</small>' : '') + '</span>' +
+          '<span class="st ' + s[2] + '">' + STEP[s[2]] + '</span><span class="v ' + s[1] + '">' + s[1] + '</span></li>';
+      }).join('') + '</ol></article>';
+  }).join('');
+
+  // ---------- comparison with other players ----------
+  // Columns: Exo Player, then the others. Exo cells name the stage or version; other cells: y yes, p partly, a add-on, n no.
+  var PLAYERS = ["Exo Player", "VLC", "MX Player", "Just Player", "Kodi", "mpv", "Nova"];
+  var CMP = [
+    ["Formats"],
+    ["Hardware decoding first", "Lowest battery for H.264, HEVC, VP9, AV1", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Dolby and DTS audio", "AC3, E-AC3, DTS, TrueHD", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Software video fallback", "10-bit H.264 (old anime), DivX 3, WMV, MPEG-2", "Proposed", "y", "y", "n", "y", "y", "y"],
+    ["WMV, RMVB, DVD folders and ISOs", "", "No", "y", "p", "n", "y", "p", "p"],
+    ["MKV ordered chapters", "Anime openings and endings kept in separate files", "No", "y", "n", "n", "y", "y", "n"],
+    ["Subtitles"],
+    ["Subtitle files next to the video", ".srt, .ass, .vtt; matched by name and language", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Full ASS styling and embedded fonts", "Anime signs, karaoke, positions", "v2", "y", "p", "p", "y", "y", "p"],
+    ["Subtitle timing", "Exo Player moves its own subtitle files earlier or later, 50 ms at a time", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Find subtitles online", "OpenSubtitles", "Built", "y", "y", "n", "a", "n", "y"],
+    ["Playback"],
+    ["Resume where you stopped", "", "Built", "y", "y", "y", "y", "p", "y"],
+    ["Speed, aspect and zoom, audio delay", "", "Built", "y", "y", "p", "y", "y", "y"],
+    ["Up next with a countdown", "Next episode plays by itself; one button cancels", "Built", "p", "p", "n", "a", "p", "p"],
+    ["Picture-in-picture", "", "v3", "y", "y", "y", "n", "p", "y"],
+    ["Library"],
+    ["Posters, plots and backdrops", "Scraped from TMDB", "Built", "n", "n", "n", "y", "n", "y"],
+    ["Show › Season › Episode", "Even when files sit loose in one folder", "Built", "p", "n", "n", "y", "n", "y"],
+    ["Continue watching", "Half-watched movies and the next episode of each show", "Built", "p", "p", "n", "y", "n", "p"],
+    ["Missing episodes greyed", "From TMDB's episode list", "Built", "n", "n", "n", "a", "n", "n"],
+    ["Fix a wrong match by hand", "", "Built", "n", "n", "n", "y", "n", "y"],
+    ["Trakt sync", "", "v3", "n", "n", "n", "a", "n", "y"],
+    ["Network"],
+    ["Network shares", "SMB, DLNA", "Later", "y", "y", "n", "y", "p", "y"],
+    ["Jellyfin and Plex", "", "Later", "p", "n", "n", "a", "n", "n"],
+    ["Online only when you ask", "No background network use at all", "Built", "y", "p", "y", "p", "y", "p"],
+    ["The Thor, and the app itself"],
+    ["Uses both screens", "Picture on top; controls and lists on the bottom", "Built", "n", "n", "n", "n", "n", "n"],
+    ["Everything works with the buttons", "No touching needed", "Built", "p", "p", "p", "y", "p", "y"],
+    ["Free, no ads, open source", "", "Built", "y", "n", "y", "y", "y", "y"]
+  ];
+  var CELL = { y: ["y", "✓", "Yes"], p: ["p", '<span class="half"></span>', "Partly"], a: ["a", "+", "Through an add-on"], n: ["n", "—", "No"] };
+  function ourCell(v) {
+    var cls = v === "Built" ? "ours" : v === "No" ? "no" : "plan";
+    return '<i class="c ' + cls + '">' + v + '</i>';
+  }
+  document.getElementById("cmpTable").innerHTML =
+    '<thead><tr><th scope="col" style="text-align:left;position:sticky;left:0;z-index:1">Feature</th>' +
+      PLAYERS.map(function (p, i) { return '<th scope="col"' + (i === 0 ? ' class="us"' : '') + '>' + p + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    CMP.map(function (r) {
+      if (r.length === 1) return '<tr class="grp"><th colspan="' + (PLAYERS.length + 1) + '">' + r[0] + '</th></tr>';
+      return '<tr><th scope="row">' + r[0] + (r[1] ? '<small>' + r[1] + '</small>' : '') + '</th><td class="us">' + ourCell(r[2]) + '</td>' +
+        r.slice(3).map(function (v) { var c = CELL[v]; return '<td><i class="c ' + c[0] + '" title="' + c[2] + '" aria-label="' + c[2] + '">' + c[1] + '</i></td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+
+  var PCARDS = [
+    { n: "VLC", e: "libVLC with its own FFmpeg decoders, plus hardware · free, open source",
+      better: ["Plays almost any file: WMV, RMVB, DVD ISOs, 10-bit H.264, ordered chapters", "Full ASS styling with libass", "Network shares, Chromecast, equaliser, audio passthrough"],
+      ours: ["A real library: artwork, Show › Season › Episode, Continue watching", "Plays the next episode with a countdown; VLC just moves on in the folder, or stops", "Both screens"],
+      take: "The format list. Software video decoders and libass would close most of the gap." },
+    { n: "MX Player", e: "Own engine, hardware plus software decoders · free with ads, or paid · closed source",
+      better: ["Wide format support through its codec pack", "Gestures, zoom, kids lock, online subtitle search", "Network shares"],
+      ours: ["No ads and nothing hidden: open source, offline unless you ask", "Library with artwork and episodes", "Both screens and full button control"],
+      take: "Quick subtitle search from inside the player, which we have as Find subtitles." },
+    { n: "Just Player", e: "Media3 ExoPlayer with the FFmpeg audio add-on · free, open source",
+      better: ["Very small and simple", "Already polished on things we haven't built: speed, zoom, refresh-rate switching"],
+      ours: ["Same engine, but with a library, Continue watching and Up next", "Find subtitles, Fix match, missing episodes", "Both screens"],
+      take: "The closest to us under the hood; a reference for how ExoPlayer handles odd files and frame rates." },
+    { n: "Kodi", e: "Own player (FFmpeg plus hardware) and a full media centre · free, open source",
+      better: ["The richest library: scrapers, skins, add-ons for Trakt, Up Next, Jellyfin, Plex", "Plays almost everything, with full ASS styling", "DVD and Blu-ray menus"],
+      ours: ["Light: no media-centre start-up, lower battery, nothing running in the background", "Built for a 6-inch handheld, not a TV across the room", "Both screens"],
+      take: "Kodi's library model (seasons, episodes, fix a match) is the one we follow." },
+    { n: "mpv", e: "mpv with FFmpeg and libass · free, open source",
+      better: ["The best subtitle rendering of any Android player", "Plays nearly every format; deep settings and scripts", "Precise seeking and frame stepping"],
+      ours: ["Library, artwork and episodes; mpv opens one file at a time", "Built for the controller, not menus of settings", "Both screens"],
+      take: "If anime subtitles must look exactly right, libass is the bar to reach." },
+    { n: "Nova", e: "Hardware first, with FFmpeg software fallback · free, open source",
+      better: ["Library with TMDB scraping already working", "SMB and other network shares", "Trakt sync and online subtitles"],
+      ours: ["Two screens and a handheld-first layout", "Up next with a countdown, missing episodes greyed", "Never online unless you press a button"],
+      take: "The nearest to our library idea on Android; worth trying on the Thor to compare." }
+  ];
+  document.getElementById("players").innerHTML = PCARDS.map(function (c) {
+    return '<article class="player"><header><b>' + c.n + '</b><span class="eng">' + c.e + '</span></header>' +
+      '<div><h4>Better than Exo Player</h4>' + li(c.better) + '</div>' +
+      '<div><h4>Exo Player does that it doesn\'t</h4>' + li(c.ours) + '</div>' +
+      '<div class="take"><b>What we take from it:</b> ' + c.take + '</div></article>';
+  }).join('');
+
+  document.getElementById("cmpSum").innerHTML = [
+    ["Where we're ahead", ["The only player that uses both of the Thor's screens", "Continue watching, Up next and missing episodes together, in a player this light", "Never goes online unless you press a button"]],
+    ["Planned, to catch up", ["v2: full ASS styling, background audio with notification controls, backup, TV output", "Later: network shares, Jellyfin and Plex"]],
+    ["Gaps to decide", ["Software video decoders, our own FFmpeg build, for 10-bit H.264, DivX 3, WMV (proposed)", "Move libass from v2 to v1, for anime typesetting (proposed)", "WMV/RMVB containers, DVD ISOs and ordered chapters: only libVLC would cover these"]]
+  ].map(function (b) { return '<div><h3>' + b[0] + '</h3>' + li(b[1]) + '</div>'; }).join('');
+
+  // ---------- rules ----------
+  var fixed = [
+    ["F1", "Top screen is display 0; bottom is a separate presentation display", "Top 1920×1080 (6″). Bottom 1240×1080 (3.92″), about 56% as wide."],
+    ["F2", "Both screens run at 60 Hz while both are on", "120 Hz on top only with the bottom screen off, or with tearing below."],
+    ["F3", "The controller follows the last-touched screen", "Unless the touched window can't take focus. Ours won't."],
+    ["F4", "AYN's \"bottom screen off\" is invisible to apps", "It's a black overlay; the display still reports as on."],
+    ["F5", "Android's keyboard is unreliable on the bottom screen", "So the app draws its own keyboard there (R10). AYN's firmware .293 can pin the system keyboard to the bottom screen, but apps can't rely on it."],
+    ["F6", "Black pixels are off on both OLED panels", "Black costs almost no power; bright white costs the most."],
+    ["F7", "A brightness override may dim both screens", "Seen on older firmware; v0 tests current firmware."],
+    ["F8", "Controls: left stick over D-pad, ABXY over right stick; L1/L2 and R1/R2 on the back edge", "Face buttons are Nintendo-style (A right, B bottom); Thor Settings can swap the style. L2/R2 are analog."],
+    ["F9", "Home and the AYN button belong to the system", "Home goes to the launcher; AYN opens AYN's menu (hold = its bottom-off). Back reaches the app."]
+  ];
+  var draft = [
+    ["R1", "The video is always full-screen and nothing is drawn over it", "While a video plays, the top screen shows only the picture and its subtitles: no clock, progress bar, buttons, pop-ups or notices from the app. Applies with the bottom screen on or off (D8, D18). The one exception is the No bottom screen layout.", "dec"],
+    ["R2", "Every background is pure black #000", "Panels and cards use near-black only where they need to read as separate.", "dec"],
+    ["R3", "During playback the bottom screen has no animation and redraws at most once a second", "Except right after a touch or button press.", "dec"],
+    ["R4", "The bottom screen dims to a black layer after 10 s untouched", "Wakes on any touch or button. Never dims while a menu is open.", "dec"],
+    ["R5", "Everything on the bottom screen also exists in the single-screen layout", "So the app works fully with no bottom screen at all (a phone). With ⏻ off, the top stays clean and the buttons still work (D18).", "dec"],
+    ["R6", "Touch targets on the bottom screen are at least 48 dp (about 7.6 mm)", "The panel is small and touched with a thumb while holding the device.", "dec"],
+    ["R7", "Text is the same physical size on both screens", "The bottom panel is denser (≈419 ppi vs ≈367 ppi on top), so the same size needs about 14% more pixels there.", "dec"],
+    ["R8", "One accent colour marks focus and the main action; nothing else uses it", "Focus must be visible from across a room when docked.", "dec"],
+    ["R9", "Every screen shows its button legend along the bottom edge of the bottom screen", "Only the 3 buttons that do something here.", "dec"],
+    ["R10", "Typing happens on the bottom screen, with the app's own keyboard", "Search and Fix match draw their own keyboard on the bottom screen (touch, or D-pad and A). Android's keyboard isn't reliable there, so the app doesn't use it. Only if a language or input the built-in keyboard can't handle is needed does the system keyboard open on the top screen.", "dec"],
+    ["R12", "A always goes one step forward, B always goes one step back", "Forward: open, play, confirm. Back: leave the cards, close the season, stop playback. On every screen.", "dec"],
+    ["R11", "The top screen is display only: it never takes input, focus or touch", "Everything you do happens on the bottom screen. Exceptions: the No bottom screen layout (a phone), and the system keyboard fallback in R10.", "dec"]
+  ];
+  var PILL = { fixed: "Fixed", prop: "Proposed", dec: "Decided", conf: "Conflict" };
+  function rule(r, pill) { pill = r[3] || pill; return '<div class="rule"><span class="id">' + r[0] + '</span><div><b>' + r[1] + '</b><small>' + r[2] + '</small><span class="pill ' + pill + '">' + PILL[pill] + '</span></div></div>'; }
+  document.getElementById("fixedRules").insertAdjacentHTML("beforeend", fixed.map(function (r) { return rule(r, "fixed"); }).join(''));
+  document.getElementById("draftRules").insertAdjacentHTML("beforeend", draft.map(function (r) { return rule(r, "prop"); }).join(''));
+  document.getElementById("openQs").innerHTML = [
+    "Does the video always play on the top screen, or can you choose?",
+    "What does the bottom screen show while browsing, and while playing?",
+    "Is the bottom screen touch-first, button-first, or both equally?",
+    "Poster row, grid or list for browsing, and how many titles on screen?",
+    "In single-screen mode, where do the menus and episode list go?",
+    "What does each button do on each screen? Which combo turns the bottom screen off?",
+    "When docked to a TV: video on the TV and controls on the bottom screen, or everything on the TV?"
+  ].map(function (q) { return '<li>' + q + '</li>'; }).join('');
+
+  // ---------- build ----------
+  var STAGES = [
+    ["1. Shell", "done", "2c4d25c", "Both screens and the controller.", ["Bottom-screen window (Presentation), finds Screen-2 by name", "A forward, B one step back; Back never closes the app by accident", "One-screen fallback: the bottom screen's content as a panel on the right", "Diagnostics page (Select + Start): displays, decoders, keys, dimming, display modes"]],
+    ["2. Library", "done", "fc5a32b", "From a folder of files to titles.", ["Folder picker, no storage permission", "Reads movie, SxxEyy, 1x02, anime and season-folder names (38 test names)", "Subtitles next to a video are linked to it", "Database: files, titles, seasons, episodes, where you stopped"]],
+    ["3. Browsing", "done", "f4a7370", "The five tabs and the cards.", ["Continue watching, Movies, Series, Anime, Others on L2 / R2, in a full circle", "Poster cards 4 across", "Top: poster mix, or the focused title's art and details", "⟳ Fetch info corner (online part in stage 6)"]],
+    ["4. Player", "done", "965f46e", "One player for movies and episodes.", ["Resumes where you stopped; saved on pause, stop and each minute; watched at 90%", "Progress, Resume / Pause, ‹ Prev / Next ›, Play from start, Mark watched", "Audio, Subtitles, subtitle timing in 50 ms steps both ways (.srt, .vtt)", "Up next with a 10 s countdown; ✎ and ⏻ corners; L2 / R2 ±10 s", "FFmpeg audio for DTS, TrueHD, AC3"]],
+    ["5. Series and anime", "done", "df18a0e", "Details → seasons → episodes → play.", ["Season cards 4 across, episode cards 3 across", "✓ watched, progress bar, missing episodes greyed", "Continue watching plays the episode; B lands on its season's episodes", "One-season shows skip the season cards; one-episode shows play like movies"]],
+    ["6. Online, on request", "done", "86c2cf6", "Only when you press a button (D32, D36).", ["⟳ Fetch info: TMDB, fanart.tv and AniList; only what's missing (D38, D44); it finishes even if you leave the app, with a progress notification (D48)", "Find subtitles: OpenSubtitles, saved next to the video (D37)", "✎ Fix match by name or TMDB ID (D43)", "Tested against stand-in servers: the real services weren't reachable from the build machine"]],
+    ["7. Player extras", "done", "986fe4d", "Everything else the player needed for v1.", ["Playback settings on Start: speed, picture, audio delay, subtitle look, brightness (D45)", "Volume bar with boost; pause when leaving (D40, D41)", "Mark unwatched, scrubbing, headset buttons"]],
+    ["Library extras", "done", "ac18e60", "Finding things without scrolling.", ["X Search, as you type", "Select: A–Z, Recently added, Year, Unwatched only", "R1 Folder browser (D46)"]],
+    ["Gates 1 and 2", "todo", "", "What v1 still needs: the Thor itself.", ["Gate 1: both screens, buttons and touch on the device", "Gate 2: battery against VLC; 95 % of your 100 file names matched"]]
+  ];
+  document.getElementById("stages").innerHTML = STAGES.map(function (g) {
+    return '<div class="stg"><header><b>' + g[0] + '</b><span class="pill ' + g[1] + '" style="margin:0">' + ({ done: "Done", next: "Next", todo: "Needs the Thor" })[g[1]] + '</span></header>' +
+      '<p>' + g[3] + '</p>' + li(g[4]) + (g[2] ? '<div class="commit">commit ' + g[2] + '</div>' : '') + '</div>';
+  }).join('');
+
+  // Screens rendered by the app's code (Robolectric screenshot tests), next to the mockup state they implement.
+  var SHOTS = [
+    ["Browsing: nothing focused", "browse", "The top screen shows a mix of the tab's posters; the selected tab sits in the centre of the strip.", "browse_top_mix", "browse_bottom_movies"],
+    ["Browsing: a title focused", "browse", "The focused title's art fills the top screen, with its details on the left.", "browse_top_focused", null],
+    ["Continue watching", "browse", "The same, with how far through you are.", "browse_top_continue", null],
+    ["Movie playing", "movie", "Only the picture and its subtitles on top. Volume bar under Pause (the volume buttons move it too); subtitle timing set to −150 ms.", "player_top_subtitle", "player_bottom_movie"],
+    ["Paused, and episode controls", "play", "Paused: the title's art and details, never a progress bar. Episodes add ‹ Prev / Next ›; the volume here is boosted to 150 %; with no subtitles, the Subtitles button offers Find subtitles.", "player_top_paused", "player_bottom_episode"],
+    ["Up next", "ending", "30 s before the end of an episode; A plays now, B cancels.", null, "player_bottom_upnext"],
+    ["Series: details and seasons", "series", "The show first, with the episode to continue; season cards below.", "show_top_details", "show_bottom_seasons"],
+    ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],
+    ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"],
+    ["Playback settings", "movie", "Start in the player: each row changes with ◀ ▶. Audio delay is kept per file; the rest for every film.", null, "player_bottom_settings", "Top screen: the film, as before"],
+    ["Fix match", null, "✎ or Y. Search TMDB by name, or type a TMDB ID; L2 / R2 switch Movie and Series.", "fixmatch_top", "fixmatch_bottom"],
+    ["Search", null, "X on Browsing. Matches show on the top screen as you type; Done lists them as cards.", "search_top", "search_bottom"],
+    ["Folder browser", null, "R1 on Browsing: folders first with how many videos they hold, then videos with their progress.", null, "folders_bottom", "Top screen: the folder path and the focused entry"],
+    ["Settings: what a key is for", null, "Start or ⚙ on Browsing. The top screen says what the setting is for and where to get it, never the key itself.", "settings_top", "settings_bottom_list"],
+    ["Settings: entering a key", null, "The app's own keyboard: D-pad and A, or touch. Paste puts in a key copied in the browser. Start saves, B cancels.", null, "settings_bottom_editor", "Top screen: the same, headed Editing"]
+  ];
+  function shotImg(name, kind, note) {
+    if (!name) return '<div class="empty ' + kind + '">' + (note || (kind === "top" ? "Top screen: the picture" : "Same as above")) + '</div>';
+    return '<figure><img class="' + kind + '" src="shots/' + name + '.jpg" alt="' + (kind === "top" ? "Top" : "Bottom") + ' screen as the app draws it" loading="lazy"><figcaption>' + (kind === "top" ? "Top · 1920×1080" : "Bottom · 1240×1080") + '</figcaption></figure>';
+  }
+  document.getElementById("shots").innerHTML = SHOTS.map(function (x, i) {
+    return '<div class="shot"><header><h3>' + x[0] + '</h3>' + (x[1] ? '<button class="btn" type="button" data-cmp="' + x[1] + '">Compare with mockup</button>' : '') + '</header><p>' + x[2] + '</p>' +
+      '<div class="pair">' + shotImg(x[3], "top", x[5]) + shotImg(x[4], "bottom") + '</div></div>';
+  }).join('');
+  document.getElementById("shots").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-cmp]");
+    if (!b) return;
+    show(b.getAttribute("data-cmp"));
+    openTab("screens");
+    window.scrollTo(0, 0);
+  });
+
+  // ---------- tabs ----------
+  var tabs = ["screens", "plan", "rules", "build"];
+  function openTab(id) {
+    if (tabs.indexOf(id) < 0) id = "screens";
+    tabs.forEach(function (t) {
+      document.getElementById(t).hidden = t !== id;
+      document.getElementById("tab-" + t).setAttribute("aria-selected", t === id ? "true" : "false");
+    });
+    try { history.replaceState(null, "", "#" + id); } catch (e) {}
+    if (id === "screens" && cur === "browse") centerTabs();
+  }
+  tabs.forEach(function (t) { document.getElementById("tab-" + t).addEventListener("click", function () { openTab(t); }); });
+  openTab((location.hash || "").slice(1));
+})();
+</script>

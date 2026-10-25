@@ -1,0 +1,410 @@
+# Thor Media Player: plan and system specs
+
+Oct 23, 2026 · @MSharwaan
+
+Updated the same day with the findings from [research/thor-dual-screen.md](research/thor-dual-screen.md) and [research/thor-platform-and-issues.md](research/thor-platform-and-issues.md). Changes from the first draft are marked **(research)**.
+
+## Overview
+
+Thor Media Player (working name) is a personal Android video player for the AYN Thor Max. It plays movies and series from the SD card, fetches their artwork, tracks what you watch, finds subtitles, and uses both screens. It must use no more battery than VLC playing the same file.
+
+It fills a gap the current options leave. Kodi has a great library but uses one screen. Cocoon can list videos but has no artwork scraper for them, and VLC closes when an episode ends, so nothing plays the next one. **(research)** VLC, Kodi and MX Player have no dual-screen support. The only Thor app with video on top and controls below is Loki's Movies section, which streams online sources and doesn't do a local library.
+
+**Goals**
+
+- Play every common file on the SD card smoothly, with hardware decoding.
+- Identify movies and episodes from their filenames and show posters, backdrops and plots automatically.
+- Video on the top screen; episodes, controls and subtitles on the bottom screen.
+- Resume, watched status, auto-play next episode and a Continue watching row.
+- Watch history kept on the device (a stats screen is for later, D27).
+- Battery use at or below VLC's on the same file.
+- Fully usable with the Thor's buttons, without touching the screen.
+
+The full feature list, with versions, is in [FEATURES.md](FEATURES.md).
+
+**Design principles**
+
+1. **Offline first, online only when you ask (D32).** The app never connects on its own. It goes online only when you press **Fetch info** (artwork, plots, episode lists) or **Find subtitles** on a video that has none. Everything else works without internet.
+2. **Battery first.** No feature may run work in the background during playback.
+3. **Controller first.** Every screen works with the D-pad and face buttons.
+4. **One screen is fine.** With the bottom screen off, the app still works fully.
+5. **Public APIs only (research).** No root and no AYN privileged service, so firmware updates break as little as possible.
+
+## How the Thor works (research)
+
+| | Top screen | Bottom screen |
+| --- | --- | --- |
+| Panel | 6" AMOLED 1080 × 1920, up to 120 Hz | 3.92" AMOLED 1080 × 1240, 60 Hz, touch |
+| Android display | `DEFAULT_DISPLAY` (0), named `"Built-in Screen"` | Public presentation display, named `"Screen-2"` (id seen as 4; never hardcoded) |
+
+- **Controller focus follows the screen you touched last.** A window flagged `FLAG_NOT_FOCUSABLE` gets touches but never takes the controller.
+- **Both screens run at 60 Hz** while both are on. 120 Hz on the top screen is an AYN setting that causes tearing on the bottom screen.
+- **Holding the AYN button "turns off" the bottom screen with a black overlay.** The display stays on, and apps can't detect it.
+- **The on-screen keyboard isn't reliable on the bottom screen.**
+- **An app launched on the bottom screen can't put a window on the top screen**, because AYN doesn't mark display 0 as a presentation display.
+- **AYN publishes no developer docs.** Behaviour changes in firmware point releases, for example .372 bound Home and Back to the active screen.
+
+## Dual-screen design (to be designed)
+
+The screen layouts aren't decided yet. They get designed as mockups in v0, compared, and chosen before any screen is built.
+
+**What is fixed** (hardware and requirements, not layout)
+
+- Top screen 6" 1080p; bottom screen 3.92" touch; both at 60 Hz with both on.
+- Video always plays full-screen on whichever screen shows it.
+- Every screen works with buttons alone, and with the bottom screen off.
+- Layouts follow the battery rules: true black, a quiet bottom screen during playback.
+- **(research)** Touching the bottom screen never takes the controller away from the top screen, so the bottom screen can be touch-first and button-first at the same time.
+- **(research)** Text entry (search, fixing a match) happens on the top screen.
+
+**Decisions so far** (also shown on the [mockup page](mockups/plan-and-screens.html))
+
+| # | Decision | Date |
+| --- | --- | --- |
+| D1 | **The top screen is display only.** It never takes input, focus or touch; everything you do happens on the bottom screen (rule R11). Open: single-screen mode, and where typing goes (R10 now conflicts) | Oct 23, 2026 |
+| D2 | **Browsing, bottom screen:** five tabs: Continue watching, Movies, Series, Anime, Others. No library counts line. Nothing under the tabs until it's designed | Oct 23, 2026 |
+| D3 | **L2 / R2 move between the browsing tabs**; tapping a tab works too | Oct 23, 2026 |
+| D4 | **Browsing, top screen:** a poster mix of everything in the current tab, with the tab's name and count | Oct 23, 2026 |
+| D5 | **The tab row stays on one line** and runs past both edges of the bottom screen; the selected tab sits in the centre, and L2 / R2 go round in a full circle (Others → R2 → Continue watching) | Oct 23, 2026 |
+| D6 | **Browsing, cards:** under the tabs, cards for every title in the selected tab. Moving through them makes the top screen switch from the poster mix to the focused title's poster, details and plot (and where you stopped, in Continue watching) | Oct 23, 2026 |
+| D7 | **Artwork comes from proper sources through their APIs, at the right size.** Wide 16:9 backdrops for the top screen (never a crop of a poster), posters sized for the bottom-screen cards. The mockup's poster crops are a stand-in only. See *Artwork sources and sizes* below | Oct 23, 2026 |
+| D8 | **Opening a movie plays it straight away**, from where you stopped. One Movie screen covers playing and paused. Top screen: the film only while playing; the title's art and details while paused; never a progress bar or controls over the picture. Bottom screen, in order: progress bar, Resume / Pause, Play from start and Mark watched (same style), Audio and Subtitles (choose a track, or Find subtitles when the file has none), subtitle timing −50 / +50 ms, and a small ⏻ button in the bottom-right corner that turns the bottom screen off and stays visible while it is off. Fix match is not on this screen. L2 / R2 skip back / forward 10 s | Oct 23, 2026 |
+| D9 | **Subtitle search moves to v1**, through the OpenSubtitles API (by file hash first, then title). The Movie screen's Subtitles block offers it when the file has none | Oct 23, 2026 |
+| D10 | **When the bottom screen is off, only the ⏻ button turns it back on.** Touching elsewhere on the black screen does nothing | Oct 23, 2026 |
+| D11 | **Fix match is a small ✎ button next to ⏻** in the bottom-right corner of the Movie screen, not a full-width field. It hides while the bottom screen is off | Oct 23, 2026 |
+| D12 | **Every video screen gets the same corner** (Movie, episode Playing, Episode ending): ✎ Fix match and ⏻ bottom screen off. While off, only ⏻ shows | Oct 23, 2026 |
+| D13 | **Series flow.** Opening a series shows its art and details on top and **season cards** (each with its own artwork) below. Focusing or opening a season shows that season's art and description on top; opening it shows **episode cards**, and focusing one shows that episode's still and description on top. Opening an episode plays it on **the same screen as movies**. Anime series work the same way; an anime with one episode, or an anime film, gets the movie treatment. B goes back a level | Oct 23, 2026 |
+| D14 | **Continuing a series plays the episode straight away** (from Continue watching), the same as a movie. Back then leads to that season's episode cards, then the seasons, then the series | Oct 23, 2026 |
+| D15 | **A show with only one season skips the season cards** and opens on its episodes | Oct 23, 2026 |
+| D16 | **Episode cards are 3 across** | Oct 23, 2026 |
+| D17 | **Previous and next episode are buttons on the bottom screen** (‹ Prev and Next ›, either side of Resume / Pause), not L1 / R1 | Oct 23, 2026 |
+| D18 | **Bottom screen off behaves the same for movies and episodes: the top screen stays clean.** Only the film, nothing over it; the buttons still work (A pause, L2 / R2 skip), and pausing shows the title's art as usual. Controls over the video are only for when there is no bottom screen at all (a phone, a missing second display) | Oct 23, 2026 |
+| D19 | **Keep the "No bottom screen" layout** for devices with one screen (a phone, or a Thor whose second display isn't detected): controls fade in over the video on any button and fade out after a few seconds; menus slide in over the video | Oct 23, 2026 |
+| D20 | **A always goes one step forward, B always one step back**, on every screen (open, play, confirm / leave, close, stop) | Oct 23, 2026 |
+| D21 | **Anime works exactly like series** (series details → seasons → episodes → play). An anime with one episode, or an anime film, plays like a movie | Oct 23, 2026 |
+| D22 | **Everything in Others plays like a movie**: opening it plays it straight away, from where you stopped | Oct 23, 2026 |
+| D23 | **Episode ending screen accepted as shown**: credits keep playing on top; the bottom shows the Up next card with a 10 s countdown, Play now (A) and Cancel (B) | Oct 23, 2026 |
+| D24 | **Layout rules R2–R9 accepted** (see the [mockup page](mockups/plan-and-screens.html), Rules tab): pure black backgrounds; no animation and at most one redraw a second on the bottom screen during playback; the bottom screen dims after 10 s; everything also works with no bottom screen; touch targets ≥ 48 dp; the same physical text size on both screens; one accent colour for focus and the main action; a button legend along the bottom of the bottom screen | Oct 23, 2026 |
+| D25 | **Typing happens on the bottom screen with the app's own keyboard** (rule R10): search and Fix match draw a keyboard on the bottom screen, used by touch or D-pad and A. The system keyboard opens on the top screen only as a fallback for input the built-in one can't handle | Oct 23, 2026 |
+| D26 | **Rule R1 accepted: nothing is ever drawn over a playing video** except its subtitles. No clock, progress bar, buttons, pop-ups or notices from the app on the top screen, with the bottom screen on or off. Exception: the No bottom screen layout | Oct 23, 2026 |
+| D27 | **No stats screen for now.** Watching stats and CSV export move to Later. The app still records watch sessions (cheap, and needed for resume and Continue watching), so stats can be added later without losing history | Oct 23, 2026 |
+| D28 | **Playback engine: Media3 ExoPlayer** with the FFmpeg audio add-on. libVLC stays the fallback if odd files become a problem | Oct 23, 2026 |
+| D29 | **No bottom screen layout: menus slide in as a panel from the right** (subtitles, audio, episodes), as in landscape phone players. The video stays visible on the left; the panel is used with the D-pad | Oct 23, 2026 |
+| D30 | **Docked to a TV (v2): the TV gets everything.** Video on the TV in the one-screen layout, menus in the right-hand panel, the Thor's bottom screen off (like Loki's couch mode). A setting keeps the controls on the Thor's bottom screen instead, for when it's in your hands | Oct 23, 2026 |
+| D31 | **App name: Exo Player** | Oct 23, 2026 |
+| D32 | **The app goes online only when you ask.** Fetch info (artwork, plots, episode lists; for the whole library, a tab or one title) and Find subtitles (only offered when a video has none) are the only things that connect. No automatic downloads, no background jobs, no checks. Scanning the SD card is offline and still automatic | Oct 23, 2026 |
+| D33 | **Library layout: both** loose files in one folder and Show/Season folders are recognised | Oct 23, 2026 |
+| D34 | **Licence: GPL-3.0**, so code from Loki, melonDS and Azahar can be reused | Oct 23, 2026 |
+| D35 | **Trakt sync stays in v3.** When it comes, it syncs only when you ask, in line with D32 | Oct 23, 2026 |
+| D36 | **Fetch info is a small ⟳ button in the bottom-right corner of the Browsing bottom screen**, matching ✎ and ⏻ on the video screens. It fetches info for the current tab. A single title is fetched through ✎ Fix match | Oct 23, 2026 |
+| D37 | **Downloaded subtitles are saved next to the video**, named like local ones (`Name.en.srt`), so they travel with the file and later scans pick them up like any local subtitle. The app asks for read and write access to the video folder when you pick it | Oct 25, 2026 |
+| D38 | **Fetch info only fetches what's missing.** Titles that already have their info and artwork are skipped; for a show, only new seasons, new episodes and missing images are fetched. Nothing that's already on the device is downloaded again. Fix match is the one exception: a corrected title is fetched fresh, since its old info belonged to the wrong match | Oct 25, 2026 |
+| D39 | **API keys and the OpenSubtitles login are entered in Settings** (Start, or ⚙ next to ⟳ on Browsing), typed on the app's own keyboard or pasted from the clipboard. They're stored on the Thor only, encrypted with a key kept in Android's Keystore; app backup is off, and nothing is built into the app or the repo. The screens never show a key in full: the list shows the last four characters, the password only "Set" | Oct 25, 2026 |
+| D40 | **Leaving the app pauses the film.** Home, switching apps, closing the app, the power button and the lid all pause and save the position straight away. Coming back shows the paused screen; nothing resumes by itself | Oct 25, 2026 |
+| D41 | **Volume bar on the player's bottom screen**, under Resume / Pause: − and + with a bar. Up to 100 % it is Android's media volume; past that it boosts to 200 % (the planned volume boost). The Thor's volume buttons move the same bar while a film is open, so Android's volume pop-up never covers the picture (R1) | Oct 25, 2026 |
+| D42 | **Refresh rate per screen in Settings.** Auto (the default) keeps battery rule 2: the screen's own rate, and the film's rate during playback when the switch is seamless. A fixed rate, from the rates each screen offers, holds everywhere, films included; that's your choice to trade battery for smoothness | Oct 25, 2026 |
+| D43 | **Fix match** is ✎ on the player and series screens, and Y on a focused card or show. It searches TMDB by name, or takes a TMDB ID typed as a number; L2 / R2 switch between Movie and Series. The choice is saved and survives rescans; that one title is then fetched fresh | Oct 25, 2026 |
+| D44 | **How Fetch info fills things in:** posters at 342 px, backdrops at 1280 px and episode stills at 300 px, saved already shrunk; textless backdrops first for the top screen; fanart.tv only for art TMDB lacks; AniList only for anime TMDB doesn't know. Anime numbered straight through (One Piece 1050) is mapped across TMDB's seasons. Stills only for episodes on the card | Oct 25, 2026 |
+| D45 | **Playback settings on Start in the player:** speed, picture (Fit, Zoom to fill, 16:9, 4:3, Stretch), audio delay (50 ms steps, kept per file), subtitle size, position and background, top screen brightness. Speed lasts the session; the rest are kept | Oct 25, 2026 |
+| D46 | **More buttons on Browsing:** X Search, Select the order (A–Z, Recently added, Year, Unwatched only; it changes on release so Select + Start still opens diagnostics), R1 the folder browser. They are shown in a bar under the cards | Oct 25, 2026 |
+| D47 | **Left out of v1, and why:** MKV chapter jumps (ExoPlayer doesn't read MKV chapters); a touch lock (⏻ already turns the only touch screen off); notification controls (they come with background audio in v2). Headset and Bluetooth play / pause work through a media session | Oct 25, 2026 |
+| D48 | **Fetch info finishes even if you leave the app.** It runs in the app rather than on a screen, held in the foreground by a service with a notification showing its progress ("Fetching info… 3 of 12"), and a wake lock (at most an hour) so it continues with the screen off. Both end with the work. When you're not in the app, a notification says how it went. It only ever starts from ⟳ (D32). The player itself still pauses and lets go of its decoders when you leave (D40) | Oct 25, 2026 |
+
+**Questions the design must answer**
+
+- Does the video always play on the top screen, or can you choose?
+- What does the bottom screen show while browsing, and while playing?
+- Poster row, grid or list for browsing, and how many titles on screen?
+- In single-screen mode, where do the menus and episode list go?
+- What do the buttons do on each screen?
+
+**Starting ideas from the first mockup** (one option to compare, not a decision)
+
+| State | Top screen (6", 1080p) | Bottom screen (3.92", touch) |
+| --- | --- | --- |
+| Browsing | Poster row you scroll; the selected title large, with backdrop, year, genre, plot | Filters and search: Movies, Series, Continue watching, Unwatched, Recently added |
+| Movie selected | Backdrop, logo, plot, cast, runtime | Play / Resume button, subtitle and audio choice, mark watched |
+| Series selected | Show backdrop, logo, plot | Season buttons, then the episode list: available ones playable, missing ones greyed; current one highlighted |
+| Playing | Full-screen video only | Episode list stays; seek bar, play/pause, skip, audio and subtitle pickers, delay controls. Dims after 10 s untouched |
+| Episode ending | Video keeps playing the credits | Up next card with a 10 s countdown and Cancel |
+| Stats | Charts: time watched per week, top shows, genres | Period picker and history list |
+| Bottom screen off | Normal single-screen player: menus appear over the video, like any phone player | Pure black |
+
+**Button mapping (first idea, not decided)**
+
+- D-pad moves on the top screen while browsing, and on the bottom screen while playing.
+- A plays or selects, B goes back, X opens subtitles and audio, Y marks watched.
+- L1 and R1 jump to the previous and next episode; L2 and R2 skip 10 s back and forward.
+- **(research)** One combo turns the bottom screen off and on (our own, because AYN's can't be detected).
+
+**Fallback (changed by research)**
+
+The app watches the displays when it starts and whenever they change (`DisplayManager.DisplayListener`). If the bottom screen is removed, it switches to the single-screen layout without stopping playback. A display that is merely *off* (during wake-up) doesn't count as removed.
+
+Turning the bottom screen off by holding the AYN button **can't be detected**: AYN draws an overlay and the display stays on. So:
+
+- The app has its own **Bottom screen off** action. It blanks our window to pure black (OLED pixels off) and switches to the single-screen layout.
+- During playback the bottom screen stays static (no animations, redraws once a second), so little is wasted if AYN's overlay covers it.
+
+If a frontend opens the app on the bottom screen, the app moves itself to display 0 first.
+
+## Battery and performance budget
+
+The target: an hour of 1080p playback uses no more battery than VLC playing the same file on the same settings. Every rule below exists to hit that.
+
+**Rules while a video plays**
+
+1. **Hardware decoding by default.** The video chip decodes H.264, HEVC, VP9 and AV1 at a fraction of the power software decoding needs. Software is used only for a file the chip can't decode, and the app shows a small notice when that happens.
+2. **Video drawn by the display hardware (research).** Video goes into a `SurfaceView`, which the display hardware composes directly. A `TextureView` (what Loki uses) costs a GPU copy every frame.
+3. **Never raise the refresh rate (research).** The Thor runs at 60 Hz with both screens on. The app never asks for 120 Hz. It asks for the film's own frame rate (24, 25, 30 or 60) only if v0 shows the Thor offers those modes; that also stops 24 fps judder.
+4. **True black interface.** The Thor's screens are AMOLED, where black pixels are switched off. All backgrounds are pure black.
+5. **Quiet bottom screen.** It dims after 10 s untouched and wakes on a touch or a button. An option turns it fully black during playback. **(research)** Dimming is done by drawing black over the content, because a window brightness override changed *both* screens on older firmware; v0 tests whether it's per-screen now.
+6. **Slow updates on the bottom screen.** The seek bar and clock redraw once a second, not every frame.
+7. **No background work during playback.** Scanning, artwork downloads and subtitle searches pause until playback stops.
+8. **Few writes.** Position and stats are saved on pause, stop, episode change and once a minute, not continuously.
+9. **Standard performance mode is enough.** The app never needs the Thor's High mode, and never asks for it.
+
+**Rules when not playing**
+
+1. **No always-running service.** When you leave the app, playback pauses and frees its decoders, and nothing else runs. The one exception is a Fetch info you started: it carries on to the end with a notification, then stops (D48).
+2. **Online fetches only on request** (D32): Fetch info and Find subtitles. Nothing runs in the background, on a timer, or after a scan.
+3. **Images decoded at display size.** Posters are stored at the size shown, not full resolution, so scrolling stays smooth and light.
+4. **Rescans are cheap.** Only folders whose contents changed are read again.
+
+| Activity | Budget |
+| --- | --- |
+| 1 h of 1080p HEVC playback, brightness 50%, Wi-Fi off | No more than VLC on the same file (measured, ±3%) |
+| App idle in the background | No wake-ups, no network |
+| First scan of 200 files, artwork included | Under 5 min on Wi-Fi |
+| Rescan with nothing new | Under 5 s |
+| Memory during playback | Under 300 MB |
+| Start to first frame | Under 1.5 s from a local file |
+
+## System architecture and tech stack
+
+The app is split so playback depends only on local files and the database. Anything that needs the internet runs separately and only adds to the database.
+
+```
+            Top screen (display 0)                    Bottom screen ("Screen-2")
+   ┌───────────────────────────────────┐    ┌───────────────────────────────────┐
+   │ MainActivity (Compose)            │    │ BottomScreen Presentation         │
+   │  • browsing UI / SurfaceView video│    │  (Compose, own lifecycle,         │
+   │  • receives all controller keys   │    │   FLAG_NOT_FOCUSABLE: touch only) │
+   └───────────────┬───────────────────┘    └───────────────┬───────────────────┘
+                   │      shared ViewModels / StateFlows      │
+                   └───────────────┬──────────────────────────┘
+                     ┌─────────────┴──────────────┐
+                     │ Playback service (Media3   │  ← the only part running
+                     │ session, ExoPlayer, FFmpeg │    during playback
+                     │ audio)                     │
+                     └─────────────┬──────────────┘
+         ┌─────────────────────────┼───────────────────────────┐
+   ┌─────┴──────┐        ┌─────────┴─────────┐        ┌────────┴─────────┐
+   │ Room DB    │        │ Library scanner   │        │ Online workers    │
+   │ DataStore  │        │ (SAF folder, file │        │ TMDB, OpenSubs    │
+   │            │        │  name parser)     │        │ (WorkManager)     │
+   └────────────┘        └───────────────────┘        └──────────────────┘
+```
+
+**Two-screen rules (research):**
+
+- The activity runs on the top screen; the bottom screen is an `android.app.Presentation` on the display found through `DISPLAY_CATEGORY_PRESENTATION`. It skips private, virtual and "HiddenDisplay"/"WebRTC_ScreenCapture" displays, and picks the bottom panel over a docked TV.
+- The Presentation window is `FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCH_MODAL`, has its **own** `LifecycleOwner` (resumed while showing) and shares only the `ViewModelStore`. Borrowing the activity's lifecycle freezes it (a lesson from Loki). It swallows Back and Escape, and forwards keys to the same handler as the activity.
+- The player lives in the playback service, never in a composable, so a display change, a screen swap or the activity being recreated never restarts the film.
+- The activity declares `configChanges` for screen size, density and layout, so moving between displays doesn't recreate it.
+- `show()` is wrapped against `BadTokenException` and `InvalidDisplayException`; the Presentation is always dismissed when the app leaves, so the bottom screen never gets stuck.
+
+| Area | Choice | Why |
+| --- | --- | --- |
+| Language and UI | Kotlin, Jetpack Compose | Android's current standard; good controller focus handling |
+| Second screen | `Presentation` API on the bottom display **(research: confirmed)** | Used by melonDS, Azahar and Loki on the Thor; needs no home-app role (Argosy's separate-activity approach does) |
+| Video surface | `SurfaceView` **(research)** | The display hardware composes it directly: lowest power |
+| Playback engine | Media3 ExoPlayer + FFmpeg audio add-on (recommended); libVLC as the alternative | Hardware decoding with low power; FFmpeg adds DTS, TrueHD and AC3 (without it they play silently) |
+| Media controls | Media3 media session in a foreground service | Notification and headset controls; Android won't kill playback |
+| Database | Room (SQLite) | Fast, offline, simple to back up |
+| Settings | DataStore | Small settings without touching the database |
+| Images | Coil, decoded at display size, disk cache | Smooth scrolling, low memory |
+| Network | OkHttp with response cache | TMDB and OpenSubtitles calls, cached so they're not repeated |
+| Background work | None scheduled. The SD-card scan runs when the app opens (offline); online fetches run only when you press Fetch info or Find subtitles (D32) | The app never connects on its own |
+| Filename parsing | Kotlin rules ported from the Movie Scraper | guessit is Python and can't run on Android |
+| Subtitles | Media3's subtitle renderer; a libass-based renderer in v2 | srt, vtt and basic ASS in v1; full ASS styling later |
+| Artwork and info | TMDB API first; fanart.tv and AniList as fallbacks (see below) | Free keys; proper 16:9 backdrops, posters, title logos, episode stills |
+| Subtitle search | OpenSubtitles API | Search by file hash finds the exact matching file |
+| Stats charts | A Compose charts library (e.g. Vico) | Draws on the device, no internet |
+| Opening from frontends | `ACTION_VIEW` for `video/*` with a temporary `content://` grant | How ES-DE (`%ACTION%`/`%DATA%`), Cocoon, Daijisho and RetroHrai! launch apps |
+
+## Artwork sources and sizes (decision D7)
+
+Every image is fetched through an API, in the size its screen needs, and stored on the device. Nothing is cropped from a different kind of image.
+
+| Where it shows | Image type | Source, in order | Size fetched | Notes |
+| --- | --- | --- | --- | --- |
+| Top screen: focused title, Movie/Series selected | **Backdrop**, 16:9 | TMDB backdrops → fanart.tv backgrounds → AniList banner (anime) | TMDB `w1280` (`original` when docked to a TV) | Prefer **textless** backdrops (`include_image_language=null`), because our own title sits over them. Highest-rated by TMDB vote |
+| Top screen: title over the art | **Logo** (transparent PNG) | TMDB logos → fanart.tv clearlogo | `w500` | Language: the app's language, then English. Falls back to the title in text |
+| Bottom screen: cards | **Poster**, 2:3 | TMDB posters → AniList `coverImage.extraLarge` (anime) → fanart.tv | TMDB `w342` (a card is ≈ 260 px wide on the 1240 px panel) | Decoded at card size (battery rule) |
+| Top screen: poster mix | Poster, 2:3 | Same as cards | `w342` | Reuses the card images; no extra downloads |
+| Series: episode cards, focused episode, Up next | **Still**, 16:9 | TMDB episode stills | `w300` (cards), `w780` (top screen, Up next) | Missing stills fall back to the show's backdrop |
+| Series: season cards and season view | **Season poster**, 2:3 | TMDB season posters → show poster | `w342` (cards), `w500` (top screen) | Seasons without their own poster use the show's |
+| Others tab (unmatched videos) | Frame from the video | Extracted on the device | 960 × 540 | No network |
+
+Rules:
+
+- **Right size, once.** Download each image in the size above, resize to the exact display size, and store it as WebP. About 0.5 MB per title, as budgeted.
+- **Wide art only on the wide screen.** If no 16:9 backdrop exists from any source, show the blurred-poster fallback, never a stretched or cropped poster.
+- **Anime** is matched on TMDB first; AniList fills gaps (its banners and covers are often better for anime). Both IDs are kept on the title.
+- **Credits:** TMDB in the About screen (required); fanart.tv and AniList as their terms require.
+- **Keys:** TMDB (free), fanart.tv personal API key (free); AniList needs no key.
+- **When:** only when you press **Fetch info** (for the whole library, a tab, or one title), never automatically and never during playback (D32).
+
+## Data model
+
+Everything lives in one small database on the device, so the library, progress and stats work offline. Stats are worked out from watch sessions, never stored as running totals, so they can't drift.
+
+| Table | Key fields | Notes |
+| --- | --- | --- |
+| media\_file | id, path, size, modified, duration, video codec, resolution, audio tracks, subtitle tracks | One row per file on the card; size + modified time detect changes |
+| movie | tmdb\_id, title, year, plot, runtime, rating, genres, director | Linked to its file |
+| show | tmdb\_id, name, first aired, plot, genres, network, status | One per series |
+| season | show id, number, name, episode count | From TMDB, so missing episodes can be listed |
+| episode | show id, season, number, title, air date, plot, still | Linked to a file when one exists; none = missing |
+| artwork | owner, type (poster, backdrop, logo, still, frame), source (TMDB, fanart.tv, AniList, device), source id, language, width × height, local path | Images stored on the device after download, already at display size |
+| match\_override | file path, type, tmdb\_id, season, episode | Your manual fixes; applied before automatic matching |
+| playback\_state | file id, position, watched, times finished, last played, chosen audio and subtitle track, delays | One row per file |
+| watch\_session | file id, started, ended, seconds watched | One row each time you watch; all stats come from these |
+| subtitle\_file | file id, path, language, source (local, embedded, downloaded) | Downloaded files are saved next to the video |
+| intro\_marker | show id, season, start, end | For Skip intro (v3) |
+
+Settings (theme, bottom screen behaviour, subtitle style, Wi-Fi-only downloads) are kept separately in DataStore, not the database.
+
+## Device and system requirements
+
+The app targets the Thor Max first and runs on any Android 10+ phone, with the dual-screen layout only where a second display exists.
+
+**Target device: AYN Thor Max**
+
+| Part | Spec | What it means for the app |
+| --- | --- | --- |
+| Chip | Snapdragon 8 Gen 2 | Hardware decoding for H.264, HEVC 10-bit, VP9 and AV1 (the Thor **Lite**'s Snapdragon 865 has no AV1 hardware) |
+| Top screen | 6" AMOLED, 1080 × 1920, 120 Hz (60 Hz with both screens on) | Video and browsing; true black saves power |
+| Bottom screen | 3.92" AMOLED 1080 × 1240, 60 Hz, touch | Controls and episode list |
+| RAM | 16 GB | No memory pressure; keep under 300 MB anyway |
+| Storage | 512 GB internal + microSD | Videos on the SD card; artwork on internal |
+| Battery | 6,000 mAh | The budget in the battery section |
+| Android | 13 with AYN's Odin system apps; firmware 1.0.0.377 is the latest known | Sets the features the app can rely on; retest after every OTA |
+| Video out | USB-C DisplayPort (since firmware .293) | TV output in v2 |
+
+**App requirements**
+
+| Item | Value |
+| --- | --- |
+| Minimum Android | 10 (API 29) |
+| Target Android | 14 (API 34) |
+| APK size | Under 40 MB |
+| Artwork cache | About 0.5 MB per title; 250 MB for 500 titles; size cap in settings |
+| Database | Under 50 MB for thousands of files |
+
+**Permissions**
+
+- **Folder access** through Android's folder picker for the SD card video folder only. No broad storage permission.
+- **Internet** and network state, used only when you press Fetch info or Find subtitles (D32).
+- **Foreground media playback service** and **notifications**, so playback controls show in the notification shade.
+- **Keep screen on** during playback only.
+
+**Accounts and keys (all free)**
+
+- TMDB API key, for artwork and info. The app must credit TMDB in its About screen.
+- OpenSubtitles account and API key, for subtitle search (v1). The free tier has a daily download limit.
+- Trakt account, optional (v3).
+
+**Build machine**
+
+- Your Windows PC with Android Studio (latest stable), which includes the Java toolkit.
+- 16 GB RAM recommended for the Android emulator.
+- USB-C cable and USB debugging turned on, on the phone and later the Thor.
+
+## Build phases and milestones
+
+The work runs in four versions. Each one ends at a gate, and the next starts only when the gate passes.
+
+| Version | Contents | Gate to pass |
+| --- | --- | --- |
+| **v0: two-screen test app + mockups** | A small probe app: video on the top screen, controls on the bottom screen, display and decoder report, refresh-mode test, bottom-screen dimming test, launch-from-bottom test. Layout mockups for the questions above | **Gate 1:** both screens work on the Thor with buttons and touch; the probe questions below are answered; a layout is chosen |
+| **v1: usable player** | Library scan, filename matching, artwork, series, resume and watched, Continue watching, auto-play next, local subtitles, subtitle search (OpenSubtitles), all v1 baseline rows | **Gate 2:** battery test passes against VLC; 95% of the filename test set matches |
+| **v2: comfort** | Backup, launch from frontends, sleep timer, background audio, night mode, TV output, full ASS | **Gate 3:** no battery regression |
+| **v3: extras** | Skip intro, Trakt, themes, picture-in-picture | — |
+
+v0 comes first because the two-screen behaviour on the Thor is the biggest unknown. **(research)** Other Thor apps already prove the approach, so v0 now mostly *measures* things. If the gate after v1 fails on battery, it gets fixed before any v2 feature is added. Each build round ends with a short list of things for you to try on the device.
+
+**Questions v0 must answer on the real Thor (research)**
+
+- [ ] Which display modes do both screens offer? Does asking for the film's frame rate (`Surface.setFrameRate`, `preferredDisplayModeId`) change the mode with both screens on?
+- [ ] Does a brightness override on the bottom-screen window dim only the bottom panel on firmware .377?
+- [ ] Can our window notice AYN's "bottom off" overlay at all?
+- [ ] Which codecs are hardware-decoded (HEVC 10-bit, AV1, AC3, E-AC3)?
+- [ ] Does launching from Cocoon or ES-DE on the bottom screen, then moving to display 0, work smoothly?
+- [ ] Does the bottom-screen window survive lid close and open, sleep and wake, an AYN screen swap and a Wayfinder move?
+- [ ] With Home and Back bound to the active screen (.372+), does touching our bottom controls change where Back goes?
+
+## Testing plan
+
+Most of the app can be tested before the Thor arrives. Only final dual-screen tuning and the battery check need the real device.
+
+| Stage | Where | What gets tested |
+| --- | --- | --- |
+| 1. Unit tests | On the PC, no device | Filename parser against 100 real filenames; stats maths; match overrides |
+| 2. Emulator | Android Studio emulator | Library, artwork, playback, resume, auto-next |
+| 3. Simulated second screen | Emulator or phone with Developer options › Simulate secondary displays (1080 × 1240 is closest) | Top and bottom screen layouts, switching to single screen |
+| 4. Your phone | Real hardware, one screen | Hardware decoding, subtitles, controller over Bluetooth |
+| 5. Thor Max | The real device | Both screens, buttons, AYN button, bottom screen off, battery budget |
+
+**Test file set** (your own files, kept in one test folder)
+
+- One each of: H.264 mkv, HEVC 10-bit mkv, AV1, mp4 with AAC, a file with DTS audio, one with AC3, **one HDR10 file (research)**.
+- A file with embedded ASS subtitles, one with a separate .srt, one with two audio languages.
+- Three loose episodes of one show with messy names, and one movie with a vague name, to test matching.
+
+**Battery test, run on the Thor**
+
+1. Write down the firmware build. Charge to 100%, brightness 50%, Wi-Fi off, Performance mode Standard.
+2. Play the same 1-hour 1080p HEVC file in VLC; note the battery drop.
+3. Charge again, repeat in the app with the bottom screen dimmed.
+4. Pass: the app's drop is no more than VLC's, within 3%. Fail: profile the app before adding features.
+
+**After every Thor OTA (research):** both screens show, buttons go to the top screen after touching the bottom screen, Back works, bottom screen off works, HDR playback and returning from it, a 10-minute battery spot check.
+
+## Risks, limits and open decisions
+
+| Risk | Impact | Plan |
+| --- | --- | --- |
+| The Thor's bottom screen may not behave like a standard second display | Dual-screen layout fails | **(research: largely retired)** melonDS, Azahar and Loki use it as a standard presentation display. v0 confirms it |
+| AYN's "bottom screen off" can't be detected **(research)** | Our window keeps drawing under AYN's overlay | Our own Bottom screen off action; static bottom screen during playback |
+| No film-rate refresh modes **(research)** | 24 fps films judder at 60 Hz | Measured in v0; if absent, accept it (same as VLC) |
+| Window brightness may affect both screens **(research)** | Dimming the bottom screen dims the film | Dim by drawing black until v0 proves per-screen brightness |
+| Launched on the bottom screen by a frontend **(research)** | Can't put a window on the top screen from there | Move to display 0 at start |
+| Docked TV becomes a third display **(research)** | Controls land on the TV | Choose the bottom panel by name or flags; TV handling in v2 |
+| Some files need software decoding (rare codecs, very high bitrates) | Higher battery use | Show a notice; keep hardware decoding the default |
+| DTS, TrueHD play silently without FFmpeg **(research)** | No sound with no error | FFmpeg audio add-on; an "unsupported audio" notice |
+| ASS subtitle styling is limited in the default engine | Anime-style subtitles look plain | Basic styling in v1; add a full ASS renderer in v2 |
+| Filename parsing misses odd names | Wrong or missing artwork | Manual fix screen and overrides from v1 |
+| OpenSubtitles free-tier daily limit | Few downloads per day | Search by file hash for the right file first time; local files always work |
+| I can't compile or test on the device here | Slower rounds | You build in Android Studio; each round ends with a short test list |
+| AYN firmware updates change dual-screen behaviour | Layout breaks after an update | Single-screen fallback always works; the after-OTA checklist above |
+| Custom ROMs (LineageOS 24) behave differently **(research)** | Dual screen may not work | Stock firmware is the target; single-screen layout works everywhere |
+| Other overlays (TCC, game assistant, Wayfinder) share the screens **(research)** | Focus or drawing surprises | Don't assume our windows are alone; never pause on losing focus |
+
+**Open decisions**
+
+- [x] App name: **Exo Player** (D31). Note: ExoPlayer is also the name of Google's playback library the app uses, so search results will mix the two; fine for a personal app.
+- [x] Playback engine: **Media3 ExoPlayer with the FFmpeg audio add-on** (decided, D28). libVLC stays the fallback if odd files become a problem. (Was: ExoPlayer, or libVLC, which plays more odd files, heavier).
+- [x] Library layout: **both** loose files and Show/Season folders work (D33).
+- [ ] Create a TMDB API key now; OpenSubtitles account before v1.
+- [x] Trakt sync: **v3** (D35); syncs only when you ask.
+- [ ] Install Android Studio on your PC before v0 starts.
+- [ ] Screen layouts: design several options as mockups, compare them on the Thor, pick one (v0).
+- [x] Licence: **GPL-3.0** (D34), so code from Loki, melonDS or Azahar can be reused. Wayfinder's code (PolyForm Strict) still can't.
+
+**Sources**
+
+- Research notes: [research/thor-dual-screen.md](research/thor-dual-screen.md), [research/thor-platform-and-issues.md](research/thor-platform-and-issues.md)
+- [Held Games: AYN Thor device page](https://heldgames.com/devices/ayn-thor)
+- Reddit r/AynThor thread on adding videos to Cocoon (screenshot you shared)
