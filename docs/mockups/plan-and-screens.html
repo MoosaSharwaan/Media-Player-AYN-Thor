@@ -187,6 +187,25 @@ p { margin: 0; }
 .v.v1 { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
 
+/* ---------- status ---------- */
+.st { display: inline-block; font: 600 10.5px/1 var(--f-mono); letter-spacing: .04em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.st.done { background: var(--ok); color: var(--bg); }
+.st.part { color: var(--warn); border: 1px solid currentColor; }
+.st.todo { color: var(--muted); border: 1px dashed var(--line); }
+.gates .st { margin-top: 8px; white-space: normal; line-height: 1.25; max-width: 100%; }
+.gates .stn { margin-top: 6px; }
+.gates > div.st-todo:not(.g) b { color: var(--muted); }
+.gates > div.st-part { box-shadow: inset 0 3px 0 var(--warn); }
+.gates > div.st-done { box-shadow: inset 0 3px 0 var(--ok); }
+.cat li { grid-template-columns: 22px 1fr auto auto; }
+.cat li.s-todo > span:first-child { color: var(--muted); }
+.cat li .sn { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+.cprog { display: grid; gap: 5px; }
+.cprog span { font: 500 12px/1.2 var(--f-mono); color: var(--muted); }
+.cbar { display: flex; height: 6px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.cbar b { background: var(--ok); }
+.cbar i { background: var(--warn); opacity: .7; }
+
 /* ---------- compare ---------- */
 .cmp-key { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); align-items: center; }
 .cmp-key span { display: inline-flex; gap: 6px; align-items: center; }
@@ -327,6 +346,7 @@ p { margin: 0; }
     <div><h2>Versions and gates</h2><p class="lede" style="margin-top:6px">Each version ends at a gate. The next one starts only when the gate passes.</p></div>
     <div class="gates" id="gates"></div>
     <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
+    <div class="legend"><span class="st done">Built</span> in the code, with its tests passing <span class="st part">Partly</span> some of it built; the note says what's left <span class="st todo">Not yet</span> not started. Nothing has run on a Thor yet, so "Built" means built and tested on the PC, not proven on the device.</div>
     <div class="cats" id="cats"></div>
 
     <div id="compare"><h2>How other players compare</h2><p class="lede" style="margin-top:6px">Six Android players side by side with Exo Player, feature by feature. For Exo Player the cell says where the feature stands: built, the build stage it's in, or the version it's planned for. For the others it's what each app offers out of the box, from its published features; nothing here was tested side by side.</p></div>
@@ -951,79 +971,94 @@ p { margin: 0; }
   show(start);
 
   // ---------- plan ----------
+  // [id, name, what, is a gate, status (done | part | todo), status note]
   var gates = [
-    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared"],
-    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1],
-    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles"],
-    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1],
-    ["v2", "Comfort", "Backup, frontends, TV output, sleep timer"],
-    ["G3", "Gate 3", "No battery regression", 1],
-    ["v3", "Extras", "Skip intro, Trakt, themes, PiP"]
+    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Measuring needs the Thor"],
+    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "todo", "Needs the Thor"],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Stages 1–5 and Settings built; stage 6 (online) next, then the player extras"],
+    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "Needs the Thor and your 100 file names"],
+    ["v2", "Comfort", "Backup, frontends, TV output, sleep timer", 0, "todo", ""],
+    ["G3", "Gate 3", "No battery regression", 1, "todo", ""],
+    ["v3", "Extras", "Skip intro, Trakt, themes, PiP", 0, "todo", ""]
   ];
-  document.getElementById("gates").innerHTML = gates.map(function (g) { return '<div class="' + (g[3] ? 'g' : '') + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small></div>'; }).join('');
+  var STATUS = { done: "Built", part: "In progress", todo: "Not started" };
+  document.getElementById("gates").innerHTML = gates.map(function (g) {
+    var label = g[3] ? { done: "Passed", part: "Testing", todo: "Not passed yet" }[g[4]] : STATUS[g[4]];
+    return '<div class="' + (g[3] ? 'g ' : '') + 'st-' + g[4] + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small>' +
+      '<span class="st ' + g[4] + '">' + label + '</span>' + (g[5] ? '<small class="stn">' + g[5] + '</small>' : '') + '</div>';
+  }).join('');
 
   var cats = [
     { t: "Two-screen foundation", s: "Prove and measure the Thor before building screens.", steps: [
-      ["Find the bottom panel by name and flags; skip virtual and TV displays", "v0"],
-      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0"],
-      ["Video in a SurfaceView on the top screen", "v0"],
-      ["Single-screen fallback when the bottom display disappears", "v0"],
-      ["Move to the top screen if launched on the bottom", "v0"],
-      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0"],
-      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0"] ] },
+      ["Find the bottom panel by name and flags; skip virtual and TV displays", "v0", "done"],
+      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0", "done"],
+      ["Video in a SurfaceView on the top screen", "v0", "done"],
+      ["Single-screen fallback when the bottom display disappears", "v0", "done", "The bottom screen’s content moves into a panel on the right"],
+      ["Move to the top screen if launched on the bottom", "v0", "done"],
+      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0", "part", "The measuring page is built (Select + Start); the readings need the Thor"],
+      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0", "part", "Playback is kept outside the screens so it shouldn’t restart; untested on the Thor"] ] },
     { t: "Layout & design", s: "Decide how both screens look before any screen is built.", steps: [
-      ["Mockup options for every state (this page is option 1)", "v0"],
-      ["Agree the display and layout rules", "v0"],
-      ["Choose a layout per state on the real Thor", "v0"],
-      ["Final button map, including bottom-screen-off combo", "v0"],
-      ["Themes: true-black default plus accent colours", "v3"] ] },
+      ["Mockup options for every state (this page is option 1)", "v0", "done"],
+      ["Agree the display and layout rules", "v0", "done", "R1–R12 decided"],
+      ["Choose a layout per state on the real Thor", "v0", "todo", "Needs the Thor"],
+      ["Final button map, including bottom-screen-off combo", "v0", "part", "Buttons mapped; ⏻ on screen works; no button combo yet"],
+      ["Themes: true-black default plus accent colours", "v3", "part", "True black built; accent colours not yet"] ] },
     { t: "Library & matching", s: "From a folder of files to posters and seasons.", steps: [
-      ["Pick the SD card folder once (folder picker)", "v1"],
-      ["Scan, then rescan only changed folders", "v1"],
-      ["Filename parser, tested on 100 real names", "v1"],
-      ["Match on TMDB; download posters, backdrops, logos", "v1"],
-      ["Group Show › Season › Episode; list missing episodes", "v1"],
-      ["Fix a match by hand; survives rescans", "v1"],
-      ["Folder browser; search, sort, filter", "v1"] ] },
+      ["Pick the SD card folder once (folder picker)", "v1", "done"],
+      ["Scan, then rescan only changed folders", "v1", "part", "Only changed files are read again, but every folder is still listed"],
+      ["Filename parser, tested on 100 real names", "v1", "part", "Built and tested on 38 names; needs your 100"],
+      ["Match on TMDB; download posters, backdrops, logos", "v1", "todo", "Stage 6"],
+      ["Group Show › Season › Episode; list missing episodes", "v1", "part", "Grouping built; missing episodes appear once Fetch info works"],
+      ["Fix a match by hand; survives rescans", "v1", "todo", "Stage 6; the keyboard for it is built"],
+      ["Folder browser; search, sort, filter", "v1", "todo"],
+      ["Settings: API keys (typed or pasted, stored encrypted), video folder, About", "v1", "done"] ] },
     { t: "Playback", s: "Everything that happens once you press Play.", steps: [
-      ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1"],
-      ["Notices for software decoding and unsupported audio", "v1"],
-      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1"],
-      ["Audio and subtitle tracks; delay in 50 ms steps", "v1"],
-      ["Resume; watched at 90%; auto-play next with countdown", "v1"],
-      ["Sleep timer, background audio, night mode, Bluetooth delay", "v2"],
-      ["Playlists and queue; TV output when docked", "v2"],
-      ["Picture-in-picture; skip intro", "v3"] ] },
+      ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1", "done"],
+      ["Notices for software decoding and unsupported audio", "v1", "done"],
+      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "±10 s skip only; the rest is planned as stage 7"],
+      ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "part", "Tracks and subtitle delay built; audio delay not yet"],
+      ["Resume; watched at 90%; auto-play next with countdown", "v1", "done"],
+      ["Sleep timer, background audio, night mode, Bluetooth delay", "v2", "todo"],
+      ["Playlists and queue; TV output when docked", "v2", "todo"],
+      ["Picture-in-picture; skip intro", "v3", "todo"] ] },
     { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
-      ["Load .srt, .ass, .vtt next to the video automatically", "v1"],
-      ["Basic styling: size, colour, outline, position", "v1"],
-      ["OpenSubtitles search by file hash; save next to the video", "v1"],
-      ["Full ASS styling (libass renderer)", "v2"] ] },
+      ["Load .srt, .ass, .vtt next to the video automatically", "v1", "done"],
+      ["Basic styling: size, colour, outline, position", "v1", "todo"],
+      ["OpenSubtitles search by file hash; save next to the video", "v1", "todo", "Stage 6; keys go in Settings"],
+      ["Full ASS styling (libass renderer)", "v2", "todo"] ] },
     { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
-      ["Watch sessions recorded; saves on pause, stop and once a minute", "v1"],
-      ["Continue watching row", "v1"],
-      ["Stats screen and CSV export: not needed for now", "Later"],
-      ["Backup and restore in one file", "v2"],
-      ["Trakt two-way sync (optional)", "v3"] ] },
+      ["Watch sessions recorded; saves on pause, stop and once a minute", "v1", "done"],
+      ["Continue watching row", "v1", "done"],
+      ["Stats screen and CSV export: not needed for now", "Later", "todo"],
+      ["Backup and restore in one file", "v2", "todo"],
+      ["Trakt two-way sync (optional)", "v3", "todo"] ] },
     { t: "Frontends", s: "Open from RetroHrai!, Cocoon or ES-DE.", steps: [
-      ["Accept \"open this video\" from other apps", "v2"],
-      ["Move to the top screen when opened on the bottom", "v2"],
-      ["Sample ES-DE custom system and Cocoon setup notes", "v2"] ] },
+      ["Accept \"open this video\" from other apps", "v2", "todo"],
+      ["Move to the top screen when opened on the bottom", "v2", "done", "Built early, in stage 1"],
+      ["Sample ES-DE custom system and Cocoon setup notes", "v2", "todo"] ] },
     { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
-      ["True black everywhere; bottom screen redraws once a second", "v0"],
-      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0"],
-      ["No background work during playback", "v1"],
-      ["Battery test against VLC on the same firmware", "v1"],
-      ["After every Thor OTA: rerun the short checklist", "v1"] ] },
+      ["True black everywhere; bottom screen redraws once a second", "v0", "done"],
+      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Film rate is requested only when the switch is seamless; check on the Thor"],
+      ["No background work during playback", "v1", "done", "Nothing runs in the background at all"],
+      ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
+      ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
     { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
-      ["Unit tests: parser, stats maths, overrides", "v1"],
-      ["Emulator with a simulated 1240×1080 second screen", "v0"],
-      ["Your phone: decoding, subtitles, Bluetooth controller", "v1"],
-      ["Thor: both screens, buttons, battery", "v0"] ] }
+      ["Unit tests: parser, stats maths, overrides", "v1", "part", "45 tests: parser, library, subtitles, series, keyboard, settings; stats and overrides not yet"],
+      ["Emulator with a simulated 1240×1080 second screen", "v0", "part", "No emulator here: screenshot tests draw the screens at the Thor’s sizes instead"],
+      ["Your phone: decoding, subtitles, Bluetooth controller", "v1", "todo"],
+      ["Thor: both screens, buttons, battery", "v0", "todo", "Needs the Thor"] ] }
   ];
+  var STEP = { done: "Built", part: "Partly", todo: "Not yet" };
   document.getElementById("cats").innerHTML = cats.map(function (c) {
-    return '<article class="cat"><div><h3>' + c.t + '</h3><p class="sub">' + c.s + '</p></div><ol>' +
-      c.steps.map(function (s) { return '<li><span>' + s[0] + '</span><span class="v ' + s[1] + '">' + s[1] + '</span></li>'; }).join('') + '</ol></article>';
+    var n = c.steps.length;
+    var done = c.steps.filter(function (s) { return s[2] === "done"; }).length, part = c.steps.filter(function (s) { return s[2] === "part"; }).length;
+    return '<article class="cat"><div><h3>' + c.t + '</h3><p class="sub">' + c.s + '</p></div>' +
+      '<div class="cprog"><div class="cbar" role="img" aria-label="' + done + ' built, ' + part + ' partly, of ' + n + '"><b style="width:' + (done / n * 100) + '%"></b><i style="width:' + (part / n * 100) + '%"></i></div>' +
+      '<span>' + done + ' of ' + n + ' built' + (part ? ' · ' + part + ' partly' : '') + '</span></div><ol>' +
+      c.steps.map(function (s) {
+        return '<li class="s-' + s[2] + '"><span>' + s[0] + (s[3] ? '<small class="sn">' + s[3] + '</small>' : '') + '</span>' +
+          '<span class="st ' + s[2] + '">' + STEP[s[2]] + '</span><span class="v ' + s[1] + '">' + s[1] + '</span></li>';
+      }).join('') + '</ol></article>';
   }).join('');
 
   // ---------- comparison with other players ----------
