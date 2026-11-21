@@ -13,8 +13,8 @@ android {
         applicationId = "com.msharwaan.exoplayer"
         minSdk = 29
         targetSdk = 34
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = 5
+        versionName = "1.0.4"
     }
 
     // One debug key for every build, here and on GitHub, so each release installs over the
@@ -70,7 +70,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
     // FFmpeg audio decoders (DTS, TrueHD, AC3…) for what the device can't decode itself (D28). GPL-3.0, as is this app (D34).
-    implementation(libs.jellyfin.media3.ffmpeg)
+    implementation(project(":ffmpeg"))
     // Fetch info and Find subtitles only (D32).
     implementation(libs.okhttp)
     implementation(libs.androidx.room.runtime)

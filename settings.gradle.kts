@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "ExoPlayer-Thor"
 include(":app")
+include(":ffmpeg")

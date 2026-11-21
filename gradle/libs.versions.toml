@@ -7,7 +7,7 @@ activityCompose = "1.11.0"
 lifecycle = "2.9.4"
 composeBom = "2025.12.01"
 media3 = "1.8.1"
-jellyfinFfmpeg = "1.8.0+1"
+checkerQual = "3.43.0"
 room = "2.7.2"
 coroutines = "1.10.2"
 documentfile = "1.1.0"
@@ -27,7 +27,9 @@ androidx-compose-material3 = { module = "androidx.compose.material3:material3" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
 androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3" }
-jellyfin-media3-ffmpeg = { module = "org.jellyfin.media3:media3-ffmpeg-decoder", version.ref = "jellyfinFfmpeg" }
+androidx-media3-decoder = { module = "androidx.media3:media3-decoder", version.ref = "media3" }
+androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
+checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
@@ -43,6 +45,7 @@ androidx-room-testing = { module = "androidx.room:room-testing", version.ref = "
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

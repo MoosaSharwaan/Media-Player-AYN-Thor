@@ -38,6 +38,7 @@ fun DiagnosticsTop(model: DiagnosticsModel) {
         Text("Decoders", color = Palette.Accent, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         model.codecs.forEach { c -> Mono("${c.mime.padEnd(22)} ${if (c.hardware) "HARDWARE" else "software"}  ${c.name}") }
         Mono("FFmpeg audio: ${model.ffmpegAudio}")
+        Mono("FFmpeg video: ${model.ffmpegVideo}")
     }
 }
 
