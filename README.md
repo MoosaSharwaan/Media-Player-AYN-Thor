@@ -6,7 +6,7 @@
   <img src="docs/images/thor-browsing.png" width="640" alt="Exo Player on the Thor: a poster mix of the Movies tab on the top screen, the tab strip and poster cards on the bottom screen">
 </p>
 
-> **v1.0.2** · [Download the APK](https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/latest). Every v1 feature is built and its 94 tests pass on a PC, with both screens drawn at the Thor's real sizes and real clips played through the player. It hasn't run on a Thor yet: the two v1 gates (testing on the device, and a battery test against VLC) are next. AniList was tested live; TMDB, fanart.tv and OpenSubtitles against stand-in servers. Personal app, installed as an APK; not on the Play Store.
+> **v1.0.2** · [Download the APK](https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/latest). Every v1 feature is built and its 94 tests pass on a PC, with both screens drawn at the Thor's real sizes and real clips played through the player. It now runs on the Thor; the two v1 gates (the full on-device test, and a battery test against VLC) are next. AniList was tested live; TMDB, fanart.tv and OpenSubtitles against stand-in servers. Personal app, installed as an APK; not on the Play Store.
 
 ## How the two screens are used
 
