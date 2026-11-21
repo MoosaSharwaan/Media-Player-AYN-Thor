@@ -12,7 +12,11 @@ data class TmdbMovie(
     val rating: Double?, val posterPath: String?, val backdropPath: String?,
 )
 
-data class TmdbSeason(val number: Int, val name: String, val overview: String?, val year: Int?, val episodeCount: Int, val posterPath: String?)
+/** [airDate] is when the season started, "2016-10-06", for telling seasons apart. */
+data class TmdbSeason(
+    val number: Int, val name: String, val overview: String?, val year: Int?, val episodeCount: Int, val posterPath: String?,
+    val airDate: String? = null,
+)
 
 data class TmdbShow(
     val id: Long, val name: String, val year: Int?, val overview: String?, val genres: String?, val rating: Double?,
@@ -70,7 +74,7 @@ class Tmdb(
             posterPath = o.str("poster_path"), backdropPath = textlessBackdrop(o) ?: o.str("backdrop_path"),
             seasons = o.optJSONArray("seasons").objects().map {
                 TmdbSeason(it.optInt("season_number"), it.str("name") ?: "Season ${it.optInt("season_number")}", it.str("overview"),
-                    yearOf(it.str("air_date")), it.optInt("episode_count"), it.str("poster_path"))
+                    yearOf(it.str("air_date")), it.optInt("episode_count"), it.str("poster_path"), it.str("air_date"))
             },
             episodeCount = o.intOrNull("number_of_episodes"),
             tvdbId = o.optJSONObject("external_ids")?.let { if (it.isNull("tvdb_id")) null else it.optLong("tvdb_id").takeIf { n -> n > 0 } },

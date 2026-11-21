@@ -65,6 +65,7 @@ class FetchInfoTest {
                 )
                 path == "/3/search/tv" && q == "Caminandes" -> json("""{"results":[{"id":100,"name":"Caminandes","first_air_date":"2013-01-01","overview":"Koro the llama."}]}""")
                 path == "/3/search/tv" && q == "Long Anime" -> json("""{"results":[{"id":200,"name":"Long Anime","first_air_date":"2020-01-01"}]}""")
+                path == "/3/search/tv" && q == "Bungo Stray Dogs" -> json("""{"results":[{"id":300,"name":"Bungo Stray Dogs","first_air_date":"2016-04-07"}]}""")
                 path == "/3/search/tv" -> json("""{"results":[]}""")
                 path == "/3/tv/100" -> json(
                     """{"id":100,"name":"Caminandes","first_air_date":"2013-01-01","overview":"Koro the llama.","genres":[{"name":"Animation"}],
@@ -86,6 +87,21 @@ class FetchInfoTest {
                 )
                 path.matches(Regex("/3/tv/200/season/\\d")) -> json(
                     """{"episodes":[${(1..12).joinToString(",") { """{"episode_number":$it,"name":"Ep $it of season ${path.last()}"}""" }}]}""",
+                )
+                path == "/3/tv/300" -> json(
+                    """{"id":300,"name":"Bungo Stray Dogs","first_air_date":"2016-04-07","overview":"The whole show.","poster_path":"/b_p.jpg","backdrop_path":"/b_b.jpg",
+                       "number_of_episodes":4,"images":{"backdrops":[]},
+                       "seasons":[{"season_number":1,"name":"Season 1","episode_count":1,"air_date":"2016-04-07","overview":""},
+                                  {"season_number":2,"name":"Season 2","episode_count":1,"air_date":"2016-10-06","overview":null},
+                                  {"season_number":3,"name":"Season 3","episode_count":1,"air_date":"2019-04-12","overview":"TMDB's own season 3."},
+                                  {"season_number":4,"name":"Season 4","episode_count":1,"air_date":"2023-01-04"}]}""",
+                )
+                path.matches(Regex("/3/tv/300/season/\\d")) -> json("""{"episodes":[{"episode_number":1,"name":"Ep"}]}""")
+                path == "/anilist" && request.body.clone().readUtf8().contains("Page") -> json(
+                    """{"data":{"Page":{"media":[
+                       {"startDate":{"year":2016,"month":4},"description":"Atsushi joins the Agency.<br>(Source: Crunchyroll)"},
+                       {"startDate":{"year":2016,"month":10},"description":"The Agency's past, and the Guild arrives."},
+                       {"startDate":{"year":2021,"month":1},"description":"The chibi spin-off."}]}}}""",
                 )
                 path == "/anilist" -> json(
                     """{"data":{"Media":{"id":777,"format":"TV","episodes":28,"seasonYear":2023,"genres":["Adventure","Fantasy"],
@@ -120,6 +136,22 @@ class FetchInfoTest {
 
     private fun file(id: Long, key: String, season: Int?, episode: Int?, kind: String = "EPISODE") =
         MediaFile(id, "u$id", "", "f$id.mkv", 1, 1, kind, key, "x", null, season, episode, season == null)
+
+    @Test
+    fun animeSeasonsTakeAniListsTextWhenTmdbHasNone() = runBlocking {
+        val dao = db.library()
+        val key = "s:bungo stray dogs"
+        dao.upsertTitle(TitleInfo(key, "SHOW", "ANIME", "Bungo Stray Dogs", null))
+        (1..4).forEach { n -> dao.insertFile(file(n.toLong(), key, n, 1)) }
+
+        fetch.fetch(listOf(key))
+        val text = dao.seasonsOf(key).associate { it.number to it.overview }
+        assertEquals("Atsushi joins the Agency.", text[1]?.substringBefore("\n")?.trim())
+        assertEquals("The Agency's past, and the Guild arrives.", text[2])
+        assertEquals("TMDB's own season 3.", text[3])
+        // Nothing on AniList started near season 4: no text, rather than another season's.
+        assertEquals(null, text[4])
+    }
 
     @Test
     fun movieThenNothingTheSecondTime() = runBlocking {
