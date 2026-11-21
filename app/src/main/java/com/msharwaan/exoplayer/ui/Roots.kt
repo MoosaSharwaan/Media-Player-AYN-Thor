@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer.ui
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -116,9 +118,26 @@ fun BottomRoot(vm: AppViewModel) {
                     CornerButton("⏻") { vm.toggleBottomScreen() }
                 }
             }
+            rememberBattery()?.let { BatteryLabel(it, batteryPlace(route)) }
             DimLayer(vm, enabled = route.isVideo())
         }
     }
+}
+
+/**
+ * The battery sits in the bottom bar, just left of the corner buttons each page has, level
+ * with them: Browsing ⚙ ⟳, the player ✎ ⏻, a show ✎, the rest none.
+ */
+private fun BoxScope.batteryPlace(route: Route): Modifier {
+    val corner = 48.dp
+    val gap = 12.dp
+    val (end, bottom) = when {
+        route == Route.Browse -> 14.dp + corner + gap + corner + 16.dp to 12.dp
+        route.isVideo() -> 16.dp + corner + gap + corner + 16.dp to 16.dp
+        route is Route.Show -> 16.dp + corner + 16.dp to 16.dp
+        else -> 20.dp to 16.dp
+    }
+    return Modifier.align(Alignment.BottomEnd).padding(end = end, bottom = bottom).height(corner)
 }
 
 @Composable
