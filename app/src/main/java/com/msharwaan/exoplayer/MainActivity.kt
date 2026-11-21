@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 launch {
                     // The rate chosen in Settings; the diagnostics mode test overrides it while it runs.
                     combine(vm.diagnostics.topModeId, displayPrefs.top) { testMode, hz ->
-                        if (testMode != 0) testMode else display?.let { DisplayPrefs.modeIdFor(it, hz) } ?: 0
+                        if (testMode != 0) testMode else currentDisplay?.let { DisplayPrefs.modeIdFor(it, hz) } ?: 0
                     }.collect { modeId ->
                         window.attributes = window.attributes.apply { preferredDisplayModeId = modeId }
                     }
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
 
     /** Relaunches on the default display when started elsewhere. Returns true if it did. */
     private fun moveToTopScreenIfNeeded(): Boolean {
-        val here = display?.displayId ?: Display.DEFAULT_DISPLAY
+        val here = currentDisplay?.displayId ?: Display.DEFAULT_DISPLAY
         if (here == Display.DEFAULT_DISPLAY) return false
         val options = ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
         startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options.toBundle())
@@ -128,6 +128,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private val displayPrefs get() = (application as ExoApp).displayPrefs
+
+    /** The display this activity is on, or null where it can't be read (test environments). */
+    private val currentDisplay: Display? get() = runCatching { display }.getOrNull()
 
     /** Asks the bottom screen for the rate chosen in Settings (0 = Auto). */
     private fun applyBottomRate() {
@@ -139,8 +142,7 @@ class MainActivity : ComponentActivity() {
     /** Shows, moves or removes the bottom screen's window as displays come and go. */
     private fun showBottomScreen(displayId: Int?) {
         if (displayId == bottomDisplayId && bottom?.isShowing == true) return
-        bottom?.let { runCatching { it.dismiss() } }
-        bottom = null
+        dismissBottomScreen()
         bottomDisplayId = displayId
         val display = displayId?.let { DisplayMonitor(this).display(it) } ?: return
         val presentation = BottomPresentation(
@@ -176,7 +178,16 @@ class MainActivity : ComponentActivity() {
         // decoders, so nothing of the player runs in the background (D8, battery rule 1 when idle).
         vm.player.toBackground()
         (application as ExoApp).work.appVisible = false
+        // The bottom window goes with the app; otherwise it stays over whatever the bottom screen
+        // shows next. It comes back in onStart, when displaySetup is collected again.
+        dismissBottomScreen()
         super.onStop()
+    }
+
+    private fun dismissBottomScreen() {
+        bottom?.let { runCatching { it.dismiss() } }
+        bottom = null
+        bottomDisplayId = null
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean =
@@ -220,8 +231,7 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         if (screenOffRegistered) unregisterReceiver(screenOff)
         // Never leave a window stuck on the bottom screen (research: iiSU #265).
-        bottom?.let { runCatching { it.dismiss() } }
-        bottom = null
+        dismissBottomScreen()
         super.onDestroy()
     }
 }

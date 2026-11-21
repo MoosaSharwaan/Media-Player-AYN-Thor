@@ -13,8 +13,19 @@ android {
         applicationId = "com.msharwaan.exoplayer"
         minSdk = 29
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
+    }
+
+    // One debug key for every build, here and on GitHub, so each release installs over the
+    // last and keeps the library. It signs only this app's debug builds.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
