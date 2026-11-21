@@ -59,28 +59,28 @@ class EmbeddedSubtitlesTest {
     @Test
     fun srtInsideMkv() {
         val played = play("text-srt.mkv")
-        assertEquals("EN", played.label)
+        assertEquals("EN · SRT", played.label)
         assertEquals(listOf("Hello from the file"), played.lines)
     }
 
     @Test
     fun assInsideMkv() {
         val played = play("text-ass.mkv")
-        assertEquals("EN", played.label)
+        assertEquals("EN · ASS", played.label)
         assertEquals(listOf("Hello from the file"), played.lines)
     }
 
     @Test
     fun movTextInsideMp4() {
         val played = play("text-movtext.mp4")
-        assertEquals("EN", played.label)
+        assertEquals("EN · Text", played.label)
         assertEquals(listOf("Hello from the file"), played.lines)
     }
 
     @Test
     fun pgsPictureInsideMkv() {
         val played = play("image-pgs.mkv")
-        assertEquals("EN", played.label)
+        assertEquals("EN · PGS", played.label)
         assertEquals(1, played.images.size)
         // A 200 × 40 box at (60, 120) on a 320 × 180 frame.
         val cue = played.images.single()

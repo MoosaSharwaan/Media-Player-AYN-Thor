@@ -433,7 +433,7 @@ class PlayerModel(
     private fun refreshAudioLabel(tracks: Tracks) {
         val selected = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
             .firstNotNullOfOrNull { g -> (0 until g.length).firstOrNull { g.isTrackSelected(it) }?.let { g.getTrackFormat(it) } }
-        _ui.update { it.copy(audioLabel = selected?.let(::audioLabel) ?: "—") }
+        _ui.update { it.copy(audioLabel = selected?.let(TrackLabels::audio) ?: "—") }
     }
 
     private fun cycleAudio() {
@@ -448,7 +448,7 @@ class PlayerModel(
 
     private fun refreshSubtitleChoices(tracks: Tracks) {
         val embedded = tracks.groups.filter { it.type == C.TRACK_TYPE_TEXT }.flatMap { g ->
-            (0 until g.length).filter { g.isTrackSupported(it) }.map { i -> SubtitleChoice.Track(g, i, trackLabel(g.getTrackFormat(i))) }
+            (0 until g.length).filter { g.isTrackSupported(it) }.map { i -> SubtitleChoice.Track(g, i, TrackLabels.subtitle(g.getTrackFormat(i))) }
         }
         val previous = subtitleChoices.getOrNull(subtitleIndex)
         subtitleChoices = listOf(SubtitleChoice.Off) + ownSubtitleFiles.map { SubtitleChoice.OwnFile(it) } + embedded
@@ -671,17 +671,5 @@ class PlayerModel(
 
         private fun labelOf(s: SubtitleFile): String =
             listOfNotNull(s.language?.uppercase(), s.fileName.substringAfterLast('.').uppercase()).joinToString(" · ")
-
-        private fun trackLabel(f: androidx.media3.common.Format): String =
-            listOfNotNull(f.label, f.language?.uppercase()).distinct().joinToString(" · ").ifEmpty { "Embedded" }
-
-        private fun audioLabel(f: androidx.media3.common.Format): String {
-            val lang = f.language?.uppercase()
-            val ch = when (f.channelCount) {
-                1 -> "Mono"; 2 -> "Stereo"; 6 -> "5.1"; 8 -> "7.1"
-                else -> if (f.channelCount > 0) "${f.channelCount} ch" else null
-            }
-            return listOfNotNull(lang, ch).joinToString(" · ").ifEmpty { "Audio" }
-        }
     }
 }
