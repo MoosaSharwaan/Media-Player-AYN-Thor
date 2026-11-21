@@ -22,7 +22,8 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
 
     data class Result(val added: Int, val changed: Int, val removed: Int, val total: Int)
 
-    private data class Entry(val uri: Uri, val name: String, val size: Long, val modified: Long, val folders: List<String>)
+    /** A file found in the folder: its name, size, date and the folders above it. */
+    internal data class Entry(val uri: Uri, val name: String, val size: Long, val modified: Long, val folders: List<String>)
 
     suspend fun scan(tree: Uri): Result = withContext(Dispatchers.IO) {
         val videos = mutableListOf<Entry>()
@@ -33,7 +34,11 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
                 entry.name.substringAfterLast('.', "").lowercase() in SUBTITLE_EXTENSIONS -> subtitles += entry
             }
         }
+        index(videos, subtitles)
+    }
 
+    /** Files the videos found into titles: new ones added, changed or re-read ones updated, missing ones removed. */
+    internal suspend fun index(videos: List<Entry>, subtitles: List<Entry>): Result = withContext(Dispatchers.IO) {
         val dao = db.library()
         val known = dao.allFiles().associateBy { it.uri }
         var added = 0
@@ -43,11 +48,12 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
             val key = v.uri.toString()
             seen += key
             val old = known[key]
-            if (old != null && old.size == v.size && old.modified == v.modified) {
+            // Names are read again every scan, so a better parser fixes files already in the library.
+            val parsed = FileNameParser.parse(v.name, v.folders)
+            if (old != null && old.size == v.size && old.modified == v.modified && old.matches(parsed, groupKeyOf(parsed, v))) {
                 linkSubtitles(old.id, v, subtitles)
                 continue
             }
-            val parsed = FileNameParser.parse(v.name, v.folders)
             val file = MediaFile(
                 id = old?.id ?: 0,
                 uri = key,
@@ -75,10 +81,10 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
         Result(added, changed, gone.size, videos.size)
     }
 
-    /** Creates the card's entry the first time a title is seen; Fetch info fills it in later. */
+    /** Creates the card's entry the first time a title is seen; Fetch info fills it in later. Extras get none. */
     private suspend fun ensureTitle(file: MediaFile) {
         val dao = db.library()
-        if (dao.title(file.groupKey) != null) return
+        if (file.kind == ParsedName.Kind.EXTRA.name || dao.title(file.groupKey) != null) return
         val kind = when (file.kind) {
             ParsedName.Kind.EPISODE.name -> "SHOW"
             ParsedName.Kind.MOVIE.name -> "MOVIE"
@@ -139,7 +145,13 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
             ParsedName.Kind.EPISODE -> "s:" + normalise(p.title)
             ParsedName.Kind.MOVIE -> "m:" + normalise(p.title) + ":" + (p.year ?: "")
             ParsedName.Kind.OTHER -> "o:" + normalise((e.folders + e.name).joinToString("/"))
+            // No title of their own, so no card: reached through the folder browser.
+            ParsedName.Kind.EXTRA -> "x:" + normalise((e.folders + e.name).joinToString("/"))
         }
+
+        private fun MediaFile.matches(p: ParsedName, key: String): Boolean =
+            kind == p.kind.name && groupKey == key && title == p.title && year == p.year &&
+                season == p.season && episode == p.episode && anime == p.animeHint
 
         private fun displayName(file: MediaFile): String =
             file.title.split(' ').joinToString(" ") { w -> if (w.length > 1 && w == w.lowercase()) w.replaceFirstChar(Char::uppercase) else w }

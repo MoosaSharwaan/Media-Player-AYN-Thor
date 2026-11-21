@@ -1,6 +1,7 @@
 package com.msharwaan.exoplayer.library
 
 import com.msharwaan.exoplayer.library.ParsedName.Kind.EPISODE
+import com.msharwaan.exoplayer.library.ParsedName.Kind.EXTRA
 import com.msharwaan.exoplayer.library.ParsedName.Kind.MOVIE
 import com.msharwaan.exoplayer.library.ParsedName.Kind.OTHER
 import org.junit.Assert.assertEquals
@@ -57,6 +58,26 @@ class FileNameParserTest {
         Case("Hunter x Hunter (2011) - 148.mkv", EPISODE, "Hunter x Hunter", episode = 148),
         Case("Violet Evergarden Episode 13.mkv", EPISODE, "Violet Evergarden", episode = 13),
         Case("Anime/Your Name (2016).mkv", MOVIE, "Your Name", 2016, anime = true),
+        // Anime with the season in the show's name, and season folders named after the show
+        Case("[Judas] Bungo Stray Dogs S2 - 05.mkv", EPISODE, "Bungo Stray Dogs", season = 2, episode = 5, anime = true),
+        Case("[Judas] Bungo Stray Dogs S1 - 12.mkv", EPISODE, "Bungo Stray Dogs", season = 1, episode = 12, anime = true),
+        Case("[SubsPlease] Mushoku Tensei S2 - 01 (1080p).mkv", EPISODE, "Mushoku Tensei", season = 2, episode = 1, anime = true),
+        Case("[SubsPlease] Spy x Family Season 2 - 03 (1080p).mkv", EPISODE, "Spy x Family", season = 2, episode = 3, anime = true),
+        Case("Kaguya-sama 2nd Season - 05.mkv", EPISODE, "Kaguya-sama", season = 2, episode = 5),
+        Case("Overlord (Seasons 1-3) [Dual-Audio]/Overlord - S1/[Judas] Overlord - S01E02.mkv", EPISODE, "Overlord", season = 1, episode = 2, anime = true),
+        Case("Bungo Stray Dogs S2/01.mkv", EPISODE, "Bungo Stray Dogs", season = 2, episode = 1),
+        Case("Show - 05 - Ending.mkv", EPISODE, "Show", episode = 5),
+        Case("Bungo Stray Dogs - Movie 01 - Dead Apple.mkv", MOVIE, "Bungo Stray Dogs: Dead Apple"),
+        // Extras: openings, endings, trailers, samples and anything in an extras folder
+        Case("Overlord (Seasons 1-3)/Overlord - S1/S1 Extras/[Judas] Overlord - S1 - NCOP.mkv", EXTRA, "Overlord", season = 1, anime = true),
+        Case("[Judas] Bungo Stray Dogs S1 - Opening 1.mkv", EXTRA, "Bungo Stray Dogs", season = 1, anime = true),
+        Case("[Judas] Bungo Stray Dogs S2 - Ending.mkv", EXTRA, "Bungo Stray Dogs", season = 2, anime = true),
+        Case("[Judas] Bungo Stray Dogs S2 - Opening 3.mkv", EXTRA, "Bungo Stray Dogs", season = 2, anime = true),
+        Case("[SubsPlease] Frieren NCED 2.mkv", EXTRA, "Frieren", anime = true),
+        Case("Frieren - Creditless Opening.mkv", EXTRA, "Frieren"),
+        Case("Inception (2010)/Inception-trailer.mkv", EXTRA, "Inception"),
+        Case("Breaking Bad/Extras/Making of.mkv", EXTRA, "Making of"),
+        Case("The.Matrix.1999.1080p.sample.mkv", EXTRA, "The Matrix"),
         // Others
         Case("VID_20240512_183022.mp4", OTHER, "VID_20240512_183022"),
         Case("PXL_20251003_101500123.mp4", OTHER, "PXL_20251003_101500123"),
