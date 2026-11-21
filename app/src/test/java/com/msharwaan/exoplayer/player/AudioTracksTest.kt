@@ -29,7 +29,12 @@ class AudioTracksTest {
         val path = File(javaClass.classLoader!!.getResource("media/$name")!!.toURI())
         player.setMediaItem(MediaItem.fromUri("file://${path.absolutePath}"))
         player.prepare()
-        repeat(20) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100)); Thread.sleep(20) }
+        // Until the file's tracks are known, however busy the machine running the tests is.
+        for (i in 0 until 100) {
+            if (!player.currentTracks.isEmpty) break
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            Thread.sleep(20)
+        }
         val labels = player.currentTracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }.map { TrackLabels.audio(it.getTrackFormat(0)) }
         player.release()
         return labels

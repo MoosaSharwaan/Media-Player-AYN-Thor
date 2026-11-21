@@ -29,7 +29,12 @@ class OldVideoFormatsTest {
         val path = File(javaClass.classLoader!!.getResource("media/$name")!!.toURI())
         player.setMediaItem(MediaItem.fromUri("file://${path.absolutePath}"))
         player.prepare()
-        repeat(20) { shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100)); Thread.sleep(20) }
+        // Until the file's tracks are known, however busy the machine running the tests is.
+        for (i in 0 until 100) {
+            if (!player.currentTracks.isEmpty) break
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            Thread.sleep(20)
+        }
         val mime = player.currentTracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO }?.getTrackFormat(0)?.sampleMimeType
         player.release()
         return mime
