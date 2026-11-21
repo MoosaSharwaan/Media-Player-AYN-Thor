@@ -1,5 +1,9 @@
 package com.msharwaan.exoplayer.player
 
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
 import android.view.SurfaceView
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
@@ -122,7 +126,7 @@ private fun PausedArt(ui: PlayerUi) {
 /** The picture: a SurfaceView, the cheapest way to show video (battery rule 2), at the video's own shape. */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoSurface(player: Player, picture: Picture = Picture.FIT) {
+fun VideoSurface(player: Player, picture: Picture = Picture.FIT, images: List<ImageCue> = emptyList()) {
     var ratio by remember { mutableFloatStateOf(16f / 9f) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -149,6 +153,25 @@ fun VideoSurface(player: Player, picture: Picture = Picture.FIT) {
             onRelease = player::clearVideoSurfaceView,
             modifier = size,
         )
+        // Picture subtitles belong to the frame, so they share its box and move with the picture mode.
+        if (images.isNotEmpty()) SubtitleImages(images, size)
+    }
+}
+
+/** PGS and VobSub subtitles, each where the disc puts it in the frame. */
+@Composable
+private fun SubtitleImages(images: List<ImageCue>, frame: Modifier) {
+    BoxWithConstraints(frame) {
+        images.forEach { cue ->
+            val width = maxWidth * cue.width
+            val height = cue.height?.let { maxHeight * it } ?: (width * cue.bitmap.height.toFloat() / cue.bitmap.width.coerceAtLeast(1))
+            Image(
+                bitmap = remember(cue.bitmap) { cue.bitmap.asImageBitmap() },
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.offset(maxWidth * cue.left, maxHeight * cue.top).size(width, height),
+            )
+        }
     }
 }
 

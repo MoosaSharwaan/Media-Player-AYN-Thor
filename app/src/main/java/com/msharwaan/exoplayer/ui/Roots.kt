@@ -132,8 +132,9 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         is Route.Player, is Route.FindSubtitles -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
             val subtitle by vm.player.subtitle.collectAsStateWithLifecycle()
+            val images by vm.player.subtitleImages.collectAsStateWithLifecycle()
             val settings by vm.player.settings.collectAsStateWithLifecycle()
-            PlayerTop(ui, subtitle, settings) { VideoSurface(vm.player.player, settings.picture) }
+            PlayerTop(ui, subtitle, settings) { VideoSurface(vm.player.player, settings.picture, images) }
         }
         is Route.FixMatch -> FixMatchTop(vm.fixMatch)
         Route.Search -> SearchTop(vm.search)

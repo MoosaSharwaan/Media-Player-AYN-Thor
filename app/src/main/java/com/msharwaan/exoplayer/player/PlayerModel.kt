@@ -1,6 +1,7 @@
 package com.msharwaan.exoplayer.player
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.media3.common.C
@@ -11,6 +12,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.text.CueGroup
+import androidx.media3.common.text.Cue as MediaCue
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -78,6 +80,30 @@ enum class PlayerButton(val row: Int) {
 }
 
 /**
+ * A subtitle drawn as a picture (PGS from Blu-rays, VobSub from DVDs, DVB), placed by
+ * fractions of the video frame. [height] is null when the file doesn't say; the picture's own
+ * shape is used then.
+ */
+data class ImageCue(val bitmap: Bitmap, val left: Float, val top: Float, val width: Float, val height: Float?) {
+    companion object {
+        fun of(cue: MediaCue): ImageCue? {
+            val bitmap = cue.bitmap ?: return null
+            val width = cue.size.takeIf { it != MediaCue.DIMEN_UNSET } ?: 0.5f
+            val height = cue.bitmapHeight.takeIf { it != MediaCue.DIMEN_UNSET }
+            val x = cue.position.takeIf { it != MediaCue.DIMEN_UNSET } ?: 0.5f
+            val left = x - width * anchor(cue.positionAnchor.takeIf { it != MediaCue.TYPE_UNSET } ?: MediaCue.ANCHOR_TYPE_MIDDLE)
+            val y = cue.line.takeIf { it != MediaCue.DIMEN_UNSET && cue.lineType == MediaCue.LINE_TYPE_FRACTION }
+            // No line given: sit near the bottom, like text subtitles.
+            val top = if (y == null) 0.95f - (height ?: 0.1f)
+            else y - (height ?: 0f) * anchor(cue.lineAnchor.takeIf { it != MediaCue.TYPE_UNSET } ?: MediaCue.ANCHOR_TYPE_START)
+            return ImageCue(bitmap, left, top, width, height)
+        }
+
+        private fun anchor(type: Int) = when (type) { MediaCue.ANCHOR_TYPE_MIDDLE -> 0.5f; MediaCue.ANCHOR_TYPE_END -> 1f; else -> 0f }
+    }
+}
+
+/**
  * One player screen for movies and episodes (decisions D8, D13, D17).
  *
  * Saves the position on pause, stop, episode change and once a minute (battery rule 8);
@@ -101,6 +127,10 @@ class PlayerModel(
     private val _subtitle = MutableStateFlow<String?>(null)
     val subtitle: StateFlow<String?> = _subtitle.asStateFlow()
 
+    /** Picture subtitles (PGS, VobSub) to draw over the video; empty when there are none. */
+    private val _subtitleImages = MutableStateFlow<List<ImageCue>>(emptyList())
+    val subtitleImages: StateFlow<List<ImageCue>> = _subtitleImages.asStateFlow()
+
     val player get() = holder.player
 
     private val prefs = PlaybackPrefs(context)
@@ -120,6 +150,7 @@ class PlayerModel(
     private var subtitleIndex = 0
     private var ownCues: List<Cue> = emptyList()
     private var mediaCueText: String? = null
+    private var mediaCueImages: List<ImageCue> = emptyList()
     private var tickJob: Job? = null
     private var subtitleJob: Job? = null
     private var sessionStart = 0L
@@ -169,6 +200,8 @@ class PlayerModel(
 
         override fun onCues(cueGroup: CueGroup) {
             mediaCueText = cueGroup.cues.mapNotNull { it.text?.toString() }.joinToString("\n").ifEmpty { null }
+            // Blu-ray and DVD subtitles are pictures, with no text.
+            mediaCueImages = cueGroup.cues.mapNotNull(ImageCue::of)
             if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) showMediaCue()
         }
 
@@ -210,6 +243,8 @@ class PlayerModel(
             val subs = withContext(Dispatchers.IO) { dao.subtitlesOf(f.id) }
             file = f
             upNextCancelled = false
+            // Turning subtitles off is for this film only; the next one starts with its subtitles on.
+            userChoseOff = false
             siblings = if (f.kind == "EPISODE") group.sortedWith(compareBy({ it.season ?: 0 }, { it.episode ?: 0 }, { it.fileName })) else listOf(f)
             val index = siblings.indexOfFirst { it.id == f.id }
             // A show with one episode gets the movie screen (D22).
@@ -447,6 +482,7 @@ class PlayerModel(
         }
         player.trackSelectionParameters = params.build()
         ownCues = emptyList()
+        if (choice !is SubtitleChoice.Track) _subtitleImages.value = emptyList()
         if (choice is SubtitleChoice.OwnFile) {
             scope.launch {
                 ownCues = withContext(Dispatchers.IO) {
@@ -471,7 +507,7 @@ class PlayerModel(
                 subtitleOn = choice != SubtitleChoice.Off,
             )
         }
-        if (choice == SubtitleChoice.Off) _subtitle.value = null
+        if (choice == SubtitleChoice.Off) { _subtitle.value = null; _subtitleImages.value = emptyList() }
     }
 
     private fun shiftSubtitles(stepMs: Int) {
@@ -508,9 +544,13 @@ class PlayerModel(
     /** Subtitles decoded by ExoPlayer, shown after the chosen delay (later only). */
     private fun showMediaCue() {
         val text = mediaCueText
+        val images = mediaCueImages
         val delayMs = _ui.value.subtitleDelayMs.toLong()
-        if (delayMs <= 0) { _subtitle.value = text; return }
-        scope.launch { delay(delayMs); if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) _subtitle.value = text }
+        if (delayMs <= 0) { _subtitle.value = text; _subtitleImages.value = images; return }
+        scope.launch {
+            delay(delayMs)
+            if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) { _subtitle.value = text; _subtitleImages.value = images }
+        }
     }
 
     // ---- clock, saving and the end of a file ----
