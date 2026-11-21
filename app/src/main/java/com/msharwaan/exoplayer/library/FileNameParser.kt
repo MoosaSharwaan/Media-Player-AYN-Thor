@@ -12,7 +12,8 @@ data class ParsedName(
     /** True for names like "[SubsPlease] …" or files under an "Anime" folder. */
     val animeHint: Boolean = false,
 ) {
-    enum class Kind { MOVIE, EPISODE, OTHER }
+    /** EXTRA: openings, endings, trailers and bonus files; kept off the tabs, playable from Folders. */
+    enum class Kind { MOVIE, EPISODE, OTHER, EXTRA }
 }
 
 /**
@@ -52,6 +53,26 @@ object FileNameParser {
     private val YEAR = Regex("""(?<!\d)(19[2-9]\d|20[0-4]\d)(?!\d|p)""")
     private val SEASON_FOLDER = Regex("""(?i)^(?:season|series|staffel|saison|s)[ ._-]*(\d{1,2})$""")
 
+    /** A season at the end of a show's name: "Bungo Stray Dogs S2", "Spy x Family Season 2", "Kaguya-sama 2nd Season". */
+    private val SEASON_SUFFIX = Regex("""(?i)\s(?:S(\d{1,2})|Season\s?(\d{1,2})|(\d{1,2})(?:st|nd|rd|th)\sSeason)$""")
+
+    /** Folders of bonus material: "Extras", "S1 Extras", "Featurettes", "NCOP"… */
+    private val EXTRA_FOLDER = Regex(
+        """(?i)(?:^|[\s._-])(?:extras?|bonus(?:es)?|featurettes?|behind the scenes|deleted scenes|interviews|trailers|samples?|creditless|ncop|nced|nc)(?:$|[\s._-])""",
+    )
+
+    /** Creditless openings and endings, anywhere in the name: "NCOP", "NCED 2", "Creditless Opening". */
+    private val EXTRA_TAG = Regex("""(?i)\b(?:NC ?OP|NC ?ED|creditless)\d*\b""")
+
+    /** Trailers and samples: "Inception-trailer" (the Plex way), "The.Matrix.1999.sample". */
+    private val EXTRA_SUFFIX = Regex("""(?i)(?:-(?:trailer|featurette|behindthescenes|deleted|interview|scene|short)|(?:^|[\s-])sample)$""")
+
+    /** An extra named after its show: "Show S1 - Opening 1", "Show - Ending", "Show - PV 2". Checked only when no episode number was found. */
+    private val EXTRA_AFTER_DASH = Regex("""(?i)\s-\s(?:(?:clean|textless)\s)?(?:opening|ending|op|ed|trailer|teaser|preview|pv|cm|menu)(?:\s?\d{1,2}[a-z]?)?$""")
+
+    /** Anime films: "Bungo Stray Dogs - Movie 01 - Dead Apple" is "Bungo Stray Dogs: Dead Apple". */
+    private val NUMBERED_MOVIE = Regex("""(?i)^(.+?)\s-\sMovie\s?\d{1,2}\s-\s(.+)$""")
+
     /**
      * @param fileName the file name with its extension
      * @param folders folder names from the library root down to the file's folder
@@ -70,8 +91,22 @@ object FileNameParser {
         text = BRACKETS.replace(text, " ")
         text = normalise(text)
 
-        val seasonFolder = folders.lastOrNull()?.let { SEASON_FOLDER.find(it.trim())?.groupValues?.get(1)?.toInt() }
-        val showFolder = if (seasonFolder != null) folders.getOrNull(folders.size - 2) else folders.lastOrNull()
+        // Extras first, wherever they are: an extras folder, or a creditless or trailer tag in the name.
+        val extraMarker = EXTRA_TAG.find(text) ?: EXTRA_SUFFIX.find(text)
+        if (extraMarker != null || folders.any { EXTRA_FOLDER.containsMatchIn(it) }) {
+            val marker = extraMarker ?: EXTRA_AFTER_DASH.find(text)
+            return extra(if (marker != null) text.substring(0, marker.range.first) else text, animeHint)
+        }
+
+        // "Season 2" on its own, or a season folder named after the show: "Overlord - S1".
+        val plainSeason = folders.lastOrNull()?.let { SEASON_FOLDER.find(it.trim())?.groupValues?.get(1)?.toInt() }
+        val namedSeason = if (plainSeason == null) folders.lastOrNull()?.let { splitSeason(cleanFolder(it)) }?.takeIf { it.second != null && it.first.isNotEmpty() } else null
+        val seasonFolder = plainSeason ?: namedSeason?.second
+        val showName = when {
+            plainSeason != null -> cleanFolder(folders.getOrNull(folders.size - 2))
+            namedSeason != null -> namedSeason.first
+            else -> cleanFolder(folders.lastOrNull())
+        }
 
         // 1. SxxEyy, 1x02, "Season 1 Episode 2"
         val se = SXXEXX.find(text) ?: SEASON_EPISODE_WORDS.find(text) ?: NXNN.find(text)
@@ -80,7 +115,7 @@ object FileNameParser {
             val showYear = findYear(before)
             // "Doctor.Who.2005.S01E01": the year tells two shows apart; it isn't part of the name.
             val title = cleanTitle(if (showYear != null) before.replace(Regex("""\s$showYear\W*$"""), "") else before)
-                .ifEmpty { cleanFolder(showFolder) }
+                .ifEmpty { showName }
             return ParsedName(
                 ParsedName.Kind.EPISODE, title, year = showYear,
                 season = se.groupValues[1].toInt(), episode = se.groupValues[2].toInt(), animeHint = animeHint,
@@ -93,27 +128,32 @@ object FileNameParser {
                 ?: EPISODE_WORD.find(text)?.groupValues?.get(1)?.toInt()
             if (number != null) {
                 return ParsedName(
-                    ParsedName.Kind.EPISODE, cleanFolder(showFolder), season = seasonFolder, episode = number,
+                    ParsedName.Kind.EPISODE, showName, season = seasonFolder, episode = number,
                     animeHint = animeHint,
                 )
             }
         }
 
-        // 3. Anime style: "Frieren - 12", "Frieren - 12v2"
+        // 3. Anime style: "Frieren - 12", "Frieren - 12v2", "Bungo Stray Dogs S2 - 05"
         ANIME_DASH_NUMBER.find(text)?.let { m ->
-            val title = cleanTitle(text.substring(0, m.range.first))
+            val (title, season) = splitSeason(cleanTitle(text.substring(0, m.range.first)))
             if (title.isNotEmpty()) {
-                return ParsedName(ParsedName.Kind.EPISODE, title, episode = m.groupValues[1].toInt(), animeHint = animeHint)
+                return ParsedName(ParsedName.Kind.EPISODE, title, season = season, episode = m.groupValues[1].toInt(), animeHint = animeHint)
             }
         }
 
         // 4. "Show Name Episode 5" / "Show Name E05"
         EPISODE_WORD.find(text)?.let { m ->
-            val title = cleanTitle(text.substring(0, m.range.first))
+            val (title, season) = splitSeason(cleanTitle(text.substring(0, m.range.first)))
             if (title.isNotEmpty()) {
-                return ParsedName(ParsedName.Kind.EPISODE, title, episode = m.groupValues[1].toInt(), animeHint = animeHint)
+                return ParsedName(ParsedName.Kind.EPISODE, title, season = season, episode = m.groupValues[1].toInt(), animeHint = animeHint)
             }
         }
+
+        // An opening or ending named after its show, with no episode number: "Show S1 - Opening 1".
+        EXTRA_AFTER_DASH.find(text)?.let { m -> return extra(text.substring(0, m.range.first), animeHint) }
+
+        NUMBERED_MOVIE.find(text)?.let { m -> text = m.groupValues[1].trim() + ": " + m.groupValues[2].trim() }
 
         // 5. A movie: title up to the year or the first release tag.
         val year = bracketYear ?: findYear(text)
@@ -132,6 +172,24 @@ object FileNameParser {
         }
         if (title.isEmpty()) title = cleanTitle(text)
         return ParsedName(ParsedName.Kind.MOVIE, title, year = year, animeHint = animeHint)
+    }
+
+    /** An extra, titled after what it belongs to: the name before its tag, without season, year or release tags. */
+    private fun extra(before: String, animeHint: Boolean): ParsedName {
+        val (name, season) = splitSeason(cleanTitle(before))
+        val cut = listOfNotNull(
+            findYear(name)?.let { y -> Regex("""(?<!\d)$y(?!\d)""").find(name)?.range?.first },
+            firstStopWord(name),
+        ).minOrNull()
+        val title = cleanTitle(if (cut != null) name.substring(0, cut) else name).ifEmpty { cleanTitle(before) }
+        return ParsedName(ParsedName.Kind.EXTRA, title, season = season, animeHint = animeHint)
+    }
+
+    /** "Bungo Stray Dogs S2" → ("Bungo Stray Dogs", 2); a name without a season comes back as it is. */
+    private fun splitSeason(title: String): Pair<String, Int?> {
+        val m = SEASON_SUFFIX.find(title) ?: return title to null
+        val season = m.groupValues.drop(1).firstOrNull { it.isNotEmpty() }?.toInt()
+        return cleanTitle(title.substring(0, m.range.first)) to season
     }
 
     /** Folders whose videos always go to Others (home videos and the like). */
