@@ -65,6 +65,8 @@ data class PlayerUi(
     val watched: Boolean = false,
     /** Playback settings open (Start), with this row focused; null when closed. */
     val panelRow: Int? = null,
+    /** What's decoding this file and how it's going, shown when paused: "Video  FFmpeg mpeg4 · 720×400 · …". */
+    val playbackInfo: String? = null,
 )
 
 /** The Up next card at the end of an episode: 10 s, then the next one plays (D23). */
@@ -179,6 +181,9 @@ class PlayerModel(
         }
 
         override fun onPlaybackStateChanged(state: Int) {
+            // Waiting for data after playback began: the file is being read too slowly.
+            if (state == Player.STATE_BUFFERING && stats.started) { stats.waits++; refreshPlaybackInfo() }
+            if (state == Player.STATE_READY) stats.started = true
             if (state == Player.STATE_READY) {
                 val d = player.duration
                 if (d > 0) {
@@ -210,6 +215,19 @@ class PlayerModel(
         }
     }
 
+    /** Decoders, formats, dropped frames and waits for this file, for the info line. */
+    private class Stats {
+        var videoDecoder: String? = null
+        var audioDecoder: String? = null
+        var video: androidx.media3.common.Format? = null
+        var audio: androidx.media3.common.Format? = null
+        var dropped = 0
+        var waits = 0
+        var started = false
+    }
+
+    private var stats = Stats()
+
     private val analytics = object : AnalyticsListener {
         override fun onVideoDecoderInitialized(
             eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long,
@@ -218,11 +236,40 @@ class PlayerModel(
             if (decoderName.startsWith("c2.android") || decoderName.startsWith("OMX.google")) {
                 onNotice("Software decoding for this file: it uses more battery.")
             }
+            stats.videoDecoder = decoderName
+            refreshPlaybackInfo()
+        }
+
+        override fun onAudioDecoderInitialized(
+            eventTime: AnalyticsListener.EventTime, decoderName: String, initializedTimestampMs: Long, initializationDurationMs: Long,
+        ) {
+            stats.audioDecoder = decoderName
+            refreshPlaybackInfo()
         }
 
         override fun onVideoInputFormatChanged(
             eventTime: AnalyticsListener.EventTime, format: androidx.media3.common.Format, decoderReuseEvaluation: DecoderReuseEvaluation?,
-        ) = Unit
+        ) {
+            stats.video = format
+            refreshPlaybackInfo()
+        }
+
+        override fun onAudioInputFormatChanged(
+            eventTime: AnalyticsListener.EventTime, format: androidx.media3.common.Format, decoderReuseEvaluation: DecoderReuseEvaluation?,
+        ) {
+            stats.audio = format
+            refreshPlaybackInfo()
+        }
+
+        override fun onDroppedVideoFrames(eventTime: AnalyticsListener.EventTime, droppedFrames: Int, elapsedMs: Long) {
+            stats.dropped += droppedFrames
+            refreshPlaybackInfo()
+        }
+    }
+
+    private fun refreshPlaybackInfo() {
+        val info = playbackInfo(stats.videoDecoder, stats.video, stats.dropped, stats.waits, stats.audioDecoder, stats.audio)
+        _ui.update { it.copy(playbackInfo = info) }
     }
 
     init {
@@ -277,6 +324,7 @@ class PlayerModel(
             subtitleChoices = emptyList()
             subtitleIndex = 0
             val startAt = if (state != null && !state.watched && state.positionMs > 0) state.positionMs else 0L
+            stats = Stats()
             player.setMediaItem(MediaItem.Builder().setUri(Uri.parse(f.uri)).setSubtitleConfigurations(sideloaded).build(), startAt)
             player.prepare()
             player.play()
@@ -666,6 +714,28 @@ class PlayerModel(
     }
 
     companion object {
+        /**
+         * Two lines for the paused top screen: "Video  FFmpeg mpeg4 · 720×400 · 23.98 fps · 3 dropped"
+         * and "Audio  c2.android.mp3.decoder · EN · Stereo · MP3", plus how often playback waited for
+         * the file. Enough to tell a slow decoder from a slow file or troublesome sound.
+         */
+        fun playbackInfo(
+            videoDecoder: String?, video: androidx.media3.common.Format?, dropped: Int, waits: Int,
+            audioDecoder: String?, audio: androidx.media3.common.Format?,
+        ): String? {
+            fun decoder(name: String?) = name?.let { if (it.startsWith("ffmpeg")) "FFmpeg " + it.substringAfterLast('-') else it }
+            val videoLine = listOfNotNull(
+                decoder(videoDecoder),
+                video?.takeIf { it.width > 0 }?.let { "${it.width}×${it.height}" },
+                video?.frameRate?.takeIf { it > 0 }?.let { "%.2f fps".format(java.util.Locale.ROOT, it) },
+                "$dropped dropped",
+                if (waits > 0) "waited $waits×" else null,
+            ).takeIf { videoDecoder != null || video != null }?.joinToString(" · ")
+            val audioLine = listOfNotNull(decoder(audioDecoder), audio?.let(TrackLabels::audio))
+                .takeIf { it.isNotEmpty() }?.joinToString(" · ")
+            return listOfNotNull(videoLine?.let { "Video  $it" }, audioLine?.let { "Audio  $it" }).joinToString("\n").ifEmpty { null }
+        }
+
         /** The Up next card appears this long before the end, if no credits marker is known. */
         const val UP_NEXT_BEFORE_END_MS = 30_000L
 

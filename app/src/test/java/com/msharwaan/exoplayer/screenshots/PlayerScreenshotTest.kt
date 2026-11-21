@@ -42,6 +42,11 @@ class PlayerScreenshotTest {
     fun pausedTop() = Screens.shoot(rule, "player_top_paused", Panel.TOP) { PlayerTop(movie.copy(paused = true), null) {} }
 
     @Test
+    fun pausedTopWithPlaybackInfo() = Screens.shoot(rule, "player_top_paused_info", Panel.TOP) {
+        PlayerTop(movie.copy(paused = true, playbackInfo = "Video  FFmpeg mpeg4 · 720×400 · 23.98 fps · 3 dropped\nAudio  c2.android.mp3.decoder · EN · Stereo · MP3"), null) {}
+    }
+
+    @Test
     fun subtitleTop() = Screens.shoot(rule, "player_top_subtitle", Panel.TOP) {
         PlayerTop(movie, "I've come to find my dragon.\nHave you seen him?") {}
     }

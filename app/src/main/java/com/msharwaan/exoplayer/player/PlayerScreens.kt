@@ -120,6 +120,13 @@ private fun PausedArt(ui: PlayerUi) {
                 ui.overview?.let { Text(it, color = Color(0xFFD6D8DC), fontSize = 16.sp, lineHeight = 23.sp, maxLines = 6, overflow = TextOverflow.Ellipsis) }
             }
         }
+        // What's decoding the file and how it's going, for when something plays badly.
+        ui.playbackInfo?.let {
+            Text(
+                it, color = Palette.Muted, fontSize = 13.sp, lineHeight = 19.sp, fontFamily = FontFamily.Monospace,
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 48.dp, bottom = 32.dp),
+            )
+        }
     }
 }
 

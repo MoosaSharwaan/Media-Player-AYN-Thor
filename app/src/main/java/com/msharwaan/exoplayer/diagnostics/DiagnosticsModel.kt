@@ -66,7 +66,10 @@ class DiagnosticsModel(private val context: Context) {
             .joinToString(", ") { it.second }.ifEmpty { "no formats" }
     }.getOrElse { "not available" }
 
-    val firmware: String = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} · ${Build.DISPLAY}"
+    /** The app's version first, so a photo of this page says which build is installed. */
+    val firmware: String = "Exo Player ${appVersion()} · ${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} · ${Build.DISPLAY}"
+
+    private fun appVersion(): String = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "?"
 
     private val _keyLog = MutableStateFlow<List<String>>(emptyList())
     val keyLog: StateFlow<List<String>> = _keyLog.asStateFlow()
