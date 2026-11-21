@@ -4,11 +4,14 @@ import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.decoder.ffmpeg.FfmpegLibrary
 import androidx.media3.session.MediaSession
 
 /**
@@ -34,8 +37,11 @@ class PlaybackHolder(private val context: Context) {
         }
             // Hardware decoders first; if one refuses a stream, try the next instead of failing.
             .setEnableDecoderFallback(true)
-            // FFmpeg (Jellyfin's Media3 build) only for audio the device can't decode: DTS, TrueHD, AC3 (D28).
+            // FFmpeg (our build, the ffmpeg module) for what the device can't decode: DTS, TrueHD,
+            // AC3 audio (D28), and old or unusual video like DivX 3, Motion JPEG and 10-bit H.264 (D49).
             .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+            // Xvid and DivX: Android claims them, but its decoder garbles what those files use (D49).
+            .setMediaCodecSelector(codecSelector(FfmpegLibrary::supportsFormat))
         val player = ExoPlayer.Builder(context, renderers)
             .setAudioAttributes(
                 AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),
@@ -49,6 +55,17 @@ class PlaybackHolder(private val context: Context) {
         // Headset and Bluetooth play / pause buttons, while the app is open.
         session = runCatching { MediaSession.Builder(context, player).build() }.getOrNull()
         return player
+    }
+
+    companion object {
+        /** Video Android's decoders claim but play badly: FFmpeg takes these whenever it can (D49). */
+        val FFMPEG_FIRST = setOf(MimeTypes.VIDEO_MP4V, MimeTypes.VIDEO_DIVX)
+
+        /** Android's decoders, minus those for [FFMPEG_FIRST] formats FFmpeg can decode. */
+        fun codecSelector(ffmpegSupports: (String) -> Boolean) = MediaCodecSelector { mimeType, secure, tunneling ->
+            if (mimeType in FFMPEG_FIRST && ffmpegSupports(mimeType)) emptyList()
+            else MediaCodecSelector.DEFAULT.getDecoderInfos(mimeType, secure, tunneling)
+        }
     }
 
     /** Auto refresh rate: follow the film's frame rate when the switch is seamless; a fixed rate: never switch. */

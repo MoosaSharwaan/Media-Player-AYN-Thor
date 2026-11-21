@@ -49,13 +49,22 @@ class DiagnosticsModel(private val context: Context) {
 
     /** The audio formats the app's own FFmpeg plays when the Thor has no decoder for them (D28). */
     val ffmpegAudio: String by lazy {
-        runCatching {
-            if (!androidx.media3.decoder.ffmpeg.FfmpegLibrary.isAvailable()) return@runCatching "not available"
-            listOf("audio/ac3" to "AC3", "audio/eac3" to "E-AC3", "audio/vnd.dts" to "DTS", "audio/true-hd" to "TrueHD", "audio/flac" to "FLAC", "audio/opus" to "Opus")
-                .filter { (mime, _) -> androidx.media3.decoder.ffmpeg.FfmpegLibrary.supportsFormat(mime) }
-                .joinToString(", ") { it.second }.ifEmpty { "no formats" }
-        }.getOrElse { "not available" }
+        ffmpegFormats("audio/ac3" to "AC3", "audio/eac3" to "E-AC3", "audio/vnd.dts" to "DTS", "audio/true-hd" to "TrueHD", "audio/flac" to "FLAC", "audio/opus" to "Opus")
     }
+
+    /** The video formats it plays: the old ones Android garbles or lacks, and 10-bit H.264 (D49). */
+    val ffmpegVideo: String by lazy {
+        ffmpegFormats(
+            "video/mp4v-es" to "Xvid/DivX", "video/mp43" to "DivX 3", "video/mpeg2" to "MPEG-2", "video/mpeg" to "MPEG-1",
+            "video/3gpp" to "H.263", "video/mjpeg" to "Motion JPEG", "video/avc" to "H.264 (10-bit)",
+        )
+    }
+
+    private fun ffmpegFormats(vararg formats: Pair<String, String>): String = runCatching {
+        if (!androidx.media3.decoder.ffmpeg.FfmpegLibrary.isAvailable()) return@runCatching "not available"
+        formats.filter { (mime, _) -> androidx.media3.decoder.ffmpeg.FfmpegLibrary.supportsFormat(mime) }
+            .joinToString(", ") { it.second }.ifEmpty { "no formats" }
+    }.getOrElse { "not available" }
 
     val firmware: String = "${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} · ${Build.DISPLAY}"
 
