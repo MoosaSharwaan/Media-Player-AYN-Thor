@@ -41,6 +41,15 @@ class LiveServicesTest {
     }
 
     @Test
+    fun aniListSeasons() {
+        live()
+        val seasons = AniList(http).seasons("Bungo Stray Dogs")
+        seasons.forEach { println("AniList season: ${it.year}-${it.month} ${it.overview.take(80)}") }
+        assertTrue(seasons.any { it.year == 2016 && it.month == 4 })
+        assertTrue(seasons.any { it.year == 2016 && it.month == 10 })
+    }
+
+    @Test
     fun tmdbMovie() {
         live("EXO_TMDB_KEY")
         val tmdb = Tmdb(http, env("EXO_TMDB_KEY")!!)

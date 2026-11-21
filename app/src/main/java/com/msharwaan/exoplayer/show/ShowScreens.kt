@@ -83,7 +83,8 @@ fun ShowTop(model: ShowModel) {
             key = title.groupKey,
             heading = season.name,
             meta = listOfNotNull(title.name, season.year?.toString(), episodesText(season)).joinToString(" · "),
-            overview = season.overview ?: title.overview,
+            // The season's own description only: the show's would read the same on every season.
+            overview = season.overview,
             poster = season.posterPath ?: title.posterPath,
         )
         else -> Details(

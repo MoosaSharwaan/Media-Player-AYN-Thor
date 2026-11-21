@@ -136,8 +136,12 @@ class FetchInfo(
         val onCard = files.mapNotNull { f -> f.episode?.let { (f.season ?: 1) to it } }.toSet()
         val missing = onCard - have
         val fromAniList = title.tmdbType == ANILIST
+        // Anime seasons TMDB left without a description are worth another look on AniList.
+        val withFiles = onCard.map { it.first }.toSet()
+        val seasonsWithoutText = title.tab == "ANIME" && !fromAniList &&
+            dao.seasonsOf(title.groupKey).any { it.number in withFiles && it.overview == null }
         val complete = title.tmdbId != null && title.overview != null && images.has(title.posterPath) &&
-            (fromAniList || (images.has(title.backdropPath) && missing.isEmpty()))
+            (fromAniList || (images.has(title.backdropPath) && missing.isEmpty() && !seasonsWithoutText))
         if (complete && !force) return Outcome.UP_TO_DATE
 
         val id = override?.tmdbId?.takeIf { override.tmdbType == Tmdb.TV }
@@ -180,12 +184,14 @@ class FetchInfo(
                 tmdb.season(id, n).forEach { e -> episodes += episode(title.groupKey, n, e.number, e, onCard) }
             }
             val kept = dao.seasonsOf(title.groupKey).associateBy { it.number }
-            val withFiles = onCard.map { it.first }.toSet()
+            val aniList = if (title.tab == "ANIME" && regular.any { it.overview == null && it.number in withFiles }) {
+                runCatching { anilist?.seasons(s.name.ifEmpty { title.name }) }.getOrNull().orEmpty()
+            } else emptyList()
             dao.upsertSeasons(
                 regular.map { t ->
                     val local = kept[t.number]?.posterPath?.takeIf { images.has(it) }
                         ?: if (t.number in withFiles) t.posterPath?.let { images.save(http, title.groupKey, "season${t.number}", tmdb.imageUrl(it, "w342"), ImageStore.POSTER) } else null
-                    SeasonInfo(title.groupKey, t.number, t.name, t.overview, t.year, t.episodeCount, local)
+                    SeasonInfo(title.groupKey, t.number, t.name, t.overview ?: seasonText(t, aniList), t.year, t.episodeCount, local)
                 },
             )
         }
@@ -198,6 +204,21 @@ class FetchInfo(
             ),
         )
         return Outcome.FETCHED
+    }
+
+    /**
+     * AniList's description of TMDB season [t]: the entry that started the same month (give or take
+     * one) of the same year. None when no entry or more than one fits, so a season never shows
+     * another's text.
+     */
+    private fun seasonText(t: TmdbSeason, all: List<AniListSeason>): String? {
+        val date = t.airDate ?: return null
+        val year = date.take(4).toIntOrNull() ?: return null
+        val month = date.drop(5).take(2).toIntOrNull()
+        val fits = all.filter { it.year == year }.map { it to if (month != null && it.month != null) kotlin.math.abs(it.month - month) else 0 }
+            .filter { it.second <= 1 }
+        val best = fits.minOfOrNull { it.second } ?: return null
+        return fits.filter { it.second == best }.singleOrNull()?.first?.overview
     }
 
     /** Stills only for episodes you have: greyed missing episodes don't need one. */

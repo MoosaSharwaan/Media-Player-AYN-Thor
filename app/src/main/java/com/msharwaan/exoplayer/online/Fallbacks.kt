@@ -33,7 +33,10 @@ data class AniListAnime(
     val posterUrl: String?, val bannerUrl: String?, val isMovie: Boolean,
 )
 
-/** AniList (no key): only for anime that TMDB doesn't find. */
+/** One season of an anime on AniList, where each season is an entry of its own. */
+data class AniListSeason(val year: Int, val month: Int?, val overview: String)
+
+/** AniList (no key): for anime TMDB doesn't find, and for season descriptions TMDB leaves empty. */
 class AniList(private val http: Http, private val endpoint: String = "https://graphql.anilist.co") {
 
     fun search(title: String): AniListAnime? {
@@ -59,6 +62,23 @@ class AniList(private val http: Http, private val endpoint: String = "https://gr
             bannerUrl = m.str("bannerImage"),
             isMovie = m.str("format") == "MOVIE",
         )
+    }
+
+    /** The TV entries AniList finds under [title], with when each started: one per season. */
+    fun seasons(title: String): List<AniListSeason> {
+        val query = """
+            query (${'$'}q: String) { Page(perPage: 25) { media(search: ${'$'}q, type: ANIME, format_in: [TV, TV_SHORT, ONA]) {
+              startDate { year month } description(asHtml: false) } } }
+        """.trimIndent()
+        val body = JSONObject().put("query", query).put("variables", JSONObject().put("q", title))
+        val list = http.postJson(endpoint, body).optJSONObject("data")?.optJSONObject("Page")?.optJSONArray("media") ?: return emptyList()
+        return (0 until list.length()).mapNotNull { i ->
+            val m = list.optJSONObject(i) ?: return@mapNotNull null
+            val start = m.optJSONObject("startDate")
+            val year = start?.intOrNull("year") ?: return@mapNotNull null
+            val text = m.str("description")?.let(::plainText)?.ifEmpty { null } ?: return@mapNotNull null
+            AniListSeason(year, start.intOrNull("month"), text)
+        }
     }
 
     private fun plainText(s: String) = s.replace(Regex("<br\\s*/?>"), "\n").replace(Regex("<[^>]+>"), "")
