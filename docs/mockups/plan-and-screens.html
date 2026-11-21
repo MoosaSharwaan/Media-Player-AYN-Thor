@@ -306,7 +306,7 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player v1.0.0 · released Oct 25, 2026 · built and tested on a PC; gates need the Thor</div>
+  <div class="eyebrow">Exo Player v1.0.1 · released Nov 21, 2026 · built and tested on a PC; gates need the Thor</div>
   <h1>Both screens, every state, and the plan behind them</h1>
   <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
@@ -377,7 +377,7 @@ p { margin: 0; }
   <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
     <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed. Every v1 feature is now built; the gates need the Thor. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
     <div class="stages" id="stages"></div>
-    <p class="lede"><a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/tag/v1.0.0">Release v1.0.0 on GitHub</a> · <a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/download/v1.0.0/exo-player-v1.0.0.apk">Download the APK (44 MB)</a></p>
+    <p class="lede"><a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/tag/v1.0.1">Release v1.0.1 on GitHub</a> · <a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/download/v1.0.1/exo-player-v1.0.1.apk">Download the APK (44 MB)</a></p>
 
     <div><h2>Battery against VLC: the estimate</h2><p class="lede" style="margin-top:6px">Worked out, not measured: from what each app does every second during a film, the Snapdragon 8 Gen 2's published figures and AMOLED panel behaviour. An emulator can't help here (no hardware decoder, no power model). Treat the numbers as ±30–50 %; Gate 2 on the Thor gives the real ones. 1 % of the 6,000 mAh battery per hour ≈ 0.23 W.</p></div>
     <div class="pw-grid">
@@ -1288,6 +1288,7 @@ p { margin: 0; }
     ["7. Player extras", "done", "986fe4d", "Everything else the player needed for v1.", ["Playback settings on Start: speed, picture, audio delay, subtitle look, brightness (D45)", "Volume bar with boost; pause when leaving (D40, D41)", "Mark unwatched, scrubbing, headset buttons"]],
     ["Library extras", "done", "ac18e60", "Finding things without scrolling.", ["X Search, as you type", "Select: A–Z, Recently added, Year, Unwatched only", "R1 Folder browser (D46)"]],
     ["Release v1.0.0", "done", "dfde05d", "On main, tagged, with the APK.", ["Merged to main (PR #1); release v1.0.0 on GitHub with exo-player-v1.0.0.apk", "Built and published by the Release workflow (Actions › Release › Run workflow)", "Live tests for the online services, skipped unless EXO_LIVE=1 (PR #2)"]],
+    ["v1.0.1", "done", "604a612", "Fixes from the first look, and the battery.", ["Picture subtitles inside the file (PGS, VobSub) now drawn; text ones already worked", "Track labels: \"EN · 5.1 · AC3 · Commentary\"; no more UND", "The bottom window leaves with the app when it's minimised", "Battery percentage on the bottom screen", "Real clips played through the player in the tests (92 tests); one signing key from now on"]],
     ["Gates 1 and 2", "todo", "", "What v1 still needs: the Thor itself.", ["Gate 1: both screens, buttons and touch on the device", "Gate 2: battery against VLC; 95 % of your 100 file names matched"]]
   ];
   document.getElementById("stages").innerHTML = STAGES.map(function (g) {
