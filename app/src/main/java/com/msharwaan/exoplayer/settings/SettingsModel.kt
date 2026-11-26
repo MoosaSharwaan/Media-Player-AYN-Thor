@@ -62,7 +62,7 @@ enum class SettingRow(
     LIBRARIES(
         "Libraries", "Library", null,
         "One library for films, another for work… Each reads its own folders and keeps its own titles and Continue watching. " +
-            "A opens them: add a library, name it, give it folders. L2 on Browsing switches between them.",
+            "A opens them: add a library, name it, give it folders. L2 + R3 on Browsing switches between them; a passkey keeps one private.",
     ),
     STORAGE(
         "Artwork and subtitles", "Library", null,

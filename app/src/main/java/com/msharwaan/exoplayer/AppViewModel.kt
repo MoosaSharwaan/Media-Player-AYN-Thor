@@ -2,6 +2,8 @@ package com.msharwaan.exoplayer
 
 import kotlinx.coroutines.withContext
 import com.msharwaan.exoplayer.library.Cleanup
+import com.msharwaan.exoplayer.library.LibrarySpec
+import com.msharwaan.exoplayer.library.PasskeyEntry
 import kotlinx.coroutines.Dispatchers
 import com.msharwaan.exoplayer.settings.LibrariesModel
 import android.app.Application
@@ -235,6 +237,75 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private var comboUsed = false
 
+    /** L2 held and R3 pressed, or the other way round. */
+    private fun switchChord(action: PadAction) =
+        (action == PadAction.R3 && PadAction.L2 in held) || (action == PadAction.L2 && PadAction.R3 in held)
+
+    /** The passkey being entered for a locked library (D56). */
+    private val _unlockEntry = MutableStateFlow(PasskeyEntry())
+    val unlockEntry: StateFlow<PasskeyEntry> = _unlockEntry.asStateFlow()
+
+    /** The next library; a locked one asks for its passkey first. */
+    private fun switchLibrary() {
+        val next = exo.prefs.after(exo.prefs.activeId.value) ?: run {
+            showNotice("One library so far. Add more in Settings › Libraries.")
+            return
+        }
+        goTo(next)
+    }
+
+    private fun goTo(library: LibrarySpec) {
+        if (library.locked) {
+            _unlockEntry.value = PasskeyEntry()
+            if (navigator.current is Route.Unlock) navigator.replace(Route.Unlock(library.id)) else navigator.push(Route.Unlock(library.id))
+            return
+        }
+        if (navigator.current is Route.Unlock) navigator.pop()
+        browse.useLibrary(library.id)?.let { showNotice("Library: $it") }
+    }
+
+    /** A button on the passkey screen: L2 + R3 again skips to the library after it. */
+    private fun unlockAction(id: Long, action: PadAction): Boolean {
+        if (switchChord(action)) {
+            val after = exo.prefs.after(id) ?: return true
+            if (after.id == exo.prefs.activeId.value) navigator.pop() else goTo(after)
+            return true
+        }
+        if (action == PadAction.L2) return true
+        val (entry, result) = _unlockEntry.value.press(action)
+        when (result) {
+            PasskeyEntry.Result.Typing -> _unlockEntry.value = entry
+            PasskeyEntry.Result.Cancel -> navigator.pop()
+            is PasskeyEntry.Result.Done -> if (exo.prefs.unlocks(id, result.presses)) {
+                navigator.pop()
+                browse.useLibrary(id)?.let { showNotice("Library: $it") }
+            } else {
+                _unlockEntry.value = PasskeyEntry(error = "That's not the passkey. Try again.")
+            }
+        }
+        return true
+    }
+
+    fun libraryName(id: Long): String = exo.prefs.library(id)?.name.orEmpty()
+
+    /** A button drawn on the passkey pad was tapped. */
+    fun onUnlockTapped(action: PadAction) { onAction(action); onButtonUp(action) }
+
+    /**
+     * The app has left the screen. A locked library on Browsing locks again: the first open one
+     * takes its place and anything opened from it closes, after the player has saved (D56).
+     */
+    fun onLeftApp() {
+        held.clear()
+        comboUsed = false
+        libraries.lockAgain()
+        val wasOn = exo.prefs.active
+        if (wasOn?.locked == true || navigator.current is Route.Unlock) {
+            if (wasOn?.locked == true) exo.prefs.firstOpen()?.let { browse.useLibrary(it.id) }
+            navigator.reset()
+        }
+    }
+
     fun onButtonUp(action: PadAction) {
         held -= action
         if (action == PadAction.SELECT) {
@@ -381,11 +452,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             is Route.Folders -> onFolders(folders.onAction((navigator.current as Route.Folders).path, action))
             Route.Browse -> if (action == PadAction.START) { openSettings(); true }
             else if (action == PadAction.X && browse.hasFolder.value) { openSearch(); true }
-            // L2: the next library (D52).
-            else if (action == PadAction.L2) {
-                showNotice(browse.nextLibrary()?.let { "Library: $it" } ?: "One library so far. Add more in Settings › Libraries.")
-                true
-            }
+            // L2 + R3: the next library (D52, D56); L2 alone only says how.
+            else if (switchChord(action)) { switchLibrary(); true }
+            else if (action == PadAction.L2) { showNotice("L2 + R3 switches library."); true }
             else if (action == PadAction.R2 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
             // Select changes the order when it's let go, so Select + Start (diagnostics) doesn't change it.
             else if (action == PadAction.SELECT) true
@@ -395,6 +464,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 BrowseResult.Used -> true
                 BrowseResult.NotUsed -> false
             }
+            is Route.Unlock -> unlockAction((navigator.current as Route.Unlock).libraryId, action)
             is Route.Player -> player.onAction(action)
             is Route.FixMatch -> fixMatch.onAction(action)
             is Route.FindSubtitles -> findSubtitles.onAction(action)

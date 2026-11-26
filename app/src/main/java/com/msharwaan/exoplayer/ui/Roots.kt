@@ -150,6 +150,10 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         is Route.Show -> ShowTop(vm.show, vm.preview)
         Route.Settings -> SettingsTop(vm.settings)
         Route.Libraries -> LibrariesTop(vm.libraries)
+        is Route.Unlock -> PasskeyTop(
+            vm.libraryName(route.libraryId),
+            "Enter its passkey on the bottom screen. L2 + R3 again skips to the next library; B goes back.",
+        )
         // Finding subtitles keeps the film on the top screen.
         is Route.Player, is Route.FindSubtitles -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
@@ -180,6 +184,10 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
             is Route.Folders -> FoldersBottom(vm.folders, route.path) { vm.onFolders(it) }
             Route.Settings -> SettingsBottom(vm.settings)
             Route.Libraries -> LibrariesBottom(vm.libraries)
+            is Route.Unlock -> {
+                val entry by vm.unlockEntry.collectAsStateWithLifecycle()
+                PasskeyPad("Passkey", "Press the combo, then ▷ Start.", entry, onPress = vm::onUnlockTapped)
+            }
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 val volume by vm.player.volume.percent.collectAsStateWithLifecycle()

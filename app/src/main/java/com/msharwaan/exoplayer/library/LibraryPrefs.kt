@@ -4,14 +4,17 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.edit
+import com.msharwaan.exoplayer.input.PadAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** A library: a name and the folders it reads (D52). */
-data class LibrarySpec(val id: Long, val name: String, val folders: List<Uri>)
+/** A library: a name, the folders it reads (D52), and its passkey's hash when it has one (D56). */
+data class LibrarySpec(val id: Long, val name: String, val folders: List<Uri>, val lock: String? = null) {
+    val locked: Boolean get() = lock != null
+}
 
 /**
  * The libraries ("Entertainment", "Work"…) and which one Browsing shows (D52). Each reads its own
@@ -27,6 +30,10 @@ class LibraryPrefs(private val context: Context) {
     private val _activeId = MutableStateFlow(prefs.getLong(KEY_ACTIVE, _libraries.value.firstOrNull()?.id ?: FIRST_ID))
     /** The library Browsing shows. */
     val activeId: StateFlow<Long> = _activeId.asStateFlow()
+
+    init {
+        relock()
+    }
 
     val active: LibrarySpec? get() = _libraries.value.firstOrNull { it.id == _activeId.value } ?: _libraries.value.firstOrNull()
 
@@ -56,11 +63,40 @@ class LibraryPrefs(private val context: Context) {
 
     fun removeFolder(id: Long, uri: Uri) = update(id) { it.copy(folders = it.folders - uri) }
 
-    /** Forgets a library (its files stay where they are on the card). The last one can't go. */
+    /** The first library without a passkey: one always stays (D56). */
+    fun firstOpen(): LibrarySpec? = _libraries.value.firstOrNull { !it.locked }
+
+    /** A passkey can go on [id] only while another library stays open. */
+    fun canLock(id: Long): Boolean = _libraries.value.any { it.id != id && !it.locked }
+
+    fun setLock(id: Long, presses: List<PadAction>) {
+        if (library(id)?.locked == true || canLock(id)) update(id) { it.copy(lock = Passkey.make(presses)) }
+    }
+
+    fun clearLock(id: Long) = update(id) { it.copy(lock = null) }
+
+    fun unlocks(id: Long, presses: List<PadAction>): Boolean = library(id)?.lock?.let { Passkey.matches(it, presses) } ?: true
+
+    /**
+     * Leaving the app, or starting it: a locked library on Browsing gives way to the first open
+     * one. Returns true when it did.
+     */
+    fun relock(): Boolean {
+        if (active?.locked != true) return false
+        val open = firstOpen() ?: return false
+        setActive(open.id)
+        return true
+    }
+
+    /**
+     * Forgets a library (its files stay where they are on the card). The last one can't go, nor
+     * the last one without a passkey (D56).
+     */
     fun delete(id: Long): Boolean {
         if (_libraries.value.size <= 1) return false
+        if (library(id)?.locked == false && !canLock(id)) return false
         save(_libraries.value.filter { it.id != id })
-        if (_activeId.value == id) setActive(_libraries.value.first().id)
+        if (_activeId.value == id) setActive((firstOpen() ?: _libraries.value.first()).id)
         return true
     }
 
@@ -69,12 +105,15 @@ class LibraryPrefs(private val context: Context) {
         _activeId.value = id
     }
 
-    /** The next library round in a circle (L2 on Browsing); null when there's only one. */
-    fun next(): LibrarySpec? {
+    /** The next library round in a circle (L2 + R3 on Browsing); null when there's only one. */
+    fun next(): LibrarySpec? = after(_activeId.value)?.also { setActive(it.id) }
+
+    /** The library after [id] round in a circle, without switching; null when there's only one. */
+    fun after(id: Long): LibrarySpec? {
         val all = _libraries.value
         if (all.size < 2) return null
-        val i = all.indexOfFirst { it.id == _activeId.value }
-        return all[(i + 1) % all.size].also { setActive(it.id) }
+        val i = all.indexOfFirst { it.id == id }
+        return all[(i + 1) % all.size]
     }
 
     private fun update(id: Long, change: (LibrarySpec) -> LibrarySpec) = save(_libraries.value.map { if (it.id == id) change(it) else it })
@@ -85,7 +124,7 @@ class LibraryPrefs(private val context: Context) {
     }
 
     private fun write(list: List<LibrarySpec>) {
-        val json = JSONArray(list.map { l -> JSONObject().put("id", l.id).put("name", l.name).put("folders", JSONArray(l.folders.map(Uri::toString))) })
+        val json = JSONArray(list.map { l -> JSONObject().put("id", l.id).put("name", l.name).put("folders", JSONArray(l.folders.map(Uri::toString))).apply { l.lock?.let { put("lock", it) } } })
         prefs.edit { putString(KEY_LIBRARIES, json.toString()) }
     }
 
@@ -96,7 +135,7 @@ class LibraryPrefs(private val context: Context) {
                 (0 until a.length()).map { i ->
                     val o = a.getJSONObject(i)
                     val f = o.getJSONArray("folders")
-                    LibrarySpec(o.getLong("id"), o.getString("name"), (0 until f.length()).map { Uri.parse(f.getString(it)) })
+                    LibrarySpec(o.getLong("id"), o.getString("name"), (0 until f.length()).map { Uri.parse(f.getString(it)) }, o.optString("lock").ifEmpty { null })
                 }
             }.getOrDefault(emptyList())
         }

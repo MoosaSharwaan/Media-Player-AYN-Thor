@@ -165,6 +165,8 @@ class MainActivity : ComponentActivity() {
         // Leaving the app (Home, a frontend, the screen going off) pauses, saves and frees the
         // decoders, so nothing of the player runs in the background (D8, battery rule 1 when idle).
         vm.player.toBackground()
+        // A locked library locks again (D56); the player has saved first.
+        vm.onLeftApp()
         (application as ExoApp).work.appVisible = false
         // The bottom window goes with the app; otherwise it stays over whatever the bottom screen
         // shows next. It comes back in onStart, when displaySetup is collected again.

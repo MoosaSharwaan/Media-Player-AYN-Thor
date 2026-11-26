@@ -19,6 +19,8 @@ sealed interface Route {
     data class Folders(val path: String) : Route
     /** Settings › Libraries (D52). */
     data object Libraries : Route
+    /** A locked library asks for its passkey before Browsing shows it (D56). */
+    data class Unlock(val libraryId: Long) : Route
 }
 
 /** The back stack. Browse is always at the bottom. */
@@ -31,6 +33,9 @@ class Navigator {
 
     /** Replaces the top route, so B skips the one being left. */
     fun replace(route: Route) { _stack.value = _stack.value.dropLast(1) + route }
+
+    /** Back to Browsing alone: a locked library was left (D56). */
+    fun reset() { _stack.value = listOf(Route.Browse) }
 
     /** Returns false at the root, where Back is left to the system. */
     fun pop(): Boolean {

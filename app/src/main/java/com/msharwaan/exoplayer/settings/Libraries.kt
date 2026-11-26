@@ -31,6 +31,9 @@ import com.msharwaan.exoplayer.data.AppDatabase
 import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.library.LibraryPrefs
 import com.msharwaan.exoplayer.library.LibrarySpec
+import com.msharwaan.exoplayer.library.Passkey
+import com.msharwaan.exoplayer.library.PasskeyEntry
+import com.msharwaan.exoplayer.ui.PasskeyPad
 import com.msharwaan.exoplayer.ui.KeyboardState
 import com.msharwaan.exoplayer.ui.KeyboardView
 import com.msharwaan.exoplayer.ui.Legend
@@ -52,8 +55,14 @@ sealed interface LibraryRow {
     data object Use : LibraryRow
     data class Folder(val uri: Uri) : LibraryRow
     data object AddFolder : LibraryRow
+    /** Set or change the passkey (D56). */
+    data object Passkey : LibraryRow
+    data object RemovePasskey : LibraryRow
     data object Delete : LibraryRow
 }
+
+/** What a passkey being entered is for. */
+enum class PasskeyStep { UNLOCK, SET, CONFIRM }
 
 data class LibrariesUi(
     /** Null: the list of libraries. Otherwise the library whose page is open. */
@@ -63,6 +72,12 @@ data class LibrariesUi(
     val naming: KeyboardState? = null,
     /** Delete was pressed once: the next A deletes. */
     val confirmDelete: Boolean = false,
+    /** A passkey being entered for [passkeyFor] (D56). */
+    val passkey: PasskeyEntry? = null,
+    val passkeyFor: Long? = null,
+    val passkeyStep: PasskeyStep = PasskeyStep.UNLOCK,
+    /** X was pressed once on a locked library in the list: the next X deletes it. */
+    val confirmForget: Boolean = false,
 )
 
 /**
@@ -96,8 +111,19 @@ class LibrariesModel(
 
     private val scope = scope
 
+    /** Locked libraries opened here with their passkey; asked again after leaving Libraries. */
+    private val unlocked = mutableSetOf<Long>()
+
+    /** The app left the screen: an open locked library's page closes (D56). */
+    fun lockAgain() {
+        unlocked.clear()
+        val ui = _ui.value
+        if (ui.passkey != null || ui.open?.let { prefs.library(it)?.locked } == true) reset()
+    }
+
     /** Opening Libraries starts on the list, on the library Browsing shows. */
     fun reset() {
+        unlocked.clear()
         _ui.value = LibrariesUi(focus = prefs.libraries.value.indexOfFirst { it.id == prefs.activeId.value }.coerceAtLeast(0))
     }
 
@@ -109,6 +135,8 @@ class LibrariesModel(
             LibraryRow.Use.takeIf { id != prefs.activeId.value },
         ) + lib.folders.map { LibraryRow.Folder(it) } + listOfNotNull(
             LibraryRow.AddFolder,
+            LibraryRow.Passkey,
+            LibraryRow.RemovePasskey.takeIf { lib.locked },
             LibraryRow.Delete.takeIf { prefs.libraries.value.size > 1 },
         )
     }
@@ -117,13 +145,18 @@ class LibrariesModel(
     fun onAction(action: PadAction): Boolean {
         val ui = _ui.value
         ui.naming?.let { return nameAction(ui, it, action) }
+        ui.passkey?.let { passkeyAction(ui, it, action); return true }
         val open = ui.open
         if (open == null) {
             val n = prefs.libraries.value.size + 1 // + "New library"
             when (action) {
-                PadAction.UP -> _ui.update { it.copy(focus = (it.focus - 1).coerceAtLeast(0)) }
-                PadAction.DOWN -> _ui.update { it.copy(focus = (it.focus + 1).coerceAtMost(n - 1)) }
+                PadAction.UP -> _ui.update { it.copy(focus = (it.focus - 1).coerceAtLeast(0), confirmForget = false) }
+                PadAction.DOWN -> _ui.update { it.copy(focus = (it.focus + 1).coerceAtMost(n - 1), confirmForget = false) }
                 PadAction.A -> activateInList(ui.focus)
+                // Forgot the passkey: X twice deletes the library without it; its videos stay (D56).
+                PadAction.X -> prefs.libraries.value.getOrNull(ui.focus)?.takeIf { it.locked }?.let { lib ->
+                    if (!ui.confirmForget) _ui.update { it.copy(confirmForget = true) } else deleteLibrary(lib.id)
+                } ?: return false
                 else -> return false
             }
             return true
@@ -156,6 +189,10 @@ class LibrariesModel(
 
     private fun activateInList(index: Int) {
         val lib = prefs.libraries.value.getOrNull(index)
+        if (lib != null && lib.locked && lib.id !in unlocked) {
+            _ui.value = LibrariesUi(focus = index, passkey = PasskeyEntry(), passkeyFor = lib.id, passkeyStep = PasskeyStep.UNLOCK)
+            return
+        }
         if (lib != null) {
             _ui.value = LibrariesUi(open = lib.id)
             return
@@ -174,21 +211,68 @@ class LibrariesModel(
             }
             is LibraryRow.Folder -> onNotice("X removes this folder from the library. The videos stay on the card.")
             LibraryRow.AddFolder -> onAddFolder(id)
+            LibraryRow.Passkey -> if (prefs.library(id)?.locked == true || prefs.canLock(id)) {
+                _ui.update { it.copy(passkey = PasskeyEntry(), passkeyFor = id, passkeyStep = PasskeyStep.SET) }
+            } else {
+                onNotice("One library always stays without a passkey. Make another library first.")
+            }
+            LibraryRow.RemovePasskey -> {
+                prefs.clearLock(id)
+                _ui.update { it.copy(focus = it.focus.coerceAtMost(rowsOf(id).size - 1)) }
+                onNotice("Passkey removed. ${prefs.library(id)?.name} opens without one.")
+            }
             LibraryRow.Delete -> if (!_ui.value.confirmDelete) {
                 _ui.update { it.copy(confirmDelete = true) }
             } else {
-                val name = prefs.library(id)?.name
-                if (prefs.delete(id)) {
-                    scope.launch {
-                        db.library().deleteFilesIn(id)
-                        cleanup()
-                    }
-                    onNotice("$name deleted. Its videos are still on the card.")
-                    reset()
+                deleteLibrary(id)
+            }
+        }
+    }
+
+    private fun deleteLibrary(id: Long) {
+        val name = prefs.library(id)?.name
+        if (prefs.delete(id)) {
+            scope.launch {
+                db.library().deleteFilesIn(id)
+                cleanup()
+            }
+            onNotice("$name deleted. Its videos are still on the card.")
+            reset()
+        } else {
+            onNotice("One library always stays without a passkey, so $name can't go.")
+            _ui.update { it.copy(confirmDelete = false, confirmForget = false) }
+        }
+    }
+
+    /** A button while a passkey is entered: to open a locked library, or to set one. */
+    private fun passkeyAction(ui: LibrariesUi, entry: PasskeyEntry, action: PadAction) {
+        val id = ui.passkeyFor ?: return
+        val (next, result) = entry.press(action)
+        when (result) {
+            PasskeyEntry.Result.Typing -> _ui.update { it.copy(passkey = next) }
+            PasskeyEntry.Result.Cancel -> _ui.update { it.copy(passkey = null, passkeyFor = null) }
+            is PasskeyEntry.Result.Done -> when (ui.passkeyStep) {
+                PasskeyStep.UNLOCK -> if (prefs.unlocks(id, result.presses)) {
+                    unlocked += id
+                    _ui.value = LibrariesUi(open = id)
+                } else {
+                    _ui.update { it.copy(passkey = PasskeyEntry(error = "That's not the passkey. Try again.")) }
+                }
+                PasskeyStep.SET -> _ui.update { it.copy(passkey = PasskeyEntry(first = result.presses), passkeyStep = PasskeyStep.CONFIRM) }
+                PasskeyStep.CONFIRM -> if (result.presses == entry.first) {
+                    prefs.setLock(id, result.presses)
+                    unlocked += id
+                    _ui.update { it.copy(passkey = null, passkeyFor = null) }
+                    onNotice("Passkey set. Switching to ${prefs.library(id)?.name} and opening it here will ask for it.")
+                } else {
+                    _ui.update { it.copy(passkey = PasskeyEntry(error = "The two didn't match. Press the new combo again."), passkeyStep = PasskeyStep.SET) }
                 }
             }
         }
     }
+
+    /** A button drawn on the passkey pad was tapped. */
+    fun onPasskeyTapped(action: PadAction) { onAction(action) }
 
     private fun removeFolder(id: Long, uri: Uri) {
         prefs.removeFolder(id, uri)
@@ -242,7 +326,7 @@ fun LibrariesTop(model: LibrariesModel) {
             Text("One for films, one for work…", color = Palette.Ink, fontSize = 46.sp, fontWeight = FontWeight.Bold)
             Text(
                 "Each library reads its own folders and keeps its own titles, Continue watching and watched marks. " +
-                    "Browsing shows one at a time: press L2 there to switch. Deleting a library never touches the videos on the card.",
+                    "Browsing shows one at a time: press L2 + R3 there to switch. A passkey keeps a library private. Deleting a library never touches the videos on the card.",
                 color = Palette.Muted, fontSize = 18.sp, lineHeight = 26.sp,
             )
         } else {
@@ -273,14 +357,30 @@ fun LibrariesBottom(model: LibrariesModel) {
     val activeId by model.activeId.collectAsStateWithLifecycle()
     val counts by model.counts.collectAsStateWithLifecycle()
     ui.naming?.let { NameEditor(model, it); return }
+    ui.passkey?.let { entry ->
+        val name = libraries.firstOrNull { it.id == ui.passkeyFor }?.name.orEmpty()
+        when (ui.passkeyStep) {
+            PasskeyStep.UNLOCK -> PasskeyPad("🔒 $name", "Its passkey opens it. Forgot it? B, then X twice on it deletes the library.", entry, onPress = model::onPasskeyTapped)
+            PasskeyStep.SET -> PasskeyPad("New passkey · $name", "${Passkey.MIN} to ${Passkey.MAX} presses of the D-pad, A, X and Y, then ▷ Start.", entry, onPress = model::onPasskeyTapped)
+            PasskeyStep.CONFIRM -> PasskeyPad("New passkey · $name", "Once more, to be sure.", entry, onPress = model::onPasskeyTapped)
+        }
+        return
+    }
     val open = ui.open?.let { id -> libraries.firstOrNull { it.id == id } }
     Column(Modifier.fillMaxSize().padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(open?.name ?: "Libraries", color = Palette.Ink, fontSize = 22.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            Legend(*listOfNotNull("A" to "Open", ("X" to "Remove folder").takeIf { open != null }, "B" to "Back").toTypedArray())
+            val focusedLocked = open == null && libraries.getOrNull(ui.focus)?.locked == true
+            Legend(*listOfNotNull("A" to "Open", ("X" to "Remove folder").takeIf { open != null }, ("X" to "Delete").takeIf { focusedLocked }, "B" to "Back").toTypedArray())
         }
         val labels: List<Pair<String, String?>> = if (open == null) {
-            libraries.map { it.name to listOfNotNull("Shown".takeIf { _ -> it.id == activeId }, countText(counts[it.id] ?: 0)).joinToString(" · ") } +
+            libraries.mapIndexed { i, lib ->
+                when {
+                    lib.locked && ui.confirmForget && i == ui.focus -> "X again deletes ${lib.name}" to "Videos stay on the card"
+                    lib.locked -> "🔒 ${lib.name}" to listOfNotNull("Shown".takeIf { lib.id == activeId }, "Passkey").joinToString(" · ")
+                    else -> lib.name to listOfNotNull("Shown".takeIf { lib.id == activeId }, countText(counts[lib.id] ?: 0)).joinToString(" · ")
+                }
+            } +
                 ("＋ New library" to null)
         } else {
             model.rowsOf(open.id).map { row ->
@@ -289,6 +389,8 @@ fun LibrariesBottom(model: LibrariesModel) {
                     LibraryRow.Use -> "Show this library on Browsing" to null
                     is LibraryRow.Folder -> SettingsModel.folderName(row.uri) to "Folder"
                     LibraryRow.AddFolder -> "＋ Add folder" to null
+                    LibraryRow.Passkey -> (if (open.locked) "Change passkey" else "Set passkey") to (if (open.locked) "On" else "Off")
+                    LibraryRow.RemovePasskey -> "Remove passkey" to null
                     LibraryRow.Delete -> (if (ui.confirmDelete) "Press A again to delete" else "Delete library") to "Videos stay on the card"
                 }
             }

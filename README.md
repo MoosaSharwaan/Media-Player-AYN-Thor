@@ -27,7 +27,7 @@ The top screen never takes input; the controller and touch work on the bottom sc
 ## What it does
 
 **Library**
-- **Libraries**: keep films and work apart, each with its own folders, titles and Continue watching; L2 switches (Settings › Libraries).
+- **Libraries**: keep films and work apart, each with its own folders, titles and Continue watching; L2 + R3 switches, and a passkey (a button combo) keeps one private (Settings › Libraries).
 - Pick your video folder once (SD card or internal). It finds every video, loose or in Show / Season folders, and reads names like `The.Dark.Knight.2008.1080p.mkv`, `Breaking.Bad.S02E05.mkv` and `[SubsPlease] Frieren - 12.mkv`.
 - Five tabs: **Continue watching**, **Movies**, **Series**, **Anime**, **Others**. Search (X), sort and filter (Select: A–Z, Recently added, Year, Unwatched only), and a folder browser (R2).
 - **⟳ Fetch info** fills in posters, backdrops, plots, seasons and episodes from TMDB, with fanart.tv and AniList as fallbacks. It fetches only what's missing, and keeps going if you leave the app, with a progress notification.
@@ -86,7 +86,7 @@ These are drawn by the app's own code at the Thor's pixel sizes, from its screen
 | **Start** | Settings | Playback settings |
 | **Select** | Change the order | — |
 | **R2** | Folder browser | — |
-| **L2** | Next library | — |
+| **L2 + R3** | Next library (a locked one asks for its passkey) | — |
 | **Select + Start** | The diagnostics page that measures the Thor | |
 
 ## Getting started

@@ -130,7 +130,7 @@ class BrowseModel(
     /** Where each library was left: its tab and focused card. */
     private val places = mutableMapOf<Long, Pair<Tab, Int>>()
 
-    /** L2: the next library, back at its own tab and card (D52). Null when there's only one. */
+    /** L2 + R3: the next library, back at its own tab and card (D52). Null when there's only one. */
     fun nextLibrary(): String? = switchTo { prefs.next() }
 
     /** A library picked in Settings › Libraries. */

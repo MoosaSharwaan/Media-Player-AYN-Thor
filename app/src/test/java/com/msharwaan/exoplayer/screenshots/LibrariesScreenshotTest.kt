@@ -59,6 +59,17 @@ class LibrariesScreenshotTest {
         Screens.shoot(rule, "libraries_bottom_page", Panel.BOTTOM) { LibrariesBottom(model) }
     }
 
+    /** Setting a passkey (D56): three presses in. */
+    @Test
+    fun passkey() {
+        model.onAction(PadAction.DOWN)
+        model.onAction(PadAction.A)
+        while (model.rowsOf(model.ui.value.open!!)[model.ui.value.focus] != com.msharwaan.exoplayer.settings.LibraryRow.Passkey) model.onAction(PadAction.DOWN)
+        model.onAction(PadAction.A)
+        listOf(PadAction.UP, PadAction.X, PadAction.Y).forEach(model::onAction)
+        Screens.shoot(rule, "libraries_bottom_passkey", Panel.BOTTOM) { LibrariesBottom(model) }
+    }
+
     @Test
     fun pageTop() {
         model.onAction(PadAction.A)
