@@ -22,25 +22,44 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
 
     data class Result(val added: Int, val changed: Int, val removed: Int, val total: Int)
 
-    /** A file found in the folder: its name, size, date and the folders above it. */
-    internal data class Entry(val uri: Uri, val name: String, val size: Long, val modified: Long, val folders: List<String>)
-
-    suspend fun scan(tree: Uri): Result = withContext(Dispatchers.IO) {
-        val videos = mutableListOf<Entry>()
-        val subtitles = mutableListOf<Entry>()
-        walk(tree) { entry ->
-            when {
-                FileNameParser.isVideo(entry.name) -> videos += entry
-                entry.name.substringAfterLast('.', "").lowercase() in SUBTITLE_EXTENSIONS -> subtitles += entry
-            }
-        }
-        index(videos, subtitles)
+    /**
+     * A file found in a folder: its name, size, date and the folders above it. [root] names the
+     * library folder it was found in, when a library reads several (D52).
+     */
+    internal data class Entry(val uri: Uri, val name: String, val size: Long, val modified: Long, val folders: List<String>, val root: String? = null) {
+        /** Where the folder browser shows it: under its library folder's name when there are several. */
+        val path: List<String> get() = listOfNotNull(root) + folders
     }
 
-    /** Files the videos found into titles: new ones added, changed or re-read ones updated, missing ones removed. */
-    internal suspend fun index(videos: List<Entry>, subtitles: List<Entry>): Result = withContext(Dispatchers.IO) {
+    /** Reads every folder of [library] (D52). */
+    suspend fun scan(library: LibrarySpec): Result = withContext(Dispatchers.IO) {
+        val videos = mutableListOf<Entry>()
+        val subtitles = mutableListOf<Entry>()
+        val several = library.folders.size > 1
+        var readAll = true
+        for (tree in library.folders) {
+            runCatching {
+                walk(tree, if (several) rootName(tree) else null) { entry ->
+                    when {
+                        FileNameParser.isVideo(entry.name) -> videos += entry
+                        entry.name.substringAfterLast('.', "").lowercase() in SUBTITLE_EXTENSIONS -> subtitles += entry
+                    }
+                }
+            }.onFailure { readAll = false }
+        }
+        // A folder that couldn't be read (the SD card out) mustn't take its files' history with it.
+        index(videos, subtitles, library.id, removeMissing = readAll)
+    }
+
+    /**
+     * Files the videos found into titles: new ones added, changed or re-read ones updated, missing
+     * ones removed (only when every folder was read).
+     */
+    internal suspend fun index(
+        videos: List<Entry>, subtitles: List<Entry>, libraryId: Long = LibraryPrefs.FIRST_ID, removeMissing: Boolean = true,
+    ): Result = withContext(Dispatchers.IO) {
         val dao = db.library()
-        val known = dao.allFiles().associateBy { it.uri }
+        val known = dao.filesIn(libraryId).associateBy { it.uri }
         // Other names of a show already matched on TMDB go straight to its title (D50).
         val sameShow = SameShow.aliases(dao.titles(), dao.overrides())
         var added = 0
@@ -52,15 +71,16 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
             val old = known[key]
             // Names are read again every scan, so a better parser fixes files already in the library.
             val parsed = FileNameParser.parse(v.name, v.folders)
-            val groupKey = groupKeyOf(parsed, v).let { sameShow[it] ?: it }
-            if (old != null && old.size == v.size && old.modified == v.modified && old.matches(parsed, groupKey)) {
+            val groupKey = groupKeyOf(parsed, v, libraryId).let { sameShow[it] ?: it }
+            val folderPath = v.path.joinToString("/")
+            if (old != null && old.size == v.size && old.modified == v.modified && old.folderPath == folderPath && old.matches(parsed, groupKey)) {
                 linkSubtitles(old.id, v, subtitles)
                 continue
             }
             val file = MediaFile(
                 id = old?.id ?: 0,
                 uri = key,
-                folderPath = v.folders.joinToString("/"),
+                folderPath = folderPath,
                 fileName = v.name,
                 size = v.size,
                 modified = v.modified,
@@ -72,13 +92,14 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
                 episode = parsed.episode,
                 anime = parsed.animeHint,
                 durationMs = old?.durationMs ?: 0,
+                libraryId = libraryId,
             )
             val id = dao.insertFile(file)
             if (old == null) added++ else changed++
             ensureTitle(file)
             linkSubtitles(if (old != null) old.id else id, v, subtitles)
         }
-        val gone = known.values.filter { it.uri !in seen }.map { it.id }
+        val gone = if (removeMissing) known.values.filter { it.uri !in seen }.map { it.id } else emptyList()
         if (gone.isNotEmpty()) dao.deleteFiles(gone)
         SameShow.merge(db)
         dao.deleteOrphanTitles()
@@ -105,7 +126,7 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
 
     private suspend fun linkSubtitles(fileId: Long, video: Entry, all: List<Entry>) {
         val base = video.name.substringBeforeLast('.')
-        val matches = all.filter { it.folders == video.folders && it.name.startsWith(base) }
+        val matches = all.filter { it.path == video.path && it.name.startsWith(base) }
         db.library().replaceSubtitles(
             fileId,
             matches.map { SubtitleFile(mediaFileId = fileId, uri = it.uri.toString(), fileName = it.name, language = languageOf(it.name, base)) },
@@ -113,7 +134,11 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
     }
 
     /** Walks the folder tree with DocumentsContract queries (much faster than DocumentFile). */
-    private fun walk(tree: Uri, onFile: (Entry) -> Unit) {
+    /** "primary:Courses/2026" → "2026": the name a library folder goes by in the folder browser. */
+    private fun rootName(tree: Uri): String =
+        DocumentsContract.getTreeDocumentId(tree).substringAfter(':').substringAfterLast('/').ifEmpty { "Card" }
+
+    private fun walk(tree: Uri, root: String?, onFile: (Entry) -> Unit) {
         val resolver = context.contentResolver
         val queue = ArrayDeque<Pair<String, List<String>>>()
         queue += DocumentsContract.getTreeDocumentId(tree) to emptyList()
@@ -132,7 +157,7 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
                     if (c.getString(2) == Document.MIME_TYPE_DIR) {
                         queue += id to (folders + name)
                     } else {
-                        onFile(Entry(DocumentsContract.buildDocumentUriUsingTree(tree, id), name, c.getLong(3), c.getLong(4), folders))
+                        onFile(Entry(DocumentsContract.buildDocumentUriUsingTree(tree, id), name, c.getLong(3), c.getLong(4), folders, root))
                     }
                 }
             }
@@ -145,13 +170,20 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
         /** Normalised name for grouping: "The Dark Knight" and "the.dark.knight" are one title. */
         fun normalise(s: String): String = s.lowercase().replace(Regex("[^a-z0-9]+"), " ").trim()
 
-        private fun groupKeyOf(p: ParsedName, e: Entry): String = when (p.kind) {
-            ParsedName.Kind.EPISODE -> "s:" + normalise(p.title)
-            ParsedName.Kind.MOVIE -> "m:" + normalise(p.title) + ":" + (p.year ?: "")
-            ParsedName.Kind.OTHER -> "o:" + normalise((e.folders + e.name).joinToString("/"))
-            // No title of their own, so no card: reached through the folder browser.
-            ParsedName.Kind.EXTRA -> "x:" + normalise((e.folders + e.name).joinToString("/"))
+        private fun groupKeyOf(p: ParsedName, e: Entry, libraryId: Long): String {
+            val key = when (p.kind) {
+                ParsedName.Kind.EPISODE -> "s:" + normalise(p.title)
+                ParsedName.Kind.MOVIE -> "m:" + normalise(p.title) + ":" + (p.year ?: "")
+                ParsedName.Kind.OTHER -> "o:" + normalise((e.path + e.name).joinToString("/"))
+                // No title of their own, so no card: reached through the folder browser.
+                ParsedName.Kind.EXTRA -> "x:" + normalise((e.path + e.name).joinToString("/"))
+            }
+            // Each library its own titles (D52); library 1's keys are as they always were.
+            return if (libraryId == LibraryPrefs.FIRST_ID) key else "$libraryId|$key"
         }
+
+        /** "2|s:fire force" → "2|"; library 1's keys have no prefix. */
+        fun libraryPrefixOf(groupKey: String): String = if ('|' in groupKey) groupKey.substringBefore('|') + "|" else ""
 
         private fun MediaFile.matches(p: ParsedName, key: String): Boolean =
             kind == p.kind.name && groupKey == key && title == p.title && year == p.year &&

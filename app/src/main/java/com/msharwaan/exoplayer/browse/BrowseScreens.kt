@@ -59,12 +59,13 @@ fun BrowseTop(model: BrowseModel, preview: Preview? = null) {
     val tab by model.tab.collectAsStateWithLifecycle()
     val focus by model.focus.collectAsStateWithLifecycle()
     val hasFolder by model.hasFolder.collectAsStateWithLifecycle()
+    val libraryName by model.libraryName.collectAsStateWithLifecycle()
     val cards = library[tab].orEmpty()
     val card = cards.getOrNull(focus)
     when {
         !hasFolder -> Welcome()
         card != null -> FocusedTitle(card, preview)
-        else -> PosterMix(tab, cards)
+        else -> PosterMix(tab, cards, libraryName)
     }
 }
 
@@ -80,7 +81,7 @@ private fun Welcome() {
 }
 
 @Composable
-private fun PosterMix(tab: Tab, cards: List<Card>) {
+private fun PosterMix(tab: Tab, cards: List<Card>, libraryName: String? = null) {
     Box(Modifier.fillMaxSize()) {
         if (cards.isNotEmpty()) {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -104,7 +105,8 @@ private fun PosterMix(tab: Tab, cards: List<Card>) {
         )
         Column(Modifier.align(Alignment.BottomStart).padding(start = 48.dp, bottom = 40.dp)) {
             Text(
-                if (cards.isEmpty()) "Nothing here yet" else countLabel(tab, cards.size),
+                // With several libraries, which one this is: "WORK · 12 ENTRIES" (D52).
+                listOfNotNull(libraryName?.uppercase(), if (cards.isEmpty()) "Nothing here yet" else countLabel(tab, cards.size)).joinToString(" · "),
                 color = Palette.Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp,
             )
             Text(tab.label, color = Palette.Ink, fontSize = 56.sp, fontWeight = FontWeight.Bold)

@@ -6,7 +6,7 @@
   <img src="docs/images/thor-browsing.png" width="640" alt="Exo Player on the Thor: a poster mix of the Movies tab on the top screen, the tab strip and poster cards on the bottom screen">
 </p>
 
-> **v1.0.6** · [Download the APK](https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/latest). Every v1 feature is built and its 111 tests pass on a PC, with both screens drawn at the Thor's real sizes and real clips played through the player. It now runs on the Thor; the two v1 gates (the full on-device test, and a battery test against VLC) are next. AniList was tested live; TMDB, fanart.tv and OpenSubtitles against stand-in servers. Personal app, installed as an APK; not on the Play Store.
+> **v1.0.6** · [Download the APK](https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/latest). Every v1 feature is built and its 116 tests pass on a PC, with both screens drawn at the Thor's real sizes and real clips played through the player. It now runs on the Thor; the two v1 gates (the full on-device test, and a battery test against VLC) are next. AniList was tested live; TMDB, fanart.tv and OpenSubtitles against stand-in servers. Personal app, installed as an APK; not on the Play Store.
 
 ## How the two screens are used
 
@@ -27,6 +27,7 @@ The top screen never takes input; the controller and touch work on the bottom sc
 ## What it does
 
 **Library**
+- **Libraries**: keep films and work apart, each with its own folders, titles and Continue watching; L2 switches (Settings › Libraries).
 - Pick your video folder once (SD card or internal). It finds every video, loose or in Show / Season folders, and reads names like `The.Dark.Knight.2008.1080p.mkv`, `Breaking.Bad.S02E05.mkv` and `[SubsPlease] Frieren - 12.mkv`.
 - Five tabs: **Continue watching**, **Movies**, **Series**, **Anime**, **Others**. Search (X), sort and filter (Select: A–Z, Recently added, Year, Unwatched only), and a folder browser (R2).
 - **⟳ Fetch info** fills in posters, backdrops, plots, seasons and episodes from TMDB, with fanart.tv and AniList as fallbacks. It fetches only what's missing, and keeps going if you leave the app, with a progress notification.
@@ -85,6 +86,7 @@ These are drawn by the app's own code at the Thor's pixel sizes, from its screen
 | **Start** | Settings | Playback settings |
 | **Select** | Change the order | — |
 | **R2** | Folder browser | — |
+| **L2** | Next library | — |
 | **Select + Start** | The diagnostics page that measures the Thor | |
 
 ## Getting started
@@ -92,7 +94,7 @@ These are drawn by the app's own code at the Thor's pixel sizes, from its screen
 1. **Download the APK** from [Releases](https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/latest), or **build it** (needs JDK 17+ and the Android SDK, platform 36; put `sdk.dir=…` in `local.properties`):
    ```
    ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
-   ./gradlew testDebugUnitTest    # 111 tests; screenshots of both screens in app/build/screenshots
+   ./gradlew testDebugUnitTest    # 116 tests; screenshots of both screens in app/build/screenshots
    ```
 2. **Install it on the Thor** with USB debugging on (`adb install app-debug.apk`), or copy the APK over and open it.
 3. **Pick your video folder** when the app asks.

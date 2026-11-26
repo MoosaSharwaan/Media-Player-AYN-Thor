@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer.ui
 
+import com.msharwaan.exoplayer.settings.LibrariesBottom
+import com.msharwaan.exoplayer.settings.LibrariesTop
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.animation.core.animateFloatAsState
@@ -147,6 +149,7 @@ private fun TopContent(vm: AppViewModel, route: Route) {
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
         is Route.Show -> ShowTop(vm.show, vm.preview)
         Route.Settings -> SettingsTop(vm.settings)
+        Route.Libraries -> LibrariesTop(vm.libraries)
         // Finding subtitles keeps the film on the top screen.
         is Route.Player, is Route.FindSubtitles -> {
             val ui by vm.player.ui.collectAsStateWithLifecycle()
@@ -176,6 +179,7 @@ private fun BottomContent(vm: AppViewModel, route: Route, oneScreen: Boolean) {
             Route.Search -> SearchBottom(vm.search, onOpen = vm::open)
             is Route.Folders -> FoldersBottom(vm.folders, route.path) { vm.onFolders(it) }
             Route.Settings -> SettingsBottom(vm.settings)
+            Route.Libraries -> LibrariesBottom(vm.libraries)
             is Route.Player -> {
                 val ui by vm.player.ui.collectAsStateWithLifecycle()
                 val volume by vm.player.volume.percent.collectAsStateWithLifecycle()

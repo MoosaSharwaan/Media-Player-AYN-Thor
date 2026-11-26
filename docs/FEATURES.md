@@ -29,6 +29,7 @@ These are the features people expect from VLC, MX Player, Just Player and Kodi. 
 | Picture-in-picture | Small floating video while using another app | v3 |
 | Night mode | Quieter loud scenes (dynamic range compression), on top of AYN's system EQ | v2 |
 | Bluetooth audio delay | Auto or manual offset for headphones | v2 |
+| Libraries | Several libraries (films, work…), each with its own folders, titles and Continue watching; L2 switches on Browsing; managed in Settings › Libraries (D52) | v1 |
 | Folder browser | R2 on Browsing: your folders as they are on the SD card, folders first, then videos with progress (D46) | v1 |
 | Search, sort, filter | X on Browsing searches titles, years and genres, typed on the app's own keyboard on the bottom screen (D25); Select steps through A–Z, Recently added, Year and Unwatched only (D46) | v1 |
 | Playlists and queue | Queue several files, repeat, shuffle | v2 |

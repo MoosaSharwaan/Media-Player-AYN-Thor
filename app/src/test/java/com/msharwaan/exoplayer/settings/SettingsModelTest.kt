@@ -23,6 +23,7 @@ class ReversingCrypto : Crypto {
 class SettingsModelTest {
 
     private lateinit var secrets: Secrets
+    private var openedLibraries = false
     private lateinit var model: SettingsModel
     private var clipboard: String? = null
     private val notices = mutableListOf<String>()
@@ -31,7 +32,7 @@ class SettingsModelTest {
     fun setUp() {
         secrets = Secrets(ApplicationProvider.getApplicationContext(), ReversingCrypto())
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        model = SettingsModel(secrets, DisplayPrefs(context), com.msharwaan.exoplayer.player.PreviewPrefs(context), { if (it == Screen.TOP) listOf(60f, 90f, 120f) else null }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { clipboard }, {}, { notices += it })
+        model = SettingsModel(secrets, DisplayPrefs(context), com.msharwaan.exoplayer.player.PreviewPrefs(context), { if (it == Screen.TOP) listOf(60f, 90f, 120f) else null }, { "Entertainment · 2 libraries" }, { clipboard }, { openedLibraries = true }, { notices += it })
     }
 
     @Test
@@ -118,7 +119,10 @@ class SettingsModelTest {
 
     @Test
     fun folderNames() {
-        assertEquals("SD card › Videos", model.ui.value.summaries[SettingRow.FOLDER])
+        assertEquals("Entertainment · 2 libraries", model.ui.value.summaries[SettingRow.LIBRARIES])
+        model.onRowTapped(SettingRow.LIBRARIES.ordinal)
+        model.onRowTapped(SettingRow.LIBRARIES.ordinal)
+        assertEquals(true, openedLibraries)
         assertEquals("Movies/Kids", SettingsModel.folderName(Uri.parse("content://x/tree/primary%3AMovies%2FKids")))
     }
 }

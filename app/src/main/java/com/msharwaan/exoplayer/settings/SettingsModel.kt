@@ -59,7 +59,11 @@ enum class SettingRow(
         "A or ◀ ▶ turns it on or off. Off, previews play silently.",
         toggle = true,
     ),
-    FOLDER("Video folder", "Library", null, "The folder the library is read from, usually on the SD card. A picks a different one."),
+    LIBRARIES(
+        "Libraries", "Library", null,
+        "One library for films, another for work… Each reads its own folders and keeps its own titles and Continue watching. " +
+            "A opens them: add a library, name it, give it folders. L2 on Browsing switches between them.",
+    ),
     ABOUT(
         "About", "About", null,
         "Exo Player, a personal video player for the AYN Thor. Licence GPL-3.0. " +
@@ -87,9 +91,10 @@ class SettingsModel(
     private val previewPrefs: PreviewPrefs,
     /** The refresh rates a screen offers, or null when that screen isn't there. */
     private val rates: (Screen) -> List<Float>?,
-    private val folder: () -> Uri?,
+    /** "Entertainment · 3 libraries": the library shown, and how many there are. */
+    private val libraries: () -> String,
     private val readClipboard: () -> String?,
-    private val onChooseFolder: () -> Unit,
+    private val onOpenLibraries: () -> Unit,
     private val onNotice: (String) -> Unit,
 ) {
     private val _ui = MutableStateFlow(SettingsUi())
@@ -103,7 +108,7 @@ class SettingsModel(
     }
 
     private fun summary(row: SettingRow): String = when (row) {
-        SettingRow.FOLDER -> folder()?.let(::folderName) ?: "Not chosen"
+        SettingRow.LIBRARIES -> libraries()
         SettingRow.ABOUT -> ""
         SettingRow.PREVIEWS -> if (previewPrefs.enabled.value) "On" else "Off"
         SettingRow.PREVIEW_SOUND -> if (previewPrefs.sound.value) "On" else "Off"
@@ -159,7 +164,7 @@ class SettingsModel(
             }
             row.screen != null -> stepRate(row, 1)
             row.toggle -> flip(row)
-            row == SettingRow.FOLDER -> onChooseFolder()
+            row == SettingRow.LIBRARIES -> onOpenLibraries()
         }
     }
 
