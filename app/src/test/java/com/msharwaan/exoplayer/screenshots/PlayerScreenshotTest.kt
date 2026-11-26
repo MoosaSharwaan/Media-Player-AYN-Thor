@@ -1,5 +1,8 @@
 package com.msharwaan.exoplayer.screenshots
 
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.msharwaan.exoplayer.player.PlayerBottom
@@ -49,6 +52,22 @@ class PlayerScreenshotTest {
     @Test
     fun subtitleTop() = Screens.shoot(rule, "player_top_subtitle", Panel.TOP) {
         PlayerTop(movie, "I've come to find my dragon.\nHave you seen him?") {}
+    }
+
+    /** An ASS sign where the file puts it, a quarter down a 16:9 frame, and the dialogue below. */
+    @Test
+    fun signTop() = Screens.shoot(rule, "player_top_sign", Panel.TOP) {
+        PlayerTop(movie, "That's a third-generation pyrokinetic for you.") {
+            androidx.compose.foundation.layout.Box(
+                androidx.compose.ui.Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xFF3A4A5A)),
+                contentAlignment = androidx.compose.ui.Alignment.Center,
+            ) {
+                com.msharwaan.exoplayer.player.SubtitleSigns(
+                    listOf(com.msharwaan.exoplayer.player.SignCue("Head Spa", 0.5f, 0.25f, 0.5f, 0.5f, 18f / 360)),
+                    androidx.compose.ui.Modifier.aspectRatio(16f / 9f),
+                )
+            }
+        }
     }
 
     @Test

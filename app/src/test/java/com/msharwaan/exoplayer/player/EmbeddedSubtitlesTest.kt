@@ -31,7 +31,7 @@ class EmbeddedSubtitlesTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
-    private class Played(val label: String, val lines: List<String>, val images: List<ImageCue>)
+    private class Played(val label: String, val lines: List<String>, val images: List<ImageCue>, val signs: List<SignCue> = emptyList())
 
     /** Plays [name] through the app's player to its end and records what the top screen was given. */
     private fun play(name: String): Played {
@@ -44,6 +44,7 @@ class EmbeddedSubtitlesTest {
         val model = PlayerModel(context, scope, db, PlaybackHolder(context), scope, {}, {})
         val lines = mutableListOf<String>()
         val images = mutableListOf<ImageCue>()
+        val signs = mutableListOf<SignCue>()
         model.open(id)
         // To the end of the clip, however busy the machine running the tests is (at most 20 s).
         for (i in 0 until 200) {
@@ -51,11 +52,12 @@ class EmbeddedSubtitlesTest {
             Thread.sleep(20)
             model.subtitle.value?.let { if (lines.lastOrNull() != it) lines += it }
             images += model.subtitleImages.value.filter { it !in images }
+            signs += model.subtitleSigns.value.filter { it !in signs }
             if (model.player.playbackState == androidx.media3.common.Player.STATE_ENDED) break
         }
         val label = model.ui.value.subtitleLabel
         model.player.release()
-        return Played(label, lines, images)
+        return Played(label, lines, images, signs)
     }
 
     @Test
@@ -70,6 +72,30 @@ class EmbeddedSubtitlesTest {
         val played = play("text-ass.mkv")
         assertEquals("EN · ASS", played.label)
         assertEquals(listOf("Hello from the file"), played.lines)
+    }
+
+    /**
+     * Anime-style ASS: a drawing (shape numbers), a sign at \pos(320,90) of 640 × 360 laid twice
+     * for outline and fill, and the dialogue. Only the dialogue is in the bottom line, the sign
+     * once at its spot, and no numbers anywhere.
+     */
+    @Test
+    fun assDrawingsAndSigns() {
+        val played = play("text-ass-signs.mkv")
+        assertEquals(listOf("Hello from the file"), played.lines)
+        val sign = played.signs.single()
+        assertEquals("Head Spa", sign.text)
+        assertEquals(0.5f, sign.x, 0.01f)
+        assertEquals(0.25f, sign.y, 0.01f)
+        assertEquals(0.5f, sign.anchorX, 0.01f)
+    }
+
+    @Test
+    fun drawingsAreNotText() {
+        assertTrue(TextCues.isDrawing("m 830 203 l 848 177 l 954 166 l 1008 182 l 1011 190"))
+        assertTrue(TextCues.isDrawing("m 0 0 b 10 -5 20 5.5 30 0 l 30 30"))
+        assertEquals(false, TextCues.isDrawing("Head Spa"))
+        assertEquals(false, TextCues.isDrawing("m 5 minutes left"))
     }
 
     @Test

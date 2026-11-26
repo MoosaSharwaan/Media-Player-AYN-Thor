@@ -133,6 +133,11 @@ class PlayerModel(
     private val _subtitleImages = MutableStateFlow<List<ImageCue>>(emptyList())
     val subtitleImages: StateFlow<List<ImageCue>> = _subtitleImages.asStateFlow()
 
+    /** Signs from ASS subtitles, each where the file places it in the frame. */
+    private val _subtitleSigns = MutableStateFlow<List<SignCue>>(emptyList())
+    val subtitleSigns: StateFlow<List<SignCue>> = _subtitleSigns.asStateFlow()
+    private var mediaCueSigns: List<SignCue> = emptyList()
+
     val player get() = holder.player
 
     private val prefs = PlaybackPrefs(context)
@@ -204,7 +209,10 @@ class PlayerModel(
         }
 
         override fun onCues(cueGroup: CueGroup) {
-            mediaCueText = cueGroup.cues.mapNotNull { it.text?.toString() }.joinToString("\n").ifEmpty { null }
+            // ASS drawings dropped, signs placed, layered copies shown once.
+            val sorted = TextCues.sort(cueGroup.cues)
+            mediaCueText = sorted.dialogue
+            mediaCueSigns = sorted.signs
             // Blu-ray and DVD subtitles are pictures, with no text.
             mediaCueImages = cueGroup.cues.mapNotNull(ImageCue::of)
             if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) showMediaCue()
@@ -530,7 +538,7 @@ class PlayerModel(
         }
         player.trackSelectionParameters = params.build()
         ownCues = emptyList()
-        if (choice !is SubtitleChoice.Track) _subtitleImages.value = emptyList()
+        if (choice !is SubtitleChoice.Track) { _subtitleImages.value = emptyList(); _subtitleSigns.value = emptyList() }
         if (choice is SubtitleChoice.OwnFile) {
             scope.launch {
                 ownCues = withContext(Dispatchers.IO) {
@@ -555,7 +563,7 @@ class PlayerModel(
                 subtitleOn = choice != SubtitleChoice.Off,
             )
         }
-        if (choice == SubtitleChoice.Off) { _subtitle.value = null; _subtitleImages.value = emptyList() }
+        if (choice == SubtitleChoice.Off) { _subtitle.value = null; _subtitleImages.value = emptyList(); _subtitleSigns.value = emptyList() }
     }
 
     private fun shiftSubtitles(stepMs: Int) {
@@ -593,11 +601,12 @@ class PlayerModel(
     private fun showMediaCue() {
         val text = mediaCueText
         val images = mediaCueImages
+        val signs = mediaCueSigns
         val delayMs = _ui.value.subtitleDelayMs.toLong()
-        if (delayMs <= 0) { _subtitle.value = text; _subtitleImages.value = images; return }
+        if (delayMs <= 0) { _subtitle.value = text; _subtitleImages.value = images; _subtitleSigns.value = signs; return }
         scope.launch {
             delay(delayMs)
-            if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) { _subtitle.value = text; _subtitleImages.value = images }
+            if (subtitleChoices.getOrNull(subtitleIndex) is SubtitleChoice.Track) { _subtitle.value = text; _subtitleImages.value = images; _subtitleSigns.value = signs }
         }
     }
 

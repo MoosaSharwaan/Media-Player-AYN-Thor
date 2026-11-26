@@ -57,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import com.msharwaan.exoplayer.browse.ProgressBar
@@ -133,7 +135,7 @@ private fun PausedArt(ui: PlayerUi) {
 /** The picture: a SurfaceView, the cheapest way to show video (battery rule 2), at the video's own shape. */
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoSurface(player: Player, picture: Picture = Picture.FIT, images: List<ImageCue> = emptyList()) {
+fun VideoSurface(player: Player, picture: Picture = Picture.FIT, images: List<ImageCue> = emptyList(), signs: List<SignCue> = emptyList()) {
     var ratio by remember { mutableFloatStateOf(16f / 9f) }
     DisposableEffect(player) {
         val listener = object : Player.Listener {
@@ -162,6 +164,35 @@ fun VideoSurface(player: Player, picture: Picture = Picture.FIT, images: List<Im
         )
         // Picture subtitles belong to the frame, so they share its box and move with the picture mode.
         if (images.isNotEmpty()) SubtitleImages(images, size)
+        if (signs.isNotEmpty()) SubtitleSigns(signs, size)
+    }
+}
+
+/** Signs from ASS subtitles, each on the spot in the frame the file gives it. */
+@Composable
+fun SubtitleSigns(signs: List<SignCue>, frame: Modifier) {
+    BoxWithConstraints(frame) {
+        val density = LocalDensity.current
+        val frameHeight = constraints.maxHeight.toFloat()
+        signs.forEach { sign ->
+            val size = with(density) { (frameHeight * (sign.size ?: 0.05f) * 0.85f).toSp() }
+            Text(
+                sign.text,
+                color = Color.White,
+                fontSize = size,
+                lineHeight = size * 1.15f,
+                textAlign = TextAlign.Center,
+                style = TextStyle(shadow = Shadow(Color.Black, Offset(0f, 2f), blurRadius = 6f)),
+                modifier = Modifier.layout { measurable, constraints ->
+                    val p = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        val x = (constraints.maxWidth * sign.x - p.width * sign.anchorX).toInt().coerceIn(0, (constraints.maxWidth - p.width).coerceAtLeast(0))
+                        val y = (constraints.maxHeight * sign.y - p.height * sign.anchorY).toInt().coerceIn(0, (constraints.maxHeight - p.height).coerceAtLeast(0))
+                        p.place(x, y)
+                    }
+                },
+            )
+        }
     }
 }
 
