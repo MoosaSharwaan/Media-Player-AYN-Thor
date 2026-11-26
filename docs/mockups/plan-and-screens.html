@@ -306,7 +306,7 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player v1.0.6 · released Nov 26, 2026 · built and tested on a PC; gates need the Thor</div>
+  <div class="eyebrow">Exo Player v1.0.6 · released Nov 26, 2026 · running on the Thor; v1 gates being tested</div>
   <h1>Both screens, every state, and the plan behind them</h1>
   <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
@@ -361,6 +361,8 @@ p { margin: 0; }
   <section class="view" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
     <div><h2>Versions and gates</h2><p class="lede" style="margin-top:6px">Each version ends at a gate. The next one starts only when the gate passes.</p></div>
     <div class="gates" id="gates"></div>
+    <div><h2>Upgrade path</h2><p class="lede" style="margin-top:6px">Where the app is, and the steps from here. Each release installs over the last and keeps your keys, libraries and progress.</p></div>
+    <div class="cats" id="path"></div>
     <div class="legend"><span class="v v0">v0</span> test app &amp; mockups <span class="v v1">v1</span> first usable player <span class="v">v2</span> comfort &amp; stats <span class="v">v3</span> extras</div>
     <div class="legend"><span class="st done">Built</span> in the code, with its tests passing <span class="st part">Partly</span> some of it built; the note says what's left <span class="st todo">Not yet</span> not started. Nothing has run on a Thor yet, so "Built" means built and tested on the PC, not proven on the device.</div>
     <div class="cats" id="cats"></div>
@@ -375,7 +377,7 @@ p { margin: 0; }
 
   <!-- ================= BUILD ================= -->
   <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
-    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed. Every v1 feature is now built; the gates need the Thor. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
+    <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed, then released as v1.0.0 to v1.0.6 from what you found on the Thor. It runs on the Thor now; what v1 still needs is its two gates. The screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
     <div class="stages" id="stages"></div>
     <p class="lede"><a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/tag/v1.0.6">Release v1.0.6 on GitHub</a> · <a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/download/v1.0.6/exo-player-v1.0.6.apk">Download the APK (44 MB)</a></p>
 
@@ -869,12 +871,12 @@ p { margin: 0; }
   var NAMES = { DPAD: "D-pad", L3: "Left stick", R3: "Right stick", SELECT: "Select", START: "Start", HOME: "Home", BACK: "Back", AYN: "AYN" };
   var COMMON = { HOME: "Android home (system, not ours)", AYN: "AYN menu; hold = AYN's bottom-off (system, not ours)", BACK: "Same as B" };
   var KEYS = {
-    browse: { L2: "Previous tab (decided)", R2: "Next tab (decided)", DPAD: "Move through the cards; the top screen shows the focused title (decided)", L3: "Same as D-pad (proposed)", A: "Open the focused title; a movie starts playing straight away, from where you stopped (decided)", B: "Leave the cards; the top screen goes back to the poster mix (decided)" },
-    movie:  { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to browsing", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", L1: "Subtitles 50 ms earlier (proposed)", R1: "Subtitles 50 ms later (proposed)", START: "Playback settings (speed, aspect, audio delay)" },
-    series: { DPAD: "Move through the season or episode cards; the top screen follows (decided)", L3: "Same as D-pad (proposed)", A: "Open the season, or play the episode (decided)", B: "Back: episodes → seasons → series → browsing (decided)", Y: "Mark the season or episode watched (proposed)" },
-    play:   { A: "Pause / resume", L2: "Back 10 s (decided)", R2: "Forward 10 s (decided)", B: "Stop, save the position and go back to this season's episode cards (decided)", X: "Subtitles: choose a track, or find some if there are none", Y: "Mark watched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, aspect, audio delay)" },
-    ending: { A: "Play next episode now (decided)", B: "Cancel the countdown and keep watching the credits (decided)", L2: "Skip back 10 s", R2: "Skip forward 10 s", R1: "Next episode now", L1: "Previous episode" },
-    single: { A: "Play / pause", B: "Hide controls, then go back", X: "Tracks side sheet over the video", DPAD: "Show controls and move in them", L1: "Previous episode", R1: "Next episode", L2: "Skip back 10 s", R2: "Skip forward 10 s", R3: "Scrub", L3: "Click with R3: bottom screen on", START: "Playback settings" }
+    browse: { L1: "Previous tab (built)", R1: "Next tab (built)", L2: "Next library (built, D52)", R2: "Folder browser (built)", DPAD: "Move through the cards; the top screen shows the focused title, and a preview after a second (built)", L3: "Same as D-pad", A: "Open the focused title; a movie starts playing straight away, from where you stopped (built)", B: "Leave the cards; the top screen goes back to the poster mix (built)", X: "Search (built)", Y: "Fix match (built)", SELECT: "Order: A–Z, Recently added, Year, Unwatched (built)", START: "Settings (built)" },
+    movie:  { A: "Pause / resume", L1: "Back 10 s (built)", R1: "Forward 10 s (built)", B: "Stop, save the position and go back to browsing", X: "Next subtitle track", Y: "Mark watched / unwatched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, picture, audio delay, subtitle look, brightness)" },
+    series: { DPAD: "Move through the season or episode cards; the top screen follows, an episode previews after a second (built)", L3: "Same as D-pad", A: "Open the season, or play the episode (built)", B: "Back: episodes → seasons → series → browsing (built)", Y: "Fix match (built)" },
+    play:   { A: "Pause / resume", L1: "Back 10 s (built)", R1: "Forward 10 s (built)", B: "Stop, save the position and go back to this season's episode cards (built)", X: "Next subtitle track", Y: "Mark watched / unwatched", DPAD: "Move between the bottom-screen buttons", START: "Playback settings (speed, picture, audio delay, subtitle look, brightness)" },
+    ending: { A: "Play next episode now (built)", B: "Cancel the countdown and keep watching the credits (built)", L1: "Back 10 s", R1: "Forward 10 s" },
+    single: { A: "Play / pause", B: "Hide controls, then go back", X: "Next subtitle track", DPAD: "Show controls and move in them", L1: "Back 10 s", R1: "Forward 10 s", START: "Playback settings" }
   };
   var LABEL = { DPAD: "✛ D-pad", L3: "L3 stick", R3: "R3 stick", SELECT: "▢ Select", START: "▷ Start", HOME: "⌂ Home", BACK: "↺ Back" };
   var ORDER = ["A", "B", "X", "Y", "DPAD", "L3", "R3", "L1", "R1", "L2", "R2", "SELECT", "START", "BACK", "HOME", "AYN"];
@@ -1059,15 +1061,52 @@ p { margin: 0; }
   // ---------- plan ----------
   // [id, name, what, is a gate, status (done | part | todo), status note]
   var gates = [
-    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Measuring needs the Thor"],
-    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "todo", "Needs the Thor"],
-    ["v1", "First usable player", "Library, artwork, resume, auto-next, local subtitles", 0, "part", "Every v1 feature is built and tested on the PC; what's left is the gates, which need the Thor"],
-    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "Needs the Thor and your 100 file names"],
-    ["v2", "Comfort", "Backup, frontends, TV output, sleep timer", 0, "todo", ""],
+    ["v0", "Two-screen test app + mockups", "Probe app measures the Thor; layouts compared", 0, "part", "Mockups done; the measuring page is in the app (Select + Start). Its readings, from the Thor, are still to record"],
+    ["G1", "Gate 1", "Both screens work with buttons and touch; probe questions answered; layout chosen", 1, "part", "Running on the Thor: both screens, buttons and touch work. Left: the diagnostics readings, lid / sleep / AYN swap, launching from a frontend"],
+    ["v1", "First usable player", "Library, artwork, resume, auto-next, subtitles, libraries", 0, "part", "Built, and released as v1.0.0–v1.0.6 from what you found on the Thor. Done once Gate 2 passes"],
+    ["G2", "Gate 2", "Battery ≤ VLC (±3%); 95% of 100 filenames match", 1, "todo", "The battery and heat test, and your 100 file names"],
+    ["v2", "Comfort", "Backup, frontends, sleep timer, background audio, TV output, full ASS", 0, "todo", "Next after the gates: see the upgrade path"],
     ["G3", "Gate 3", "No battery regression", 1, "todo", ""],
     ["v3", "Extras", "Skip intro, Trakt, themes, PiP", 0, "todo", ""]
   ];
   var STATUS = { done: "Built", part: "In progress", todo: "Not started" };
+
+  // Where the app is and where it goes next (D49–D53 built in v1.0.4–v1.0.6).
+  var PATH = [
+    { t: "Now: v1.0.6", s: "Released Nov 26, 2026, running on the Thor.", st: "done", pill: "Released", items: [
+      "Libraries: films, work… each with its own folders and titles; L2 switches (D52)",
+      "Previews: moments of the focused movie or episode behind its details (D51)",
+      "Tabs on L1 / R1, ±10 s on L1 / R1, folders on R2; only tabs with something in them (D53)",
+      "Before it: FFmpeg video for AVI and old formats (v1.0.4), one card per show and season backgrounds (v1.0.5)"] },
+    { t: "Next: v1.0.7", s: "Fixes and small things from the Thor.", st: "part", pill: "Next", items: [
+      "AVI lag: waiting on a photo of the paused screen's playback info to see where it comes from",
+      "Thumbnails from the file when there's no artwork: cover art, else a frame 10 % in; the file's own title or description tags",
+      "DivX 3 AVIs tagged \"DIV3\": teach Media3's AVI reader the tag",
+      "Show the last few frames of a file FFmpeg decodes",
+      "README pictures with the new buttons"] },
+    { t: "Then: v1.1, the v1 gates", s: "What makes v1 finished.", st: "todo", pill: "Planned", items: [
+      "Gate 1: diagnostics readings, lid / sleep / AYN swap, opening from a frontend on the bottom screen",
+      "Gate 2: one hour against VLC for battery and heat, same file and settings",
+      "Your 100 real file names in the parser tests, and fixes for whatever they show",
+      "Battery changes only if the test asks for them: black bottom screen in playback, 48 Hz for films, a software-decoding warning"] },
+    { t: "v2: Comfort", s: "After the gates; Gate 3 is no battery regression.", st: "todo", pill: "Planned", items: [
+      "Backup and restore in one file: keys, libraries, watch history",
+      "Open videos from frontends (ES-DE, Cocoon) and other apps",
+      "Sleep timer, night mode, Bluetooth audio delay",
+      "Background audio with notification controls",
+      "TV output when docked; playlists and a queue",
+      "Full ASS styling (libass) for anime signs and karaoke",
+      "Optional PIN on a library"] },
+    { t: "v3: Extras", s: "Nice to have.", st: "todo", pill: "Planned", items: [
+      "Skip intro", "Trakt sync", "Themes: accent colours on true black", "Picture-in-picture"] },
+    { t: "Later", s: "Bigger pieces, no version yet.", st: "todo", pill: "Later", items: [
+      "Network shares (SMB, DLNA); Jellyfin and Plex",
+      "WMV and RMVB containers, DVD folders and ISOs",
+      "MKV ordered chapters and chapter jumps"] }
+  ];
+  document.getElementById("path").innerHTML = PATH.map(function (p) {
+    return '<article class="cat"><div><h3>' + p.t + ' <span class="st ' + p.st + '" style="margin-left:6px">' + p.pill + '</span></h3><p class="sub">' + p.s + '</p></div><ol>' + p.items.map(function (x) { return '<li><span>' + x + '</span></li>'; }).join('') + '</ol></article>';
+  }).join('');
   document.getElementById("gates").innerHTML = gates.map(function (g) {
     var label = g[3] ? { done: "Passed", part: "Testing", todo: "Not passed yet" }[g[4]] : STATUS[g[4]];
     return '<div class="' + (g[3] ? 'g ' : '') + 'st-' + g[4] + '"><span class="eyebrow">' + g[0] + '</span><b>' + g[1] + '</b><small>' + g[2] + '</small>' +
@@ -1077,63 +1116,78 @@ p { margin: 0; }
   var cats = [
     { t: "Two-screen foundation", s: "Prove and measure the Thor before building screens.", steps: [
       ["Find the bottom panel by name and flags; skip virtual and TV displays", "v0", "done"],
-      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0", "done"],
+      ["Bottom-screen window: non-focusable Presentation with its own lifecycle", "v0", "done", "Leaves with the app when it's minimised (v1.0.1)"],
       ["Video in a SurfaceView on the top screen", "v0", "done"],
       ["Single-screen fallback when the bottom display disappears", "v0", "done", "The bottom screen’s content moves into a panel on the right"],
       ["Move to the top screen if launched on the bottom", "v0", "done"],
-      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0", "part", "The measuring page is built (Select + Start); the readings need the Thor"],
-      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0", "part", "Playback is kept outside the screens so it shouldn’t restart; untested on the Thor"] ] },
-    { t: "Layout & design", s: "Decide how both screens look before any screen is built.", steps: [
-      ["Mockup options for every state (this page is option 1)", "v0", "done"],
+      ["Measure: display modes, per-screen dimming, AYN overlay, codecs", "v0", "part", "The measuring page is built (Select + Start) and lists FFmpeg's formats too; the readings are still to record"],
+      ["Survive lid, sleep, AYN swap and Wayfinder moves", "v0", "part", "Playback is kept outside the screens so it shouldn’t restart; to check on the Thor"] ] },
+    { t: "Layout & design", s: "How both screens look.", steps: [
+      ["Mockup options for every state (this page)", "v0", "done"],
       ["Agree the display and layout rules", "v0", "done", "R1–R12 decided"],
-      ["Choose a layout per state on the real Thor", "v0", "todo", "Needs the Thor"],
-      ["Final button map, including bottom-screen-off combo", "v0", "part", "Buttons mapped; ⏻ on screen works; no button combo yet"],
+      ["Layout on the real Thor", "v0", "done", "In use on the Thor; changes from it so far: season backgrounds, button swap"],
+      ["Final button map", "v0", "done", "L1 / R1 tabs and ±10 s, L2 libraries, R2 folders; ⏻ on screen for the bottom screen"],
+      ["Battery percentage on the bottom screen", "v1", "done", "v1.0.1"],
       ["Themes: true-black default plus accent colours", "v3", "part", "True black built; accent colours not yet"] ] },
-    { t: "Library & matching", s: "From a folder of files to posters and seasons.", steps: [
-      ["Pick the SD card folder once (folder picker)", "v1", "done"],
-      ["Scan, then rescan only changed folders", "v1", "part", "Only changed files are read again, but every folder is still listed"],
-      ["Filename parser, tested on 100 real names", "v1", "part", "Built and tested on 38 names; needs your 100"],
-      ["Match on TMDB; download posters, backdrops, logos", "v1", "done", "Only what's missing (D38); no logos yet, since nothing shows them. Tested against a stand-in server"],
+    { t: "Libraries & browsing", s: "Finding what to watch.", steps: [
+      ["Several libraries, each its own folders, titles and Continue watching; L2 switches", "v1", "done", "Settings › Libraries (D52, v1.0.6)"],
+      ["Only tabs with something in them", "v1", "done", "D53, v1.0.6"],
+      ["Previews of the focused movie or episode behind its details", "v1", "done", "Settings › Browsing; sound off by default (D51, v1.0.6)"],
+      ["Each season's own poster as the top screen's background", "v1", "done", "v1.0.5"],
+      ["Thumbnails and titles from the file when there's no artwork", "v1", "todo", "Proposed for v1.0.7"],
+      ["Optional PIN on a library", "v2", "todo"] ] },
+    { t: "Library & matching", s: "From folders of files to posters and seasons.", steps: [
+      ["Pick folders with Android's folder picker, per library", "v1", "done"],
+      ["Scan, then rescan only changed files", "v1", "done", "Every scan re-reads names, so better parsing fixes old cards; a folder that can't be read removes nothing"],
+      ["Filename parser, tested on 100 real names", "v1", "part", "Tested on about 70 names, including your anime batches; needs your 100"],
+      ["Extras (openings, endings, NCOP, trailers, extras folders) off the tabs", "v1", "done", "v1.0.2, v1.0.5"],
+      ["Match on TMDB; posters, backdrops; AniList and fanart.tv as fallbacks", "v1", "done", "Only what's missing (D38); AniList tested live"],
+      ["Season descriptions: each season its own, from AniList when TMDB has none", "v1", "done", "v1.0.3"],
+      ["One card per show under any name (Japanese and English)", "v1", "done", "Merged by TMDB match (D50, v1.0.5)"],
       ["Group Show › Season › Episode; list missing episodes", "v1", "done"],
-      ["Fix a match by hand; survives rescans", "v1", "done", "✎ or Y; by name or TMDB ID (D43)"],
+      ["Fix a match by hand; survives rescans", "v1", "done", "Y; by name or TMDB ID (D43)"],
       ["Folder browser; search, sort, filter", "v1", "done", "X Search, Select order, R2 Folders (D46)"],
-      ["Settings: API keys (typed or pasted, stored encrypted), refresh rate per screen, video folder, About", "v1", "done"],
+      ["Settings: API keys (stored encrypted), refresh rate per screen, libraries, previews, About", "v1", "done"],
       ["Pause and save when leaving the app, power off or lid (D40)", "v1", "done"] ] },
     { t: "Playback", s: "Everything that happens once you press Play.", steps: [
-      ["ExoPlayer + FFmpeg audio; hardware decoding first", "v1", "done"],
-      ["Notices for software decoding and unsupported audio", "v1", "done"],
-      ["Seek, skip, chapters, speed, aspect, volume boost, screen lock", "v1", "part", "All built except chapters (ExoPlayer doesn't read MKV chapters) and the touch lock (dropped: ⏻ covers it) (D47)"],
-      ["Audio and subtitle tracks; delay in 50 ms steps", "v1", "done", "Audio delay in Playback settings (Start)"],
+      ["ExoPlayer, hardware decoding first", "v1", "done"],
+      ["Our own FFmpeg: DTS / TrueHD / AC3 audio; Xvid, DivX, DivX 3, MPEG-2, MJPEG, 10-bit H.264 video", "v1", "done", "v1.0.4 (D49); decoding checked on a PC with the same FFmpeg"],
+      ["AVI plays smoothly", "v1", "part", "Still lags on the Thor; the playback info line (v1.0.5) will show why"],
+      ["Playback info when paused: decoders, dropped frames, waits", "v1", "done", "v1.0.5"],
+      ["Audio and subtitle tracks, labelled by language, format and title", "v1", "done", "\"EN · 5.1 · AC3 · Commentary\" (v1.0.1)"],
+      ["Seek, skip, speed, picture modes, volume boost", "v1", "done", "Chapters and a touch lock left out (D47)"],
       ["Resume; watched at 90%; auto-play next with countdown", "v1", "done"],
       ["Sleep timer, background audio, night mode, Bluetooth delay", "v2", "todo"],
       ["Playlists and queue; TV output when docked", "v2", "todo"],
       ["Picture-in-picture; skip intro", "v3", "todo"] ] },
     { t: "Subtitles", s: "Find, show and style subtitles.", steps: [
-      ["Load .srt, .ass, .vtt next to the video automatically", "v1", "done"],
-      ["Basic styling: size, colour, outline, position", "v1", "done", "Size, position, dark box (D45)"],
-      ["OpenSubtitles search by file hash; save next to the video", "v1", "done", "Tested against a stand-in server"],
+      ["Subtitle files next to the video (.srt, .ass, .vtt)", "v1", "done"],
+      ["Subtitles inside the file: text (SRT, ASS, MP4) and pictures (PGS, VobSub)", "v1", "done", "Pictures since v1.0.1"],
+      ["Timing in 50 ms steps; size, position, dark box", "v1", "done", "D45"],
+      ["OpenSubtitles search by file hash; save next to the video", "v1", "done", "Tested against a stand-in server; live with your key"],
       ["Full ASS styling (libass renderer)", "v2", "todo"] ] },
     { t: "Progress & stats", s: "What you've watched, kept on the device.", steps: [
       ["Watch sessions recorded; saves on pause, stop and once a minute", "v1", "done"],
-      ["Continue watching row", "v1", "done"],
-      ["Stats screen and CSV export: not needed for now", "Later", "todo"],
+      ["Continue watching, per library", "v1", "done"],
       ["Backup and restore in one file", "v2", "todo"],
-      ["Trakt two-way sync (optional)", "v3", "todo"] ] },
+      ["Trakt two-way sync (optional)", "v3", "todo"],
+      ["Stats screen and CSV export: not needed for now", "Later", "todo"] ] },
     { t: "Frontends", s: "Open from RetroHrai!, Cocoon or ES-DE.", steps: [
       ["Accept \"open this video\" from other apps", "v2", "todo"],
       ["Move to the top screen when opened on the bottom", "v2", "done", "Built early, in stage 1"],
       ["Sample ES-DE custom system and Cocoon setup notes", "v2", "todo"] ] },
     { t: "Battery & performance", s: "At or below VLC on the same file.", steps: [
-      ["True black everywhere; bottom screen redraws once a second", "v0", "done"],
-      ["Never raise the refresh rate; film-rate only if the Thor allows", "v0", "part", "Auto does this (film rate only when seamless); Settings can also fix a rate per screen (D42). Check on the Thor"],
-      ["No background work during playback", "v1", "done", "Leaving the app pauses the film and frees its decoders; only a Fetch info you started carries on, with a notification (D48)"],
-      ["Battery test against VLC on the same firmware", "v1", "todo", "Needs the Thor"],
+      ["True black everywhere; bottom screen redraws once a second and dims", "v0", "done"],
+      ["Film-rate only when seamless; a fixed rate per screen in Settings", "v0", "done", "D42; check on the Thor"],
+      ["No background work during playback", "v1", "done", "Leaving the app pauses and frees decoders; only a Fetch info you started carries on (D48); previews stop when you leave"],
+      ["Estimate against VLC", "v1", "done", "Worked out on the Build tab: within 0.1–0.2 % per hour"],
+      ["Battery and heat test against VLC on the Thor", "v1", "todo", "Gate 2"],
       ["After every Thor OTA: rerun the short checklist", "v1", "todo"] ] },
-    { t: "Testing", s: "Most of it works before the Thor arrives.", steps: [
-      ["Unit tests: parser, stats maths, overrides", "v1", "part", "74 tests, overrides included; stats maths waits for the stats screen"],
-      ["Emulator with a simulated 1240×1080 second screen", "v0", "part", "No emulator here: screenshot tests draw the screens at the Thor’s sizes instead"],
-      ["Your phone: decoding, subtitles, Bluetooth controller", "v1", "todo"],
-      ["Thor: both screens, buttons, battery", "v0", "todo", "Needs the Thor"] ] }
+    { t: "Releases & testing", s: "How it gets to the Thor, and how it's checked.", steps: [
+      ["Release workflow: APK built and published on GitHub", "v1", "done", "One signing key since v1.0.1, so updates keep everything"],
+      ["Unit and screenshot tests on the PC", "v1", "done", "122 tests, including real clips played through the player and a database upgrade"],
+      ["Live checks of the online services", "v1", "part", "AniList live; TMDB, fanart.tv and OpenSubtitles with your keys on the Thor"],
+      ["Thor: both screens, buttons, battery", "v0", "part", "In daily use; the gates' checks still to do"] ] }
   ];
   var STEP = { done: "Built", part: "Partly", todo: "Not yet" };
   document.getElementById("cats").innerHTML = cats.map(function (c) {
@@ -1155,11 +1209,12 @@ p { margin: 0; }
     ["Formats"],
     ["Hardware decoding first", "Lowest battery for H.264, HEVC, VP9, AV1", "Built", "y", "y", "y", "y", "y", "y"],
     ["Dolby and DTS audio", "AC3, E-AC3, DTS, TrueHD", "Built", "y", "y", "y", "y", "y", "y"],
-    ["Software video fallback", "10-bit H.264 (old anime), DivX 3, WMV, MPEG-2", "Proposed", "y", "y", "n", "y", "y", "y"],
+    ["Software video fallback", "Xvid / DivX, DivX 3, MPEG-2, MJPEG, 10-bit H.264 (old anime)", "Built", "y", "y", "n", "y", "y", "y"],
     ["WMV, RMVB, DVD folders and ISOs", "", "No", "y", "p", "n", "y", "p", "p"],
     ["MKV ordered chapters", "Anime openings and endings kept in separate files", "No", "y", "n", "n", "y", "y", "n"],
     ["Subtitles"],
     ["Subtitle files next to the video", ".srt, .ass, .vtt; matched by name and language", "Built", "y", "y", "y", "y", "y", "y"],
+    ["Picture subtitles in the file", "PGS (Blu-ray) and VobSub (DVD)", "Built", "y", "y", "y", "y", "y", "y"],
     ["Full ASS styling and embedded fonts", "Anime signs, karaoke, positions", "v2", "y", "p", "p", "y", "y", "p"],
     ["Subtitle timing", "Exo Player moves its own subtitle files earlier or later, 50 ms at a time", "Built", "y", "y", "y", "y", "y", "y"],
     ["Find subtitles online", "OpenSubtitles", "Built", "y", "y", "n", "a", "n", "y"],
@@ -1175,6 +1230,8 @@ p { margin: 0; }
     ["Missing episodes greyed", "From TMDB's episode list", "Built", "n", "n", "n", "a", "n", "n"],
     ["Fix a wrong match by hand", "", "Built", "n", "n", "n", "y", "n", "y"],
     ["Trakt sync", "", "v3", "n", "n", "n", "a", "n", "y"],
+    ["Several libraries", "Films and work kept apart, each its own Continue watching", "Built", "n", "n", "n", "y", "n", "p"],
+    ["Previews while browsing", "Moments of the focused film behind its details", "Built", "n", "n", "n", "a", "n", "n"],
     ["Network"],
     ["Network shares", "SMB, DLNA", "Later", "y", "y", "n", "y", "p", "y"],
     ["Jellyfin and Plex", "", "Later", "p", "n", "n", "a", "n", "n"],
@@ -1202,7 +1259,7 @@ p { margin: 0; }
     { n: "VLC", e: "libVLC with its own FFmpeg decoders, plus hardware · free, open source",
       better: ["Plays almost any file: WMV, RMVB, DVD ISOs, 10-bit H.264, ordered chapters", "Full ASS styling with libass", "Network shares, Chromecast, equaliser, audio passthrough"],
       ours: ["A real library: artwork, Show › Season › Episode, Continue watching", "Plays the next episode with a countdown; VLC just moves on in the folder, or stops", "Both screens"],
-      take: "The format list. Software video decoders and libass would close most of the gap." },
+      take: "The format list. Our own FFmpeg video (v1.0.4) closed much of the gap; libass would close most of the rest." },
     { n: "MX Player", e: "Own engine, hardware plus software decoders · free with ads, or paid · closed source",
       better: ["Wide format support through its codec pack", "Gestures, zoom, kids lock, online subtitle search", "Network shares"],
       ours: ["No ads and nothing hidden: open source, offline unless you ask", "Library with artwork and episodes", "Both screens and full button control"],
@@ -1232,9 +1289,9 @@ p { margin: 0; }
   }).join('');
 
   document.getElementById("cmpSum").innerHTML = [
-    ["Where we're ahead", ["The only player that uses both of the Thor's screens", "Continue watching, Up next and missing episodes together, in a player this light", "Never goes online unless you press a button"]],
+    ["Where we're ahead", ["The only player that uses both of the Thor's screens", "Continue watching, Up next and missing episodes together, in a player this light", "Libraries kept apart, and previews while browsing", "Never goes online unless you press a button"]],
     ["Planned, to catch up", ["v2: full ASS styling, background audio with notification controls, backup, TV output", "Later: network shares, Jellyfin and Plex"]],
-    ["Gaps to decide", ["Software video decoders, our own FFmpeg build, for 10-bit H.264, DivX 3, WMV (proposed)", "Move libass from v2 to v1, for anime typesetting (proposed)", "WMV/RMVB containers, DVD ISOs and ordered chapters: only libVLC would cover these"]]
+    ["Gaps to decide", ["Full ASS styling (libass): v2, or sooner for anime typesetting", "WMV / RMVB containers, DVD ISOs and ordered chapters: Later", "DivX 3 AVIs tagged DIV3: v1.0.7"]]
   ].map(function (b) { return '<div><h3>' + b[0] + '</h3>' + li(b[1]) + '</div>'; }).join('');
 
   // ---------- rules ----------
