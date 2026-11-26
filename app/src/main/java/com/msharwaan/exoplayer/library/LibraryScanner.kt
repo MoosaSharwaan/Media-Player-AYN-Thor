@@ -41,6 +41,8 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
     internal suspend fun index(videos: List<Entry>, subtitles: List<Entry>): Result = withContext(Dispatchers.IO) {
         val dao = db.library()
         val known = dao.allFiles().associateBy { it.uri }
+        // Other names of a show already matched on TMDB go straight to its title (D50).
+        val sameShow = SameShow.aliases(dao.titles(), dao.overrides())
         var added = 0
         var changed = 0
         val seen = mutableSetOf<String>()
@@ -50,7 +52,8 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
             val old = known[key]
             // Names are read again every scan, so a better parser fixes files already in the library.
             val parsed = FileNameParser.parse(v.name, v.folders)
-            if (old != null && old.size == v.size && old.modified == v.modified && old.matches(parsed, groupKeyOf(parsed, v))) {
+            val groupKey = groupKeyOf(parsed, v).let { sameShow[it] ?: it }
+            if (old != null && old.size == v.size && old.modified == v.modified && old.matches(parsed, groupKey)) {
                 linkSubtitles(old.id, v, subtitles)
                 continue
             }
@@ -62,7 +65,7 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
                 size = v.size,
                 modified = v.modified,
                 kind = parsed.kind.name,
-                groupKey = groupKeyOf(parsed, v),
+                groupKey = groupKey,
                 title = parsed.title,
                 year = parsed.year,
                 season = parsed.season,
@@ -77,6 +80,7 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
         }
         val gone = known.values.filter { it.uri !in seen }.map { it.id }
         if (gone.isNotEmpty()) dao.deleteFiles(gone)
+        SameShow.merge(db)
         dao.deleteOrphanTitles()
         Result(added, changed, gone.size, videos.size)
     }

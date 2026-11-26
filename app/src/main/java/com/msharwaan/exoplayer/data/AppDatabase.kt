@@ -104,6 +104,16 @@ interface LibraryDao {
     @Query("SELECT * FROM match_override WHERE groupKey = :groupKey")
     suspend fun override(groupKey: String): MatchOverride?
 
+    @Query("SELECT * FROM match_override")
+    suspend fun overrides(): List<MatchOverride>
+
+    /** Moves every file of one title to another (two names of the same show, D50). */
+    @Query("UPDATE media_file SET groupKey = :to WHERE groupKey = :from")
+    suspend fun regroupFiles(from: String, to: String)
+
+    @Query("DELETE FROM title_info WHERE groupKey = :groupKey")
+    suspend fun deleteTitle(groupKey: String)
+
     @Upsert
     suspend fun upsertOverride(override: MatchOverride)
 

@@ -7,6 +7,7 @@ import com.msharwaan.exoplayer.data.MediaFile
 import com.msharwaan.exoplayer.data.SeasonInfo
 import com.msharwaan.exoplayer.data.TitleInfo
 import com.msharwaan.exoplayer.library.LibraryScanner
+import com.msharwaan.exoplayer.library.SameShow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -59,6 +60,9 @@ class FetchInfo(
                 if (++offline >= 3) throw e
             }
         }
+        // Two names that turned out to be one show become one title; it then looks up the
+        // episodes of the seasons it gained (D50).
+        for (key in SameShow.merge(db)) runCatching { one(key, force = false) }
         progress(keys.size, keys.size)
         Report(fetched, upToDate, notFound, failed)
     }
