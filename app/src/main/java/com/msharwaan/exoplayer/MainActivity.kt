@@ -1,7 +1,6 @@
 package com.msharwaan.exoplayer
 
 import android.Manifest
-import android.app.ActivityOptions
 import android.content.pm.PackageManager
 import android.os.Build
 import android.content.BroadcastReceiver
@@ -37,9 +36,9 @@ import kotlinx.coroutines.launch
 /**
  * The top screen, and the owner of the bottom screen's window.
  *
- * The activity always lives on the default display (the Thor's top screen). If a frontend
- * started it on the bottom screen, it moves itself to the top first: an app on the bottom
- * screen can't put a window on the top one (research: Azahar #1437).
+ * The activity lives on the default display (the Thor's top screen): LaunchActivity starts it
+ * there wherever the icon was tapped (D55), since an app on the bottom screen can't put a
+ * window on the top one (research: Azahar #1437).
  */
 class MainActivity : ComponentActivity() {
 
@@ -57,7 +56,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (moveToTopScreenIfNeeded()) return
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -115,16 +113,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    /** Relaunches on the default display when started elsewhere. Returns true if it did. */
-    private fun moveToTopScreenIfNeeded(): Boolean {
-        val here = currentDisplay?.displayId ?: Display.DEFAULT_DISPLAY
-        if (here == Display.DEFAULT_DISPLAY) return false
-        val options = ActivityOptions.makeBasic().setLaunchDisplayId(Display.DEFAULT_DISPLAY)
-        startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), options.toBundle())
-        finish()
-        return true
     }
 
     private val displayPrefs get() = (application as ExoApp).displayPrefs
