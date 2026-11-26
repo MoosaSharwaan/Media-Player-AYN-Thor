@@ -65,12 +65,13 @@ fun Artwork(
     label: String? = null,
     labelSize: TextUnit = 14.sp,
     contentScale: ContentScale = ContentScale.Crop,
+    alignment: Alignment = Alignment.Center,
 ) {
     val image by produceState<ImageBitmap?>(null, path) { value = path?.let { ImageCache.load(it) } }
     Box(modifier.background(placeholderBrush(key))) {
         val bitmap = image
         if (bitmap != null) {
-            Image(bitmap, contentDescription = label, contentScale = contentScale, modifier = Modifier.fillMaxSize())
+            Image(bitmap, contentDescription = label, contentScale = contentScale, alignment = alignment, modifier = Modifier.fillMaxSize())
         } else if (label != null) {
             Text(
                 label,

@@ -144,8 +144,11 @@ class FetchInfo(
         val withFiles = onCard.map { it.first }.toSet()
         val seasonsWithoutText = title.tab == "ANIME" && !fromAniList &&
             dao.seasonsOf(title.groupKey).any { it.number in withFiles && it.overview == null }
+        // Seasons whose poster arrived before the large background copy existed (v1.0.5).
+        val seasonsWithoutBackground = !fromAniList &&
+            dao.seasonsOf(title.groupKey).any { it.number in withFiles && it.posterPath != null && !images.has(ImageStore.wideOf(it.posterPath)) }
         val complete = title.tmdbId != null && title.overview != null && images.has(title.posterPath) &&
-            (fromAniList || (images.has(title.backdropPath) && missing.isEmpty() && !seasonsWithoutText))
+            (fromAniList || (images.has(title.backdropPath) && missing.isEmpty() && !seasonsWithoutText && !seasonsWithoutBackground))
         if (complete && !force) return Outcome.UP_TO_DATE
 
         val id = override?.tmdbId?.takeIf { override.tmdbType == Tmdb.TV }
@@ -195,6 +198,10 @@ class FetchInfo(
                 regular.map { t ->
                     val local = kept[t.number]?.posterPath?.takeIf { images.has(it) }
                         ?: if (t.number in withFiles) t.posterPath?.let { images.save(http, title.groupKey, "season${t.number}", tmdb.imageUrl(it, "w342"), ImageStore.POSTER) } else null
+                    // A large copy for the season's background on the top screen.
+                    if (local != null && t.number in withFiles && !images.has(ImageStore.wideOf(local))) {
+                        t.posterPath?.let { images.save(http, title.groupKey, "season${t.number}-wide", tmdb.imageUrl(it, "original"), ImageStore.BACKDROP) }
+                    }
                     SeasonInfo(title.groupKey, t.number, t.name, t.overview ?: seasonText(t, aniList), t.year, t.episodeCount, local)
                 },
             )
