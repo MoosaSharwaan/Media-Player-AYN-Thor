@@ -57,7 +57,7 @@ class ShowScreenshotTest {
             dao.upsertSeasons(
                 listOf(
                     SeasonInfo("s:caminandes", 1, "Season 1", "Koro meets the fence.", 2013, 3, Screens.art("posters", "caminandes")),
-                    SeasonInfo("s:caminandes", 2, "Season 2", "Koro meets Oti the penguin.", 2016, 3, null),
+                    SeasonInfo("s:caminandes", 2, "Season 2", "Koro meets Oti the penguin.", 2016, 3, Screens.art("posters", "caminandes")),
                 ),
             )
             dao.upsertEpisodes(

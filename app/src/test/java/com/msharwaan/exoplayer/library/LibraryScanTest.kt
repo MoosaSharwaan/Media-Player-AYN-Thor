@@ -77,4 +77,50 @@ class LibraryScanTest {
         assertEquals(listOf("Bungo Stray Dogs", "Bungo Stray Dogs: Dead Apple", "Overlord"), dao.titles().map { it.name }.sorted())
         assertEquals(3, animeTab().size)
     }
+
+    private fun entriesOf(vararg paths: String) = paths.map { p ->
+        val parts = p.split('/')
+        LibraryScanner.Entry(Uri.parse("content://test/" + Uri.encode(p)), parts.last(), 100, 1, parts.dropLast(1))
+    }
+
+    /** What Fetch info leaves behind: the title matched to [tmdbId], named as TMDB names it. */
+    private suspend fun matched(key: String, tmdbId: Long, name: String) {
+        val dao = db.library()
+        dao.upsertTitle(dao.title(key)!!.copy(name = name, tmdbId = tmdbId, tmdbType = com.msharwaan.exoplayer.online.Tmdb.TV))
+    }
+
+    @Test
+    fun twoNamesOfOneShowBecomeOneCard() = runBlocking {
+        val files = entriesOf(
+            "Fire Force/[Judas] Enen no Shouboutai - S02E23.mkv",
+            "Fire Force/[Judas] Enen no Shouboutai - S02E24.mkv",
+            "Fire Force/[Judas] Fire Force - S03E01.mkv",
+        )
+        scanner.index(files, emptyList())
+        assertEquals(2, db.library().titles().size)
+
+        // Fetch info finds both on TMDB as Fire Force.
+        matched("s:enen no shouboutai", 88046, "Fire Force")
+        matched("s:fire force", 88046, "Fire Force")
+        assertEquals(setOf("s:fire force"), SameShow.merge(db))
+
+        val dao = db.library()
+        assertEquals(listOf("s:fire force"), dao.titles().map { it.groupKey })
+        assertEquals(listOf(2 to 23, 2 to 24, 3 to 1), dao.filesOf("s:fire force").map { it.season to it.episode })
+        assertEquals(1, animeTab().size)
+
+        // A rescan reads "Enen no Shouboutai" again, and files it under Fire Force again.
+        scanner.index(files, emptyList())
+        assertEquals(listOf("s:fire force"), dao.titles().map { it.groupKey })
+        assertEquals(3, dao.filesOf("s:fire force").size)
+    }
+
+    @Test
+    fun differentShowsInOneFolderStayApart() = runBlocking {
+        scanner.index(entriesOf("Naruto/[Judas] Naruto - S01E01.mkv", "Naruto/[Judas] Naruto Shippuden - S01E01.mkv"), emptyList())
+        matched("s:naruto", 46260, "Naruto")
+        matched("s:naruto shippuden", 31910, "Naruto Shippūden")
+        assertEquals(emptySet<String>(), SameShow.merge(db))
+        assertEquals(2, db.library().titles().size)
+    }
 }

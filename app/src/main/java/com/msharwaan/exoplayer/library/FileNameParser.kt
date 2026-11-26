@@ -48,7 +48,8 @@ object FileNameParser {
     private val NXNN = Regex("""(?i)(?<![\dx])(\d{1,2})x(\d{2,3})\b""")
     private val SEASON_EPISODE_WORDS = Regex("""(?i)\bseason[ ._-]*(\d{1,2})[ ._-]*(?:episode|ep)[ ._-]*(\d{1,3})\b""")
     private val EPISODE_WORD = Regex("""(?i)\b(?:episode|ep|e)[ ._-]?(\d{1,4})\b""")
-    private val ANIME_DASH_NUMBER = Regex("""\s-\s(\d{1,4})(?:v\d)?(?=\s|$)""")
+    // " - 12", and the careless " -12" / "S2- 05" spacing some releases use.
+    private val ANIME_DASH_NUMBER = Regex("""(?:\s-\s?|-\s)(\d{1,4})(?:v\d)?(?=\s|$)""")
     private val LEADING_NUMBER = Regex("""^(\d{1,4})(?:\s*-\s*|\s+|$)""")
     private val YEAR = Regex("""(?<!\d)(19[2-9]\d|20[0-4]\d)(?!\d|p)""")
     private val SEASON_FOLDER = Regex("""(?i)^(?:season|series|staffel|saison|s)[ ._-]*(\d{1,2})$""")
@@ -68,7 +69,7 @@ object FileNameParser {
     private val EXTRA_SUFFIX = Regex("""(?i)(?:-(?:trailer|featurette|behindthescenes|deleted|interview|scene|short)|(?:^|[\s-])sample)$""")
 
     /** An extra named after its show: "Show S1 - Opening 1", "Show - Ending", "Show - PV 2". Checked only when no episode number was found. */
-    private val EXTRA_AFTER_DASH = Regex("""(?i)\s-\s(?:(?:clean|textless)\s)?(?:opening|ending|op|ed|trailer|teaser|preview|pv|cm|menu)(?:\s?\d{1,2}[a-z]?)?$""")
+    private val EXTRA_AFTER_DASH = Regex("""(?i)(?:\s-\s?|-\s)(?:(?:clean|textless)\s)?(?:opening|ending|op|ed|trailer|teaser|preview|pv|cm|menu)(?:\s?\d{1,2}[a-z]?)?$""")
 
     /** Anime films: "Bungo Stray Dogs - Movie 01 - Dead Apple" is "Bungo Stray Dogs: Dead Apple". */
     private val NUMBERED_MOVIE = Regex("""(?i)^(.+?)\s-\sMovie\s?\d{1,2}\s-\s(.+)$""")

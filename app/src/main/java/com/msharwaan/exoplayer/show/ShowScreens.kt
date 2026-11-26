@@ -25,6 +25,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -79,13 +84,14 @@ fun ShowTop(model: ShowModel) {
             }
         }
         season != null -> Details(
-            art = title.backdropPath ?: title.posterPath,
+            // Each season its own look: its poster across the screen, no box in front.
+            art = season.backgroundPath ?: title.backdropPath ?: title.posterPath,
             key = title.groupKey,
             heading = season.name,
             meta = listOfNotNull(title.name, season.year?.toString(), episodesText(season)).joinToString(" · "),
             // The season's own description only: the show's would read the same on every season.
             overview = season.overview,
-            poster = season.posterPath ?: title.posterPath,
+            posterBackground = season.backgroundPath != null,
         )
         else -> Details(
             art = title.backdropPath ?: title.posterPath,
@@ -110,7 +116,11 @@ private fun episodesText(s: SeasonEntry): String {
     return if (n == 1) "1 episode" else "$n episodes"
 }
 
-/** Art across the screen, text over a dark fade on the left, and a poster on the right for seasons. */
+/**
+ * Art across the screen and text over a dark fade on the left. With [posterBackground] the art is
+ * a tall poster (a season's): the whole poster stands at the right, full height and edge to edge,
+ * fading into a blurred, darkened copy of itself that fills the rest, so none of it is cut away.
+ */
 @Composable
 private fun Details(
     art: String?,
@@ -118,22 +128,31 @@ private fun Details(
     heading: String,
     meta: String,
     overview: String?,
-    poster: String? = null,
+    posterBackground: Boolean = false,
     extra: @Composable () -> Unit = {},
 ) {
     Box(Modifier.fillMaxSize().background(Palette.Black)) {
-        Artwork(art, key, Modifier.fillMaxSize())
+        if (posterBackground) {
+            Artwork(art, key, Modifier.fillMaxSize().blur(40.dp))
+            Box(Modifier.fillMaxSize().background(Color(0x8C000000)))
+            // The poster's left edge fades to transparent, dissolving into the blurred copy: no seam.
+            Artwork(
+                art, key,
+                Modifier.align(Alignment.CenterEnd).fillMaxHeight().aspectRatio(2f / 3f)
+                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                    .drawWithContent {
+                        drawContent()
+                        drawRect(Brush.horizontalGradient(0f to Color.Transparent, 0.4f to Color.Black), blendMode = BlendMode.DstIn)
+                    },
+            )
+        } else {
+            Artwork(art, key, Modifier.fillMaxSize())
+        }
         Box(
             Modifier.fillMaxSize().background(
                 Brush.horizontalGradient(0f to Color(0xF0000000), 0.3f to Color(0xD1000000), 0.5f to Color(0x66000000), 0.72f to Color.Transparent),
             ),
         )
-        if (poster != null) {
-            Artwork(
-                poster, key,
-                Modifier.align(Alignment.CenterEnd).padding(48.dp).fillMaxHeight().aspectRatio(2f / 3f).clip(RoundedCornerShape(8.dp)),
-            )
-        }
         Column(
             Modifier.align(Alignment.CenterStart).padding(start = 48.dp).fillMaxWidth(0.42f),
             verticalArrangement = Arrangement.spacedBy(12.dp),

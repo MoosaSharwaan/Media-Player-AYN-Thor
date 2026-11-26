@@ -1,5 +1,6 @@
 package com.msharwaan.exoplayer.show
 
+import com.msharwaan.exoplayer.online.ImageStore
 import com.msharwaan.exoplayer.data.EpisodeInfo
 import com.msharwaan.exoplayer.data.MediaFile
 import com.msharwaan.exoplayer.data.PlaybackState
@@ -32,7 +33,11 @@ data class SeasonEntry(
     val year: Int?,
     val posterPath: String?,
     val episodes: List<EpisodeEntry>,
-)
+) {
+    /** The season's poster for the top screen's background: the large copy once Fetch info has it. */
+    val backgroundPath: String?
+        get() = posterPath?.let { p -> ImageStore.wideOf(p).takeIf { java.io.File(it).isFile } ?: p }
+}
 
 /** A series or anime as the series screens show it (D14, D15, D21). */
 data class ShowData(

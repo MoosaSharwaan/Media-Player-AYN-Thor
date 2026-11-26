@@ -50,5 +50,11 @@ class ImageStore(private val root: File) {
         const val POSTER = 342
         const val BACKDROP = 1280
         const val STILL = 300
+
+        /**
+         * The large copy of a season poster, for the top screen's background ("season2.jpg" →
+         * "season2-wide.jpg"); Fetch info saves it next to the card-sized one.
+         */
+        fun wideOf(posterPath: String): String = posterPath.removeSuffix(".jpg") + "-wide.jpg"
     }
 }

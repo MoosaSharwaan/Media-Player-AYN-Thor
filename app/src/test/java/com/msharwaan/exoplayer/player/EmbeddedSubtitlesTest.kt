@@ -33,7 +33,7 @@ class EmbeddedSubtitlesTest {
 
     private class Played(val label: String, val lines: List<String>, val images: List<ImageCue>)
 
-    /** Plays [name] through the app's player for 6 s and records what the top screen was given. */
+    /** Plays [name] through the app's player to its end and records what the top screen was given. */
     private fun play(name: String): Played {
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).allowMainThreadQueries().build()
         val path = File(javaClass.classLoader!!.getResource("media/$name")!!.toURI())
@@ -45,11 +45,13 @@ class EmbeddedSubtitlesTest {
         val lines = mutableListOf<String>()
         val images = mutableListOf<ImageCue>()
         model.open(id)
-        repeat(60) {
+        // To the end of the clip, however busy the machine running the tests is (at most 20 s).
+        for (i in 0 until 200) {
             shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
             Thread.sleep(20)
             model.subtitle.value?.let { if (lines.lastOrNull() != it) lines += it }
             images += model.subtitleImages.value.filter { it !in images }
+            if (model.player.playbackState == androidx.media3.common.Player.STATE_ENDED) break
         }
         val label = model.ui.value.subtitleLabel
         model.player.release()
