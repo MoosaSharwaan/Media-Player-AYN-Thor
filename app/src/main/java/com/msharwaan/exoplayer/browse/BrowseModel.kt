@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -70,6 +71,18 @@ class BrowseModel(
 
     private val _tab = MutableStateFlow(Tab.CONTINUE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
+
+    /** Only tabs with something in them (D53): no Movies tab in a library without films. */
+    val tabs: StateFlow<List<Tab>> = all.map(Library::visibleTabs).stateIn(scope, SharingStarted.Eagerly, Tab.entries)
+
+    init {
+        // The tab you're on emptied (or the library changed): the first one with something in it.
+        scope.launch {
+            combine(tabs, _tab) { visible, tab -> visible to tab }.collect { (visible, tab) ->
+                if (tab !in visible) { _tab.value = visible.first(); _focus.value = -1 }
+            }
+        }
+    }
 
     /** -1: nothing focused yet, so the top screen shows the poster mix (D6). */
     private val _focus = MutableStateFlow(-1)
@@ -138,6 +151,13 @@ class BrowseModel(
 
     fun selectTab(tab: Tab) { _tab.value = tab; _focus.value = -1 }
 
+    /** L1 / R1: round the tabs that are showing, in a full circle (D5, D53). */
+    private fun stepTab(step: Int) {
+        val visible = tabs.value
+        val i = visible.indexOf(_tab.value).coerceAtLeast(0)
+        selectTab(visible[(i + step + visible.size) % visible.size])
+    }
+
     fun focusCard(index: Int) { if (index in cards.indices) _focus.value = index }
 
     /**
@@ -151,8 +171,8 @@ class BrowseModel(
         }
         val n = cards.size
         when (action) {
-            PadAction.L1 -> selectTab(Tab.entries[(_tab.value.ordinal + Tab.entries.size - 1) % Tab.entries.size])
-            PadAction.R1 -> selectTab(Tab.entries[(_tab.value.ordinal + 1) % Tab.entries.size])
+            PadAction.L1 -> stepTab(-1)
+            PadAction.R1 -> stepTab(1)
             PadAction.LEFT -> move(-1)
             PadAction.RIGHT -> move(1)
             PadAction.UP -> move(-COLUMNS)

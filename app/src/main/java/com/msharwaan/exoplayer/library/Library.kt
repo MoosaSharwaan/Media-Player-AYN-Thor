@@ -81,6 +81,10 @@ object Library {
     )
 
     /** Half-watched movies and the next episode of each show you've started, newest first. */
+    /** The tabs with something in them, in their usual order; all five while the library is empty (D53). */
+    fun visibleTabs(tabs: Map<Tab, List<Card>>): List<Tab> =
+        Tab.entries.filter { tabs[it].orEmpty().isNotEmpty() }.ifEmpty { Tab.entries }
+
     fun continueWatching(
         byGroup: Map<String, List<MediaFile>>,
         titleOf: Map<String, TitleInfo>,

@@ -176,7 +176,8 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
     }
 
     Column(Modifier.fillMaxSize()) {
-        TabStrip(tab, onSelect = model::selectTab)
+        val tabs by model.tabs.collectAsStateWithLifecycle()
+        TabStrip(tab, tabs, onSelect = model::selectTab)
         Box(Modifier.fillMaxWidth().weight(1f)) {
             if (cards.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -240,14 +241,15 @@ internal fun PosterCard(card: Card, focused: Boolean, onClick: () -> Unit) {
 
 /**
  * The tab row: one line that runs past both edges, the selected tab in the centre,
- * L1 / R1 going round in a full circle (D5).
+ * L1 / R1 going round in a full circle (D5). Only tabs with something in them are shown (D53).
  */
 @Composable
-private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
-    val tabs = Tab.entries
+private fun TabStrip(selected: Tab, tabs: List<Tab>, onSelect: (Tab) -> Unit) {
     val n = tabs.size
-    // The ring repeated on both sides of the selected tab, so the row never shows an end.
-    val ring = (-n..n).map { tabs[((selected.ordinal + it) % n + n) % n] to (it == 0) }
+    val at = tabs.indexOf(selected).coerceAtLeast(0)
+    // The ring repeated on both sides of the selected tab, so the row never shows an end;
+    // a single tab stands alone rather than repeating itself.
+    val ring = if (n == 1) listOf(selected to true) else (-n..n).map { tabs[((at + it) % n + n) % n] to (it == 0) }
     Box(Modifier.fillMaxWidth().height(64.dp)) {
         Layout(
             modifier = Modifier.fillMaxSize(),
@@ -273,7 +275,7 @@ private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
             val loose = constraints.copy(minWidth = 0, maxWidth = Int.MAX_VALUE, minHeight = 0)
             val placeables = measurables.map { it.measure(loose) }
             val gap = 10.dp.roundToPx()
-            val center = n // index of the selected tab in the ring
+            val center = ring.indexOfFirst { it.second } // the selected tab's place in the ring
             val starts = IntArray(placeables.size)
             for (i in 1 until placeables.size) starts[i] = starts[i - 1] + placeables[i - 1].width + gap
             val shift = constraints.maxWidth / 2 - (starts[center] + placeables[center].width / 2)
