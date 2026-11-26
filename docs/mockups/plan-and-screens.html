@@ -306,7 +306,7 @@ p { margin: 0; }
 </style>
 
 <header class="masthead wrap">
-  <div class="eyebrow">Exo Player v1.0.4 · released Nov 21, 2026 · built and tested on a PC; gates need the Thor</div>
+  <div class="eyebrow">Exo Player v1.0.5 · released Nov 26, 2026 · built and tested on a PC; gates need the Thor</div>
   <h1>Both screens, every state, and the plan behind them</h1>
   <p class="lede">The mockup of each screen state, drawn to the Thor's real proportions, with the build plan by category and the display and layout rules. Decisions are marked <b>(decided)</b>. The Build tab shows how far the app has got and what its screens actually look like.</p>
 </header>
@@ -377,7 +377,7 @@ p { margin: 0; }
   <section class="view" id="build" role="tabpanel" aria-labelledby="tab-build" hidden>
     <div><h2>Build progress</h2><p class="lede" style="margin-top:6px">v1 was built in stages, each committed once it compiled and its tests passed. Every v1 feature is now built; the gates need the Thor. Nothing has run on a Thor yet: the screens below are drawn by the app's own code at the Thor's pixel sizes, using the open-movie sample art.</p></div>
     <div class="stages" id="stages"></div>
-    <p class="lede"><a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/tag/v1.0.4">Release v1.0.4 on GitHub</a> · <a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/download/v1.0.4/exo-player-v1.0.4.apk">Download the APK (44 MB)</a></p>
+    <p class="lede"><a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/tag/v1.0.5">Release v1.0.5 on GitHub</a> · <a href="https://github.com/MoosaSharwaan/Media-Player-AYN-Thor/releases/download/v1.0.5/exo-player-v1.0.5.apk">Download the APK (44 MB)</a></p>
 
     <div><h2>Battery against VLC: the estimate</h2><p class="lede" style="margin-top:6px">Worked out, not measured: from what each app does every second during a film, the Snapdragon 8 Gen 2's published figures and AMOLED panel behaviour. An emulator can't help here (no hardware decoder, no power model). Treat the numbers as ±30–50 %; Gate 2 on the Thor gives the real ones. 1 % of the 6,000 mAh battery per hour ≈ 0.23 W.</p></div>
     <div class="pw-grid">
@@ -1292,6 +1292,7 @@ p { margin: 0; }
     ["v1.0.2", "done", "66eb97c", "A tidier library, from the first look on the Thor.", ["Extras (openings, endings, NCOP/NCED, trailers, extras folders) off the tabs; playable from Folders", "\"Show S2 - 05\" is season 2 of Show: one card per series", "Anime films named for Fetch info: \"Show: Dead Apple\"", "Every scan re-reads the names, so old cards fix themselves (94 tests)"]],
     ["v1.0.3", "done", "", "Each season its own description.", ["No more the show's text on every season", "Anime seasons TMDB leaves empty get AniList's, matched by start month", "Next: AVI (Xvid/DivX) through FFmpeg video decoding"]],
     ["v1.0.4", "done", "", "AVI plays properly: FFmpeg video (D49).", ["Xvid and DivX go to the app's own FFmpeg, not Android's decoder that garbled them", "DivX 3, MPEG-1/2, H.263, Motion JPEG and 10-bit H.264 when the Thor lacks a decoder", "Media3's FFmpeg video was a stub: the decoder is written for the app, FFmpeg 6.0 built for arm64", "Checked on a PC with the same FFmpeg: every frame, in order (102 tests)"]],
+    ["v1.0.5", "done", "5a43439", "From the Thor: one card per show, season looks, playback info.", ["Two names of one show (Enen no Shouboutai / Fire Force) become one card via TMDB (D50)", "Each season's own poster as the top screen's background, no framed box", "\"S2- Opening 2\" kept off the tabs", "Playback info when paused: decoders, dropped frames, waits (to chase the AVI lag)"]],
     ["Gates 1 and 2", "todo", "", "What v1 still needs: the Thor itself.", ["Gate 1: both screens, buttons and touch on the device", "Gate 2: battery against VLC; 95 % of your 100 file names matched"]]
   ];
   document.getElementById("stages").innerHTML = STAGES.map(function (g) {
