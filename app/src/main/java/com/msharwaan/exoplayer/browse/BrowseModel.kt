@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Browsing: five tabs moved with L2 / R2 in a full circle (D2, D3, D5), cards on the bottom
+ * Browsing: five tabs moved with L1 / R1 in a full circle (D2, D3, D5), cards on the bottom
  * screen (D6), and the top screen showing either the tab's poster mix or the focused title.
  */
 class BrowseModel(
@@ -116,8 +116,8 @@ class BrowseModel(
         }
         val n = cards.size
         when (action) {
-            PadAction.L2 -> selectTab(Tab.entries[(_tab.value.ordinal + Tab.entries.size - 1) % Tab.entries.size])
-            PadAction.R2 -> selectTab(Tab.entries[(_tab.value.ordinal + 1) % Tab.entries.size])
+            PadAction.L1 -> selectTab(Tab.entries[(_tab.value.ordinal + Tab.entries.size - 1) % Tab.entries.size])
+            PadAction.R1 -> selectTab(Tab.entries[(_tab.value.ordinal + 1) % Tab.entries.size])
             PadAction.LEFT -> move(-1)
             PadAction.RIGHT -> move(1)
             PadAction.UP -> move(-COLUMNS)

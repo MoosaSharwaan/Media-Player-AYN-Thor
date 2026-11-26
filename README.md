@@ -12,7 +12,7 @@
 
 | | Top screen (6″, 1920×1080) | Bottom screen (3.92″, 1240×1080, touch) |
 | --- | --- | --- |
-| **Browsing** | A mix of the tab's posters, or the focused title's art and plot | Five tabs on L2 / R2, poster cards, Search, Fetch info, Settings |
+| **Browsing** | A mix of the tab's posters, or the focused title's art and plot | Five tabs on L1 / R1, poster cards, Search, Fetch info, Settings |
 | **Watching** | The film and its subtitles, nothing else. Paused: the title's art | Progress, Pause, volume, audio, subtitles and their timing, ‹ Prev / Next › |
 | **Series** | The show, then the season, then the focused episode | Season cards, then episode cards with ✓ watched and progress |
 
@@ -28,7 +28,7 @@ The top screen never takes input; the controller and touch work on the bottom sc
 
 **Library**
 - Pick your video folder once (SD card or internal). It finds every video, loose or in Show / Season folders, and reads names like `The.Dark.Knight.2008.1080p.mkv`, `Breaking.Bad.S02E05.mkv` and `[SubsPlease] Frieren - 12.mkv`.
-- Five tabs: **Continue watching**, **Movies**, **Series**, **Anime**, **Others**. Search (X), sort and filter (Select: A–Z, Recently added, Year, Unwatched only), and a folder browser (R1).
+- Five tabs: **Continue watching**, **Movies**, **Series**, **Anime**, **Others**. Search (X), sort and filter (Select: A–Z, Recently added, Year, Unwatched only), and a folder browser (R2).
 - **⟳ Fetch info** fills in posters, backdrops, plots, seasons and episodes from TMDB, with fanart.tv and AniList as fallbacks. It fetches only what's missing, and keeps going if you leave the app, with a progress notification.
 - **Previews**: rest on a movie or episode and moments of it play behind its details (Settings to turn off, or to hear them).
 - **✎ Fix match** when a title is wrong: search by name or type its TMDB ID. The fix survives rescans.
@@ -36,7 +36,7 @@ The top screen never takes input; the controller and touch work on the bottom sc
 **Watching**
 - Opens where you stopped; saved on pause, on leaving and once a minute; watched at 90 %.
 - **Up next** with a 10-second countdown at the end of an episode.
-- L2 / R2 skip 10 seconds; tap or drag the progress bar to jump.
+- L1 / R1 skip 10 seconds; tap or drag the progress bar to jump.
 - Audio and subtitle tracks; subtitle timing in 50 ms steps, earlier or later.
 - **Find subtitles** from OpenSubtitles when a video has none, saved next to the video.
 - **Playback settings** (Start): speed, picture (Fit, Zoom, 16:9, 4:3, Stretch), audio delay, subtitle size, position and background, top screen brightness.
@@ -78,13 +78,13 @@ These are drawn by the app's own code at the Thor's pixel sizes, from its screen
 | --- | --- | --- |
 | **A** | Focus, then open | Press the focused button (Pause / Resume to start with) |
 | **B** | One step back | Stop, save and go back |
-| **L2 / R2** | Previous / next tab | Back / forward 10 s |
+| **L1 / R1** | Previous / next tab | Back / forward 10 s |
 | **D-pad** | Move through the cards | Move between the buttons |
 | **X** | Search | Next subtitle track |
 | **Y** | ✎ Fix match on the focused card | Mark watched / unwatched |
 | **Start** | Settings | Playback settings |
 | **Select** | Change the order | — |
-| **R1** | Folder browser | — |
+| **R2** | Folder browser | — |
 | **Select + Start** | The diagnostics page that measures the Thor | |
 
 ## Getting started

@@ -277,7 +277,7 @@ fun PlayerBottom(
             }
         }
         Box(Modifier.align(Alignment.BottomStart).padding(start = 28.dp, bottom = 30.dp)) {
-            Legend("L2" to "−10 s", "R2" to "+10 s", "▷" to "Settings", "B" to "Back")
+            Legend("L1" to "−10 s", "R1" to "+10 s", "▷" to "Settings", "B" to "Back")
         }
     }
 }
@@ -333,7 +333,7 @@ private fun SettingsPanel(s: PlaybackSettings, focus: Int, onSetting: (PlaybackS
             }
         }
         Box(Modifier.weight(1f))
-        Legend("◀▶" to "Change", "L2" to "−10 s", "R2" to "+10 s", "B" to "Close")
+        Legend("◀▶" to "Change", "L1" to "−10 s", "R1" to "+10 s", "B" to "Close")
     }
 }
 

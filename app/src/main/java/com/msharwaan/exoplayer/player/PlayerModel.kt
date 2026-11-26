@@ -364,8 +364,8 @@ class PlayerModel(
                 PadAction.DOWN -> _ui.update { it.copy(panelRow = (panel + 1).coerceAtMost(rows.size - 1)) }
                 PadAction.LEFT -> changeSetting(rows[panel], -1)
                 PadAction.RIGHT, PadAction.A -> changeSetting(rows[panel], 1)
-                PadAction.L2 -> seekBy(-10_000)
-                PadAction.R2 -> seekBy(10_000)
+                PadAction.L1 -> seekBy(-10_000)
+                PadAction.R1 -> seekBy(10_000)
                 PadAction.B, PadAction.START -> closeSettings()
                 else -> Unit
             }
@@ -373,8 +373,8 @@ class PlayerModel(
         }
         when (action) {
             PadAction.START -> openSettings()
-            PadAction.L2 -> seekBy(-10_000)
-            PadAction.R2 -> seekBy(10_000)
+            PadAction.L1 -> seekBy(-10_000)
+            PadAction.R1 -> seekBy(10_000)
             PadAction.A -> press(_ui.value.focus)
             PadAction.X -> cycleSubtitles()
             PadAction.Y -> markWatched()

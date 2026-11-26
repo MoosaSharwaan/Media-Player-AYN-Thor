@@ -560,7 +560,7 @@ p { margin: 0; }
         '<div class="b-btn" data-act="dplus" style="cursor:pointer;justify-content:center;min-width:16cqw">+ 50 ms</div>' +
       '</div>' +
     '</div>' +
-    '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L2", "−10 s"], ["R2", "+10 s"], ["B", "Back"]]) + '</div>' + corner(false) +
+    '<div style="position:absolute;left:5cqw;bottom:5.2cqw">' + legend([["L1", "−10 s"], ["R1", "+10 s"], ["B", "Back"]]) + '</div>' + corner(false) +
     '<div class="dimmer" id="dimmer" style="opacity:0"></div>';
   }
   var MOVIE = { frame: frame("int"), wide: wide("int"), poster: art(T.int), title: "Interstellar", meta: "2014 · 2 h 49 m · Sci-fi, Drama · ★ 8.7",
@@ -760,17 +760,17 @@ p { margin: 0; }
         }
         return '<div style="position:absolute;left:0;right:0;top:4.5cqw;height:9cqw;overflow:hidden">' +
             '<div class="tabstrip" style="position:absolute;top:0;left:0;display:flex;gap:1.6cqw;white-space:nowrap">' + strip + '</div>' +
-            '<div style="position:absolute;inset:0 auto 0 0;width:13cqw;background:linear-gradient(90deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L2") + '</div>' +
-            '<div style="position:absolute;inset:0 0 0 auto;width:13cqw;background:linear-gradient(270deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R2") + '</div>' +
+            '<div style="position:absolute;inset:0 auto 0 0;width:13cqw;background:linear-gradient(90deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center start;padding-left:1.6cqw" class="b-legend">' + key("L1") + '</div>' +
+            '<div style="position:absolute;inset:0 0 0 auto;width:13cqw;background:linear-gradient(270deg,#000 55%,rgba(0,0,0,0));display:grid;place-items:center end;padding-right:1.6cqw" class="b-legend">' + key("R1") + '</div>' +
           '</div>' +
           browseCards() +
           // ⟳ Fetch info for this tab: the only way Browsing goes online (D32, D36)
           '<div title="Fetch info for this tab: artwork, plots and episode lists (goes online)" style="position:absolute;right:3cqw;bottom:3cqw;width:8cqw;height:8cqw;border-radius:50%;display:grid;place-items:center;background:#000;font:700 3.8cqw/1 var(--f-body);border:.35cqw solid var(--scr-line);color:var(--scr-mute);box-shadow:0 0 0 1.2cqw rgba(0,0,0,.7)">⟳</div>';
       },
       notes: {
-        what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Try it: L2 / R2 or a tap switches tabs; the arrow keys, the D-pad on the drawing or a tap on a card moves through the cards; B or Esc leaves them.",
+        what: "The home view. The top screen only displays; everything you do happens on the bottom screen. Try it: L1 / R1 or a tap switches tabs; the arrow keys, the D-pad on the drawing or a tap on a card moves through the cards; B or Esc leaves them.",
         top: ["Display only: no input, no focus, no touch <b>(decided)</b>", "On a new tab: a poster mix of everything in it, with the tab's name and size <b>(decided)</b>", "Once you move through the cards: the focused title's poster, details and plot; for Continue watching, where you stopped <b>(decided)</b>"],
-        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L2 / R2 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>", "⟳ in the bottom-right corner: Fetch info for this tab (artwork, plots, episode lists). The only way Browsing goes online <b>(decided)</b>"],
+        bottom: ["Five tabs: Continue watching, Movies, Series, Anime, Others <b>(decided)</b>", "L1 / R1 move between the tabs; tapping a tab works too <b>(decided)</b>", "The tabs stay on one line and run past both edges; the selected tab sits in the centre, and L2 / R2 go round in a full circle <b>(decided)</b>", "No library counts line <b>(decided)</b>", "Under the tabs: cards for every title in the tab, 4 across, scrolling down; the focused card is outlined <b>(decided)</b>", "⟳ in the bottom-right corner: Fetch info for this tab (artwork, plots, episode lists). The only way Browsing goes online <b>(decided)</b>"],
         q: ["Card shape: tall posters (shown) or square cards like the Thor's own launcher? How many across?", "Should the cards show the title under the art, or art only?", "When you switch tabs, does each tab remember the card you were on?","How does a title land in Anime or Others: automatically from TMDB (animation + Japanese origin), by folder, or set by hand?"]
       }
     },
@@ -918,7 +918,7 @@ p { margin: 0; }
     });
     try { localStorage.setItem("thor-state", s.id); } catch (e) {}
   }
-  // Browsing: tap a tab on the bottom screen, or press L2 / R2 on the drawing
+  // Browsing: tap a tab on the bottom screen, or press L1 / R1 on the drawing
   var cur = "browse";
   function centerTabs() {
     var strip = bottom.querySelector(".tabstrip"), c = strip && strip.querySelector("[data-center]");
@@ -1040,8 +1040,8 @@ p { margin: 0; }
     }
     if (cur !== "browse") return;
     if (c === "A") browseA();
-    if (c === "L2") setTab(browseTab - 1);
-    if (c === "R2") setTab(browseTab + 1);
+    if (c === "L1") setTab(browseTab - 1);
+    if (c === "R1") setTab(browseTab + 1);
     if (c === "DPAD" || c === "L3") moveFocus(1, 0);
     if (c === "B" && focusIdx >= 0) { focusIdx = -1; redrawBrowse(); }
   });
@@ -1096,7 +1096,7 @@ p { margin: 0; }
       ["Match on TMDB; download posters, backdrops, logos", "v1", "done", "Only what's missing (D38); no logos yet, since nothing shows them. Tested against a stand-in server"],
       ["Group Show › Season › Episode; list missing episodes", "v1", "done"],
       ["Fix a match by hand; survives rescans", "v1", "done", "✎ or Y; by name or TMDB ID (D43)"],
-      ["Folder browser; search, sort, filter", "v1", "done", "X Search, Select order, R1 Folders (D46)"],
+      ["Folder browser; search, sort, filter", "v1", "done", "X Search, Select order, R2 Folders (D46)"],
       ["Settings: API keys (typed or pasted, stored encrypted), refresh rate per screen, video folder, About", "v1", "done"],
       ["Pause and save when leaving the app, power off or lid (D40)", "v1", "done"] ] },
     { t: "Playback", s: "Everything that happens once you press Play.", steps: [
@@ -1311,7 +1311,7 @@ p { margin: 0; }
     ["Series: a season focused", "series", "The season's art, poster and description. (The sample show has one image, so the poster repeats the backdrop.)", "show_top_season", null],
     ["Series: an episode focused", "series", "Episode 1 watched (✓), 2 started, 3 known to TMDB but not on the SD card.", "show_top_episode", "show_bottom_episodes"],
     ["Playback settings", "movie", "Start in the player: each row changes with ◀ ▶. Audio delay is kept per file; the rest for every film.", null, "player_bottom_settings", "Top screen: the film, as before"],
-    ["Fix match", null, "✎ or Y. Search TMDB by name, or type a TMDB ID; L2 / R2 switch Movie and Series.", "fixmatch_top", "fixmatch_bottom"],
+    ["Fix match", null, "✎ or Y. Search TMDB by name, or type a TMDB ID; L1 / R1 switch Movie and Series.", "fixmatch_top", "fixmatch_bottom"],
     ["Search", null, "X on Browsing. Matches show on the top screen as you type; Done lists them as cards.", "search_top", "search_bottom"],
     ["Folder browser", null, "R1 on Browsing: folders first with how many videos they hold, then videos with their progress.", null, "folders_bottom", "Top screen: the folder path and the focused entry"],
     ["Settings: what a key is for", null, "Start or ⚙ on Browsing. The top screen says what the setting is for and where to get it, never the key itself.", "settings_top", "settings_bottom_list"],

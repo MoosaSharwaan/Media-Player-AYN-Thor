@@ -70,7 +70,7 @@ class FixMatchModel(
                 PadAction.A -> press()
                 PadAction.X -> setKeyboard(ui.keyboard.delete())
                 PadAction.Y -> setKeyboard(ui.keyboard.copy(caps = !ui.keyboard.caps))
-                PadAction.L2, PadAction.R2 -> toggleType()
+                PadAction.L1, PadAction.R1 -> toggleType()
                 PadAction.START -> search()
                 PadAction.B -> return false
                 else -> Unit
@@ -79,7 +79,7 @@ class FixMatchModel(
                 PadAction.UP -> _ui.update { it.copy(focus = (it.focus - 1).coerceAtLeast(0)) }
                 PadAction.DOWN -> _ui.update { it.copy(focus = (it.focus + 1).coerceAtMost(it.results.size - 1)) }
                 PadAction.A -> ui.results.getOrNull(ui.focus)?.let(::apply)
-                PadAction.L2, PadAction.R2 -> { toggleType(); search() }
+                PadAction.L1, PadAction.R1 -> { toggleType(); search() }
                 PadAction.B -> _ui.update { it.copy(phase = FixMatchUi.Phase.TYPING) }
                 else -> Unit
             }
@@ -140,7 +140,7 @@ class FixMatchModel(
             }
             when {
                 hits == null -> _ui.update { it.copy(phase = FixMatchUi.Phase.TYPING) }
-                hits.isEmpty() -> { onNotice("Nothing found. Try another name, or switch Movie / Series with L2 / R2."); _ui.update { it.copy(phase = FixMatchUi.Phase.TYPING) } }
+                hits.isEmpty() -> { onNotice("Nothing found. Try another name, or switch Movie / Series with L1 / R1."); _ui.update { it.copy(phase = FixMatchUi.Phase.TYPING) } }
                 else -> _ui.update { it.copy(phase = FixMatchUi.Phase.RESULTS, results = hits.take(20), focus = 0) }
             }
         }

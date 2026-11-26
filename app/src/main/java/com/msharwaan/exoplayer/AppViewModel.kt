@@ -302,7 +302,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             is Route.Folders -> onFolders(folders.onAction((navigator.current as Route.Folders).path, action))
             Route.Browse -> if (action == PadAction.START) { openSettings(); true }
             else if (action == PadAction.X && browse.hasFolder.value) { openSearch(); true }
-            else if (action == PadAction.R1 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
+            else if (action == PadAction.R2 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
             // Select changes the order when it's let go, so Select + Start (diagnostics) doesn't change it.
             else if (action == PadAction.SELECT) true
             else when (val r = browse.onAction(action)) {

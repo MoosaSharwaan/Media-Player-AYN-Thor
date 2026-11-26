@@ -209,7 +209,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
         // folder browser on the left; ⚙ Settings (also Start) and ⟳ Fetch info on the right.
         val order by model.order.collectAsStateWithLifecycle()
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 14.dp, top = 4.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { Legend("X" to "Search", "▢" to order.label, "R1" to "Folders") }
+            Box(Modifier.weight(1f)) { Legend("X" to "Search", "▢" to order.label, "R2" to "Folders") }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CornerButton("⚙", onClick = onSettings)
                 CornerButton(if (scanning || fetching) "…" else "⟳", onClick = onFetchInfo)
@@ -238,7 +238,7 @@ internal fun PosterCard(card: Card, focused: Boolean, onClick: () -> Unit) {
 
 /**
  * The tab row: one line that runs past both edges, the selected tab in the centre,
- * L2 / R2 going round in a full circle (D5).
+ * L1 / R1 going round in a full circle (D5).
  */
 @Composable
 private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
@@ -279,9 +279,9 @@ private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
                 placeables.forEachIndexed { i, p -> p.place(starts[i] + shift, (constraints.maxHeight - p.height) / 2) }
             }
         }
-        // L2 / R2 on dark fades at the edges.
-        EdgeKey("L2", Alignment.CenterStart)
-        EdgeKey("R2", Alignment.CenterEnd)
+        // L1 / R1 on dark fades at the edges.
+        EdgeKey("L1", Alignment.CenterStart)
+        EdgeKey("R1", Alignment.CenterEnd)
     }
 }
 
