@@ -1,5 +1,9 @@
 package com.msharwaan.exoplayer.browse
 
+import androidx.compose.ui.graphics.graphicsLayer
+import com.msharwaan.exoplayer.player.previewFileId
+import com.msharwaan.exoplayer.player.PreviewVideo
+import com.msharwaan.exoplayer.player.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,7 +54,7 @@ import com.msharwaan.exoplayer.ui.theme.Palette
  * details filling the screen, title, year and plot on the left (D6, user feedback).
  */
 @Composable
-fun BrowseTop(model: BrowseModel) {
+fun BrowseTop(model: BrowseModel, preview: Preview? = null) {
     val library by model.library.collectAsStateWithLifecycle()
     val tab by model.tab.collectAsStateWithLifecycle()
     val focus by model.focus.collectAsStateWithLifecycle()
@@ -59,7 +63,7 @@ fun BrowseTop(model: BrowseModel) {
     val card = cards.getOrNull(focus)
     when {
         !hasFolder -> Welcome()
-        card != null -> FocusedTitle(card)
+        card != null -> FocusedTitle(card, preview)
         else -> PosterMix(tab, cards)
     }
 }
@@ -117,9 +121,11 @@ private fun countLabel(tab: Tab, n: Int): String = when (tab) {
 
 /** The focused title: art filling the screen, text over a dark fade on the left. */
 @Composable
-fun FocusedTitle(card: Card) {
+fun FocusedTitle(card: Card, preview: Preview? = null) {
     Box(Modifier.fillMaxSize()) {
-        Artwork(card.backdropPath ?: card.posterPath, card.groupKey, Modifier.fillMaxSize())
+        // Moments of the film behind its details, once it has rested here a second (D51).
+        val artAlpha = PreviewVideo(preview, card.previewFileId)
+        Artwork(card.backdropPath ?: card.posterPath, card.groupKey, Modifier.fillMaxSize().graphicsLayer { alpha = artAlpha })
         Box(
             Modifier.fillMaxSize().background(
                 Brush.horizontalGradient(0f to Color(0xF0000000), 0.3f to Color(0xD1000000), 0.5f to Color(0x66000000), 0.72f to Color.Transparent),

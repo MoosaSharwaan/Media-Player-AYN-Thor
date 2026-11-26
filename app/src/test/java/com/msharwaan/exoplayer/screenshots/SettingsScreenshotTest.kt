@@ -36,7 +36,7 @@ class SettingsScreenshotTest {
         secrets[Secret.TMDB_KEY] = "0123456789abcdef0123456789ab3f9a"
         secrets[Secret.OPENSUBTITLES_USER] = "msharwaan"
         val prefs = DisplayPrefs(ApplicationProvider.getApplicationContext()).apply { setRate(Screen.TOP, 120f) }
-        model = SettingsModel(secrets, prefs, { listOf(60f, 120f) }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { "k3y" }, {}, {})
+        model = SettingsModel(secrets, prefs, com.msharwaan.exoplayer.player.PreviewPrefs(ApplicationProvider.getApplicationContext()), { listOf(60f, 120f) }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { "k3y" }, {}, {})
     }
 
     @Test

@@ -31,7 +31,7 @@ class SettingsModelTest {
     fun setUp() {
         secrets = Secrets(ApplicationProvider.getApplicationContext(), ReversingCrypto())
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        model = SettingsModel(secrets, DisplayPrefs(context), { if (it == Screen.TOP) listOf(60f, 90f, 120f) else null }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { clipboard }, {}, { notices += it })
+        model = SettingsModel(secrets, DisplayPrefs(context), com.msharwaan.exoplayer.player.PreviewPrefs(context), { if (it == Screen.TOP) listOf(60f, 90f, 120f) else null }, { Uri.parse("content://x/tree/1234-ABCD%3AVideos") }, { clipboard }, {}, { notices += it })
     }
 
     @Test

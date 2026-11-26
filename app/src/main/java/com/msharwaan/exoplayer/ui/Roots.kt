@@ -143,9 +143,9 @@ private fun BoxScope.batteryPlace(route: Route): Modifier {
 @Composable
 private fun TopContent(vm: AppViewModel, route: Route) {
     when (route) {
-        Route.Browse -> BrowseTop(vm.browse)
+        Route.Browse -> BrowseTop(vm.browse, vm.preview)
         Route.Diagnostics -> DiagnosticsTop(vm.diagnostics)
-        is Route.Show -> ShowTop(vm.show)
+        is Route.Show -> ShowTop(vm.show, vm.preview)
         Route.Settings -> SettingsTop(vm.settings)
         // Finding subtitles keeps the film on the top screen.
         is Route.Player, is Route.FindSubtitles -> {
@@ -156,7 +156,7 @@ private fun TopContent(vm: AppViewModel, route: Route) {
             PlayerTop(ui, subtitle, settings) { VideoSurface(vm.player.player, settings.picture, images) }
         }
         is Route.FixMatch -> FixMatchTop(vm.fixMatch)
-        Route.Search -> SearchTop(vm.search)
+        Route.Search -> SearchTop(vm.search, vm.preview)
         is Route.Folders -> FoldersTop(vm.folders, route.path)
     }
 }

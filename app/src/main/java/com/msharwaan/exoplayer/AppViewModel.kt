@@ -80,9 +80,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val show = ShowModel(viewModelScope, exo.db, ::showNotice)
 
     /** Settings: API keys, the OpenSubtitles login, the video folder, About. */
+    val preview = exo.preview
+
     val settings = SettingsModel(
         secrets = exo.secrets,
         displayPrefs = exo.displayPrefs,
+        previewPrefs = exo.previewPrefs,
         rates = { screen ->
             val id = if (screen == Screen.TOP) Display.DEFAULT_DISPLAY else displaySetup.value.bottomDisplayId
             id?.let { displayMonitor.display(it) }?.let(DisplayPrefs::ratesOf)
