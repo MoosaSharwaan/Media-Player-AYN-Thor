@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer
 
+import kotlinx.coroutines.withContext
+import com.msharwaan.exoplayer.library.Cleanup
 import kotlinx.coroutines.Dispatchers
 import com.msharwaan.exoplayer.settings.LibrariesModel
 import android.app.Application
@@ -102,6 +104,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         },
         readClipboard = { clipboard() },
         onOpenLibraries = { libraries.reset(); navigator.push(Route.Libraries) },
+        storage = { storageText },
+        onClearUnused = { clearUnused() },
         onNotice = ::showNotice,
     )
 
@@ -137,6 +141,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             onUse = { id -> browse.useLibrary(id)?.let { showNotice("Browsing shows $it.") }; settings.refresh() },
             onFoldersChanged = ::readLibrary,
             onNotice = ::showNotice,
+            cleanup = { Cleanup.run(getApplication(), exo.db); refreshStorage() },
         )
     }
 
@@ -147,7 +152,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             if (library.folders.isEmpty()) {
                 exo.db.library().deleteFilesIn(id)
-                exo.db.library().deleteOrphanTitles()
+                Cleanup.run(getApplication(), exo.db)
+                refreshStorage()
             } else {
                 runCatching { exo.scanner.scan(library) }
             }
@@ -269,6 +275,34 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** Start or ⚙ on Browsing. */
     fun openSettings() {
         if (navigator.current != Route.Settings) navigator.push(Route.Settings)
+        refreshStorage()
+    }
+
+    /** Settings' "Artwork and subtitles" figure, measured off the main thread (D54). */
+    @Volatile private var storageText = "…"
+
+    private fun refreshStorage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            storageText = sizeText(Cleanup.storageUsed(getApplication()))
+            withContext(Dispatchers.Main) { settings.refresh() }
+        }
+    }
+
+    private fun clearUnused() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val freed = Cleanup.run(getApplication(), exo.db)
+            storageText = sizeText(Cleanup.storageUsed(getApplication()))
+            withContext(Dispatchers.Main) {
+                settings.refresh()
+                showNotice(if (freed.bytes > 0 || freed.rows > 0) "Cleared ${sizeText(freed.bytes)} left by videos that are gone." else "Nothing to clear: everything belongs to a video you have.")
+            }
+        }
+    }
+
+    private fun sizeText(bytes: Long): String = when {
+        bytes >= 1L shl 30 -> "%.1f GB".format(java.util.Locale.ROOT, bytes / (1L shl 30).toDouble())
+        bytes >= 1L shl 20 -> "${bytes shr 20} MB"
+        else -> "${bytes shr 10} KB"
     }
 
     /** ✎ Fix match for what's on screen: the film playing, the show open, or the focused card. */

@@ -64,6 +64,11 @@ enum class SettingRow(
         "One library for films, another for work… Each reads its own folders and keeps its own titles and Continue watching. " +
             "A opens them: add a library, name it, give it folders. L2 on Browsing switches between them.",
     ),
+    STORAGE(
+        "Artwork and subtitles", "Library", null,
+        "The space posters, backdrops and subtitles kept in the app take on this device. Whatever belonged to videos that " +
+            "are gone is cleared after every scan; A clears it now. Fix match choices stay, so a video that comes back is matched the same way.",
+    ),
     ABOUT(
         "About", "About", null,
         "Exo Player, a personal video player for the AYN Thor. Licence GPL-3.0. " +
@@ -96,6 +101,10 @@ class SettingsModel(
     private val readClipboard: () -> String?,
     private val onOpenLibraries: () -> Unit,
     private val onNotice: (String) -> Unit,
+    /** "84 MB": what artwork and app-kept subtitles take (D54). */
+    private val storage: () -> String = { "" },
+    /** Clears what belonged to videos that are gone. */
+    private val onClearUnused: () -> Unit = {},
 ) {
     private val _ui = MutableStateFlow(SettingsUi())
     val ui: StateFlow<SettingsUi> = _ui.asStateFlow()
@@ -109,6 +118,7 @@ class SettingsModel(
 
     private fun summary(row: SettingRow): String = when (row) {
         SettingRow.LIBRARIES -> libraries()
+        SettingRow.STORAGE -> storage()
         SettingRow.ABOUT -> ""
         SettingRow.PREVIEWS -> if (previewPrefs.enabled.value) "On" else "Off"
         SettingRow.PREVIEW_SOUND -> if (previewPrefs.sound.value) "On" else "Off"
@@ -165,6 +175,7 @@ class SettingsModel(
             row.screen != null -> stepRate(row, 1)
             row.toggle -> flip(row)
             row == SettingRow.LIBRARIES -> onOpenLibraries()
+            row == SettingRow.STORAGE -> onClearUnused()
         }
     }
 

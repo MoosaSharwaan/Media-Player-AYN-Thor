@@ -14,7 +14,7 @@ import java.io.File
  */
 class Online(private val context: Context, private val db: AppDatabase, private val secrets: Secrets) {
     val http by lazy { Http() }
-    val images by lazy { ImageStore(File(context.filesDir, "art")) }
+    val images by lazy { ImageStore(ImageStore.rootOf(context)) }
 
     fun isConnected(): Boolean {
         val cm = context.getSystemService(ConnectivityManager::class.java) ?: return false

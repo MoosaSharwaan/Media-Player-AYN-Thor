@@ -80,6 +80,8 @@ class LibrariesModel(
     /** A library's folders changed: read them again if Browsing shows it. */
     private val onFoldersChanged: (Long) -> Unit,
     private val onNotice: (String) -> Unit,
+    /** After a library is deleted: let go of its titles, artwork and history (D54). */
+    private val cleanup: suspend () -> Unit = { db.library().deleteOrphanTitles() },
 ) {
     private val _ui = MutableStateFlow(LibrariesUi())
     val ui: StateFlow<LibrariesUi> = _ui.asStateFlow()
@@ -179,7 +181,7 @@ class LibrariesModel(
                 if (prefs.delete(id)) {
                     scope.launch {
                         db.library().deleteFilesIn(id)
-                        db.library().deleteOrphanTitles()
+                        cleanup()
                     }
                     onNotice("$name deleted. Its videos are still on the card.")
                     reset()

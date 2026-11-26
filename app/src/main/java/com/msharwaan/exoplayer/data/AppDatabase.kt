@@ -127,6 +127,29 @@ interface LibraryDao {
     @Query("DELETE FROM title_info WHERE groupKey = :groupKey")
     suspend fun deleteTitle(groupKey: String)
 
+    // ---- clean-up after files are gone (D54) ----
+
+    @Query("SELECT groupKey FROM title_info")
+    suspend fun titleKeys(): List<String>
+
+    @Query("DELETE FROM season_info WHERE groupKey NOT IN (SELECT groupKey FROM title_info)")
+    suspend fun deleteOrphanSeasons(): Int
+
+    @Query("DELETE FROM episode_info WHERE groupKey NOT IN (SELECT groupKey FROM title_info)")
+    suspend fun deleteOrphanEpisodes(): Int
+
+    @Query("SELECT * FROM subtitle_file WHERE mediaFileId NOT IN (SELECT id FROM media_file)")
+    suspend fun orphanSubtitles(): List<SubtitleFile>
+
+    @Query("DELETE FROM subtitle_file WHERE mediaFileId NOT IN (SELECT id FROM media_file)")
+    suspend fun deleteOrphanSubtitles(): Int
+
+    @Query("DELETE FROM playback_state WHERE mediaFileId NOT IN (SELECT id FROM media_file)")
+    suspend fun deleteOrphanPlayback(): Int
+
+    @Query("DELETE FROM watch_session WHERE mediaFileId NOT IN (SELECT id FROM media_file)")
+    suspend fun deleteOrphanSessions(): Int
+
     @Upsert
     suspend fun upsertOverride(override: MatchOverride)
 

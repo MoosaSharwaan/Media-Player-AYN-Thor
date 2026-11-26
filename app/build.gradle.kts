@@ -13,8 +13,8 @@ android {
         applicationId = "com.msharwaan.exoplayer"
         minSdk = 29
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.0.6"
+        versionCode = 8
+        versionName = "1.0.7"
     }
 
     // One debug key for every build, here and on GitHub, so each release installs over the

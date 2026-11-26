@@ -102,7 +102,8 @@ class LibraryScanner(private val context: Context, private val db: AppDatabase) 
         val gone = if (removeMissing) known.values.filter { it.uri !in seen }.map { it.id } else emptyList()
         if (gone.isNotEmpty()) dao.deleteFiles(gone)
         SameShow.merge(db)
-        dao.deleteOrphanTitles()
+        // What belonged to files that are gone goes too: details, artwork, history (D54).
+        Cleanup.run(context, db)
         Result(added, changed, gone.size, videos.size)
     }
 

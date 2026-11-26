@@ -31,6 +31,20 @@ class ImageStore(private val root: File) {
     /** Removes a title's images, for Fix match (the old ones belonged to the wrong title). */
     fun clear(groupKey: String) { File(root, folderOf(groupKey)).deleteRecursively() }
 
+    /** Removes the image folders of every title not in [groupKeys]; returns the bytes freed (D54). */
+    fun keepOnly(groupKeys: Collection<String>): Long {
+        val keep = groupKeys.map(::folderOf).toSet()
+        return root.listFiles().orEmpty().filter { it.isDirectory && it.name !in keep }.sumOf { dir ->
+            sizeOf(dir).also { dir.deleteRecursively() }
+        }
+    }
+
+    /** The folder a title's images go in. */
+    internal fun folderFor(groupKey: String): File = File(root, folderOf(groupKey))
+
+    /** What all the artwork takes up. */
+    fun sizeBytes(): Long = sizeOf(root)
+
     private fun shrink(bytes: ByteArray, maxWidth: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
@@ -56,5 +70,10 @@ class ImageStore(private val root: File) {
          * "season2-wide.jpg"); Fetch info saves it next to the card-sized one.
          */
         fun wideOf(posterPath: String): String = posterPath.removeSuffix(".jpg") + "-wide.jpg"
+
+        /** Where artwork is kept: the app's own storage, never the SD card. */
+        fun rootOf(context: android.content.Context): File = File(context.filesDir, "art")
+
+        fun sizeOf(f: File): Long = if (f.isFile) f.length() else f.listFiles().orEmpty().sumOf(::sizeOf)
     }
 }
