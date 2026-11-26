@@ -10,6 +10,8 @@ import com.msharwaan.exoplayer.library.LibraryPrefs
 import com.msharwaan.exoplayer.library.LibraryScanner
 import com.msharwaan.exoplayer.library.Tab
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,11 +23,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Browsing: five tabs moved with L2 / R2 in a full circle (D2, D3, D5), cards on the bottom
+ * Browsing: five tabs moved with L1 / R1 in a full circle (D2, D3, D5), cards on the bottom
  * screen (D6), and the top screen showing either the tab's poster mix or the focused title.
  */
 class BrowseModel(
@@ -34,11 +37,20 @@ class BrowseModel(
     private val prefs: LibraryPrefs,
     private val scanner: LibraryScanner,
 ) {
-    private val all: StateFlow<Map<Tab, List<Card>>> = combine(
-        db.library().observeFiles(), db.library().observeTitles(), db.library().observePlayback(),
-    ) { files, titles, playback -> Library.build(files, titles, playback) }
+    /** The active library's cards only (D52). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val all: StateFlow<Map<Tab, List<Card>>> = prefs.activeId.flatMapLatest { id ->
+        combine(db.library().observeFilesIn(id), db.library().observeTitles(), db.library().observePlayback()) { files, titles, playback ->
+            Library.build(files, titles, playback)
+        }
+    }
         .flowOn(Dispatchers.Default)
         .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    /** The active library's name, shown when there's more than one (D52). */
+    val libraryName: StateFlow<String?> = combine(prefs.libraries, prefs.activeId) { all, _ ->
+        prefs.active?.name?.takeIf { all.size > 1 }
+    }.stateIn(scope, SharingStarted.Eagerly, null)
 
     private val _order = MutableStateFlow(BrowseOrder.NAME)
     /** A–Z, Recently added, Year or Unwatched only (Select). */
@@ -60,12 +72,25 @@ class BrowseModel(
     private val _tab = MutableStateFlow(Tab.CONTINUE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
 
+    /** Only tabs with something in them (D53): no Movies tab in a library without films. */
+    val tabs: StateFlow<List<Tab>> = all.map(Library::visibleTabs).stateIn(scope, SharingStarted.Eagerly, Tab.entries)
+
+    init {
+        // The tab you're on emptied (or the library changed): the first one with something in it.
+        scope.launch {
+            combine(tabs, _tab) { visible, tab -> visible to tab }.collect { (visible, tab) ->
+                if (tab !in visible) { _tab.value = visible.first(); _focus.value = -1 }
+            }
+        }
+    }
+
     /** -1: nothing focused yet, so the top screen shows the poster mix (D6). */
     private val _focus = MutableStateFlow(-1)
     val focus: StateFlow<Int> = _focus.asStateFlow()
 
-    private val _hasFolder = MutableStateFlow(prefs.folder != null)
-    val hasFolder: StateFlow<Boolean> = _hasFolder.asStateFlow()
+    /** The active library has a folder to read; until then Browsing asks for one. */
+    val hasFolder: StateFlow<Boolean> = combine(prefs.libraries, prefs.activeId) { _, _ -> prefs.active?.folders?.isNotEmpty() == true }
+        .stateIn(scope, SharingStarted.Eagerly, prefs.active?.folders?.isNotEmpty() == true)
 
     private val _fetching = MutableStateFlow(false)
     /** Fetch info is running: ⟳ shows "…". */
@@ -84,24 +109,54 @@ class BrowseModel(
 
     fun chooseFolder() { _folderRequests.tryEmit(Unit) }
 
+    /** The first folder, chosen from Browsing: it goes to the active library (made if there's none). */
     fun onFolderChosen(uri: Uri) {
-        prefs.choose(uri)
-        _hasFolder.value = true
+        val library = prefs.active ?: prefs.create()
+        prefs.addFolder(library.id, uri)
         rescan()
     }
 
-    /** Offline: reads the SD card folder for new, changed and removed files. */
+    /** Offline: reads the active library's folders for new, changed and removed files. */
     fun rescan() {
-        val folder = prefs.folder ?: return
+        val library = prefs.active?.takeIf { it.folders.isNotEmpty() } ?: return
         if (_scanning.value) return
         scope.launch {
             _scanning.value = true
-            runCatching { scanner.scan(folder) }
+            runCatching { scanner.scan(library) }
             _scanning.value = false
         }
     }
 
+    /** Where each library was left: its tab and focused card. */
+    private val places = mutableMapOf<Long, Pair<Tab, Int>>()
+
+    /** L2: the next library, back at its own tab and card (D52). Null when there's only one. */
+    fun nextLibrary(): String? = switchTo { prefs.next() }
+
+    /** A library picked in Settings › Libraries. */
+    fun useLibrary(id: Long): String? = switchTo { prefs.library(id)?.also { prefs.setActive(it.id) } }
+
+    private fun switchTo(pick: () -> com.msharwaan.exoplayer.library.LibrarySpec?): String? {
+        val from = prefs.activeId.value
+        places[from] = _tab.value to _focus.value
+        val to = pick() ?: return null
+        if (to.id != from) {
+            val (tab, focus) = places[to.id] ?: (Tab.CONTINUE to -1)
+            _tab.value = tab
+            _focus.value = focus
+            rescan()
+        }
+        return to.name
+    }
+
     fun selectTab(tab: Tab) { _tab.value = tab; _focus.value = -1 }
+
+    /** L1 / R1: round the tabs that are showing, in a full circle (D5, D53). */
+    private fun stepTab(step: Int) {
+        val visible = tabs.value
+        val i = visible.indexOf(_tab.value).coerceAtLeast(0)
+        selectTab(visible[(i + step + visible.size) % visible.size])
+    }
 
     fun focusCard(index: Int) { if (index in cards.indices) _focus.value = index }
 
@@ -110,14 +165,14 @@ class BrowseModel(
      * so a tap focuses and a second tap opens, like the mockup.
      */
     fun onAction(action: PadAction): BrowseResult {
-        if (!_hasFolder.value) {
+        if (!hasFolder.value) {
             if (action == PadAction.A) { chooseFolder(); return BrowseResult.Used }
             return BrowseResult.NotUsed
         }
         val n = cards.size
         when (action) {
-            PadAction.L2 -> selectTab(Tab.entries[(_tab.value.ordinal + Tab.entries.size - 1) % Tab.entries.size])
-            PadAction.R2 -> selectTab(Tab.entries[(_tab.value.ordinal + 1) % Tab.entries.size])
+            PadAction.L1 -> stepTab(-1)
+            PadAction.R1 -> stepTab(1)
             PadAction.LEFT -> move(-1)
             PadAction.RIGHT -> move(1)
             PadAction.UP -> move(-COLUMNS)

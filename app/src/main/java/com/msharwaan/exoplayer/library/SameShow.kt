@@ -24,7 +24,9 @@ object SameShow {
         titles.filter { it.kind == "SHOW" && it.tmdbType == Tmdb.TV && it.tmdbId != null }.forEach { idOf[it.groupKey] = it.tmdbId!! }
         overrides.filter { it.tmdbType == Tmdb.TV }.forEach { idOf.putIfAbsent(it.groupKey, it.tmdbId) }
         val result = mutableMapOf<String, String>()
-        idOf.entries.filter { it.key.startsWith("s:") }.groupBy({ it.value }, { it.key }).values
+        // Within one library only: the same show in two libraries stays two titles (D52).
+        idOf.entries.filter { it.key.substringAfter('|').startsWith("s:") }
+            .groupBy({ LibraryScanner.libraryPrefixOf(it.key) to it.value }, { it.key }).values
             .filter { it.size > 1 }
             .forEach { keys ->
                 val main = mainKey(keys, titleByKey)
@@ -35,7 +37,7 @@ object SameShow {
 
     /** The key named like TMDB's title ("s:fire force"), else the first that has a title. */
     private fun mainKey(keys: List<String>, titleByKey: Map<String, TitleInfo>): String =
-        keys.firstOrNull { k -> titleByKey[k]?.let { "s:" + LibraryScanner.normalise(it.name) == k } == true }
+        keys.firstOrNull { k -> titleByKey[k]?.let { LibraryScanner.libraryPrefixOf(k) + "s:" + LibraryScanner.normalise(it.name) == k } == true }
             ?: keys.filter { titleByKey[it] != null }.minOrNull()
             ?: keys.min()
 

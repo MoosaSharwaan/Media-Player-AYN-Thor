@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer
 
+import com.msharwaan.exoplayer.player.PreviewPrefs
+import com.msharwaan.exoplayer.player.Preview
 import android.app.Application
 import com.msharwaan.exoplayer.data.AppDatabase
 import com.msharwaan.exoplayer.library.LibraryPrefs
@@ -25,6 +27,9 @@ class ExoApp : Application() {
     val secrets: Secrets by lazy { Secrets(this) }
     /** Refresh rate per screen, chosen in Settings. */
     val displayPrefs: DisplayPrefs by lazy { DisplayPrefs(this) }
+    val previewPrefs: PreviewPrefs by lazy { PreviewPrefs(this) }
+    /** Moments of the focused movie or episode behind its details (D51). */
+    val preview: Preview by lazy { Preview(this, db, previewPrefs) }
     /** Fetch info, Fix match and Find subtitles: only when you press them (D32). */
     val online: Online by lazy { Online(this, db, secrets) }
     /** Fetch info, kept going when you leave the app (D48). */

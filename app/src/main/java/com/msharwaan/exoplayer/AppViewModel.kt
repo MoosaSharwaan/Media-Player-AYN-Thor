@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer
 
+import kotlinx.coroutines.Dispatchers
+import com.msharwaan.exoplayer.settings.LibrariesModel
 import android.app.Application
 import android.content.ClipboardManager
 import android.net.Uri
@@ -80,16 +82,26 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val show = ShowModel(viewModelScope, exo.db, ::showNotice)
 
     /** Settings: API keys, the OpenSubtitles login, the video folder, About. */
+    val preview = exo.preview
+
     val settings = SettingsModel(
         secrets = exo.secrets,
         displayPrefs = exo.displayPrefs,
+        previewPrefs = exo.previewPrefs,
         rates = { screen ->
             val id = if (screen == Screen.TOP) Display.DEFAULT_DISPLAY else displaySetup.value.bottomDisplayId
             id?.let { displayMonitor.display(it) }?.let(DisplayPrefs::ratesOf)
         },
-        folder = { exo.prefs.folder },
+        libraries = {
+            val all = exo.prefs.libraries.value
+            when {
+                all.isEmpty() -> "None yet"
+                all.size == 1 -> exo.prefs.active?.name.orEmpty()
+                else -> "${exo.prefs.active?.name} · ${all.size} libraries"
+            }
+        },
         readClipboard = { clipboard() },
-        onChooseFolder = { browse.chooseFolder() },
+        onOpenLibraries = { libraries.reset(); navigator.push(Route.Libraries) },
         onNotice = ::showNotice,
     )
 
@@ -103,7 +115,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Find subtitles (D9, D37). */
     val findSubtitles = FindSubtitlesModel(
-        app, viewModelScope, exo.db, exo.online, { exo.prefs.folder }, ::showNotice,
+        app, viewModelScope, exo.db, exo.online, ::showNotice,
         onAdded = { player.addSubtitle(it) },
         onDone = { if (navigator.current is Route.FindSubtitles) navigator.pop() },
     )
@@ -112,14 +124,49 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val search = SearchModel({ browse.allCards }, clipboard, ::showNotice)
 
     /** The folder browser (R1 on Browsing). */
-    val folders = FoldersModel(viewModelScope, exo.db)
+    val folders = FoldersModel(viewModelScope, exo.db, exo.prefs.activeId)
+
+    /** The library a folder being picked is for; null: Browsing's first folder. */
+    private var folderFor: Long? = null
+
+    /** Settings › Libraries (D52). */
+    val libraries: LibrariesModel by lazy {
+        LibrariesModel(
+            viewModelScope, exo.db, exo.prefs,
+            onAddFolder = { id -> folderFor = id; browse.chooseFolder() },
+            onUse = { id -> browse.useLibrary(id)?.let { showNotice("Browsing shows $it.") }; settings.refresh() },
+            onFoldersChanged = ::readLibrary,
+            onNotice = ::showNotice,
+        )
+    }
+
+    /** Reads a library's folders again; one left without folders lets its files go. */
+    private fun readLibrary(id: Long) {
+        val library = exo.prefs.library(id) ?: return
+        if (id == exo.prefs.activeId.value && library.folders.isNotEmpty()) { browse.rescan(); return }
+        viewModelScope.launch(Dispatchers.IO) {
+            if (library.folders.isEmpty()) {
+                exo.db.library().deleteFilesIn(id)
+                exo.db.library().deleteOrphanTitles()
+            } else {
+                runCatching { exo.scanner.scan(library) }
+            }
+        }
+    }
 
     /** True while Fetch info runs, here or in the background; ⟳ shows "…". */
     private val _fetching = MutableStateFlow(false)
     val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
 
     fun onFolderChosen(uri: Uri) {
-        browse.onFolderChosen(uri)
+        val target = folderFor
+        folderFor = null
+        if (target == null) {
+            browse.onFolderChosen(uri)
+        } else {
+            exo.prefs.addFolder(target, uri)
+            readLibrary(target)
+        }
         settings.refresh()
     }
 
@@ -291,6 +338,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val used = when (navigator.current) {
             Route.Diagnostics -> diagnostics.onAction(action)
             Route.Settings -> settings.onAction(action)
+            Route.Libraries -> libraries.onAction(action).also { settings.refresh() }
             Route.Search -> when (val r = search.onAction(action)) {
                 is SearchModel.Result.Open -> { open(r.card); true }
                 SearchModel.Result.Used -> true
@@ -299,7 +347,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             is Route.Folders -> onFolders(folders.onAction((navigator.current as Route.Folders).path, action))
             Route.Browse -> if (action == PadAction.START) { openSettings(); true }
             else if (action == PadAction.X && browse.hasFolder.value) { openSearch(); true }
-            else if (action == PadAction.R1 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
+            // L2: the next library (D52).
+            else if (action == PadAction.L2) {
+                showNotice(browse.nextLibrary()?.let { "Library: $it" } ?: "One library so far. Add more in Settings › Libraries.")
+                true
+            }
+            else if (action == PadAction.R2 && browse.hasFolder.value) { navigator.push(Route.Folders("")); true }
             // Select changes the order when it's let go, so Select + Start (diagnostics) doesn't change it.
             else if (action == PadAction.SELECT) true
             else when (val r = browse.onAction(action)) {

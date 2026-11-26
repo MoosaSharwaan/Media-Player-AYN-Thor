@@ -1,5 +1,9 @@
 package com.msharwaan.exoplayer.browse
 
+import androidx.compose.ui.graphics.graphicsLayer
+import com.msharwaan.exoplayer.player.previewFileId
+import com.msharwaan.exoplayer.player.PreviewVideo
+import com.msharwaan.exoplayer.player.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,17 +54,18 @@ import com.msharwaan.exoplayer.ui.theme.Palette
  * details filling the screen, title, year and plot on the left (D6, user feedback).
  */
 @Composable
-fun BrowseTop(model: BrowseModel) {
+fun BrowseTop(model: BrowseModel, preview: Preview? = null) {
     val library by model.library.collectAsStateWithLifecycle()
     val tab by model.tab.collectAsStateWithLifecycle()
     val focus by model.focus.collectAsStateWithLifecycle()
     val hasFolder by model.hasFolder.collectAsStateWithLifecycle()
+    val libraryName by model.libraryName.collectAsStateWithLifecycle()
     val cards = library[tab].orEmpty()
     val card = cards.getOrNull(focus)
     when {
         !hasFolder -> Welcome()
-        card != null -> FocusedTitle(card)
-        else -> PosterMix(tab, cards)
+        card != null -> FocusedTitle(card, preview)
+        else -> PosterMix(tab, cards, libraryName)
     }
 }
 
@@ -76,7 +81,7 @@ private fun Welcome() {
 }
 
 @Composable
-private fun PosterMix(tab: Tab, cards: List<Card>) {
+private fun PosterMix(tab: Tab, cards: List<Card>, libraryName: String? = null) {
     Box(Modifier.fillMaxSize()) {
         if (cards.isNotEmpty()) {
             Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -100,7 +105,8 @@ private fun PosterMix(tab: Tab, cards: List<Card>) {
         )
         Column(Modifier.align(Alignment.BottomStart).padding(start = 48.dp, bottom = 40.dp)) {
             Text(
-                if (cards.isEmpty()) "Nothing here yet" else countLabel(tab, cards.size),
+                // With several libraries, which one this is: "WORK · 12 ENTRIES" (D52).
+                listOfNotNull(libraryName?.uppercase(), if (cards.isEmpty()) "Nothing here yet" else countLabel(tab, cards.size)).joinToString(" · "),
                 color = Palette.Accent, fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp,
             )
             Text(tab.label, color = Palette.Ink, fontSize = 56.sp, fontWeight = FontWeight.Bold)
@@ -117,9 +123,11 @@ private fun countLabel(tab: Tab, n: Int): String = when (tab) {
 
 /** The focused title: art filling the screen, text over a dark fade on the left. */
 @Composable
-fun FocusedTitle(card: Card) {
+fun FocusedTitle(card: Card, preview: Preview? = null) {
     Box(Modifier.fillMaxSize()) {
-        Artwork(card.backdropPath ?: card.posterPath, card.groupKey, Modifier.fillMaxSize())
+        // Moments of the film behind its details, once it has rested here a second (D51).
+        val artAlpha = PreviewVideo(preview, card.previewFileId)
+        Artwork(card.backdropPath ?: card.posterPath, card.groupKey, Modifier.fillMaxSize().graphicsLayer { alpha = artAlpha })
         Box(
             Modifier.fillMaxSize().background(
                 Brush.horizontalGradient(0f to Color(0xF0000000), 0.3f to Color(0xD1000000), 0.5f to Color(0x66000000), 0.72f to Color.Transparent),
@@ -168,7 +176,8 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
     }
 
     Column(Modifier.fillMaxSize()) {
-        TabStrip(tab, onSelect = model::selectTab)
+        val tabs by model.tabs.collectAsStateWithLifecycle()
+        TabStrip(tab, tabs, onSelect = model::selectTab)
         Box(Modifier.fillMaxWidth().weight(1f)) {
             if (cards.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
@@ -203,7 +212,7 @@ fun BrowseBottom(model: BrowseModel, onOpen: (Card) -> Unit, onFetchInfo: () -> 
         // folder browser on the left; ⚙ Settings (also Start) and ⟳ Fetch info on the right.
         val order by model.order.collectAsStateWithLifecycle()
         Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 14.dp, top = 4.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.weight(1f)) { Legend("X" to "Search", "▢" to order.label, "R1" to "Folders") }
+            Box(Modifier.weight(1f)) { Legend("X" to "Search", "▢" to order.label, "R2" to "Folders") }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CornerButton("⚙", onClick = onSettings)
                 CornerButton(if (scanning || fetching) "…" else "⟳", onClick = onFetchInfo)
@@ -232,14 +241,15 @@ internal fun PosterCard(card: Card, focused: Boolean, onClick: () -> Unit) {
 
 /**
  * The tab row: one line that runs past both edges, the selected tab in the centre,
- * L2 / R2 going round in a full circle (D5).
+ * L1 / R1 going round in a full circle (D5). Only tabs with something in them are shown (D53).
  */
 @Composable
-private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
-    val tabs = Tab.entries
+private fun TabStrip(selected: Tab, tabs: List<Tab>, onSelect: (Tab) -> Unit) {
     val n = tabs.size
-    // The ring repeated on both sides of the selected tab, so the row never shows an end.
-    val ring = (-n..n).map { tabs[((selected.ordinal + it) % n + n) % n] to (it == 0) }
+    val at = tabs.indexOf(selected).coerceAtLeast(0)
+    // The ring repeated on both sides of the selected tab, so the row never shows an end;
+    // a single tab stands alone rather than repeating itself.
+    val ring = if (n == 1) listOf(selected to true) else (-n..n).map { tabs[((at + it) % n + n) % n] to (it == 0) }
     Box(Modifier.fillMaxWidth().height(64.dp)) {
         Layout(
             modifier = Modifier.fillMaxSize(),
@@ -265,7 +275,7 @@ private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
             val loose = constraints.copy(minWidth = 0, maxWidth = Int.MAX_VALUE, minHeight = 0)
             val placeables = measurables.map { it.measure(loose) }
             val gap = 10.dp.roundToPx()
-            val center = n // index of the selected tab in the ring
+            val center = ring.indexOfFirst { it.second } // the selected tab's place in the ring
             val starts = IntArray(placeables.size)
             for (i in 1 until placeables.size) starts[i] = starts[i - 1] + placeables[i - 1].width + gap
             val shift = constraints.maxWidth / 2 - (starts[center] + placeables[center].width / 2)
@@ -273,9 +283,9 @@ private fun TabStrip(selected: Tab, onSelect: (Tab) -> Unit) {
                 placeables.forEachIndexed { i, p -> p.place(starts[i] + shift, (constraints.maxHeight - p.height) / 2) }
             }
         }
-        // L2 / R2 on dark fades at the edges.
-        EdgeKey("L2", Alignment.CenterStart)
-        EdgeKey("R2", Alignment.CenterEnd)
+        // L1 / R1 on dark fades at the edges.
+        EdgeKey("L1", Alignment.CenterStart)
+        EdgeKey("R1", Alignment.CenterEnd)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.msharwaan.exoplayer.browse
 
+import com.msharwaan.exoplayer.player.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,10 +47,10 @@ import com.msharwaan.exoplayer.ui.theme.Palette
 
 /** Top screen: the matches as you type, or the focused match once you're choosing. */
 @Composable
-fun SearchTop(model: SearchModel) {
+fun SearchTop(model: SearchModel, preview: Preview? = null) {
     val ui by model.ui.collectAsStateWithLifecycle()
     val focused = ui.results.getOrNull(ui.focus).takeIf { ui.choosing }
-    if (focused != null) { FocusedTitle(focused); return }
+    if (focused != null) { FocusedTitle(focused, preview); return }
     Column(Modifier.fillMaxSize().background(Palette.Black).padding(horizontal = 64.dp, vertical = 56.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Text("SEARCH", color = Palette.Accent, fontSize = 14.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp)
         Text(ui.keyboard.text.ifEmpty { "Type a title, a year or a genre" }, color = if (ui.keyboard.text.isEmpty()) Palette.Muted else Palette.Ink, fontSize = 46.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)

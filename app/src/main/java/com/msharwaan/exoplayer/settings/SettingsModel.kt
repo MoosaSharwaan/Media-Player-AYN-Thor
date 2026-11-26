@@ -1,5 +1,6 @@
 package com.msharwaan.exoplayer.settings
 
+import com.msharwaan.exoplayer.player.PreviewPrefs
 import android.net.Uri
 import com.msharwaan.exoplayer.input.PadAction
 import com.msharwaan.exoplayer.ui.KeyboardState
@@ -9,7 +10,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /** One line in Settings, in order. [secret] rows open the keyboard; [screen] rows pick a refresh rate. */
-enum class SettingRow(val title: String, val group: String, val secret: Secret?, val help: String, val screen: Screen? = null) {
+enum class SettingRow(
+    val title: String, val group: String, val secret: Secret?, val help: String, val screen: Screen? = null,
+    /** An on/off switch: A or ◀ ▶ flips it. */
+    val toggle: Boolean = false,
+) {
     TMDB_KEY(
         "TMDB API key", "Online", Secret.TMDB_KEY,
         "Needed for Fetch info: posters, backdrops, plots, seasons and episodes. Free: make an account at themoviedb.org, " +
@@ -43,7 +48,22 @@ enum class SettingRow(val title: String, val group: String, val secret: Secret?,
             "so a lower rate here saves battery without looking different.",
         Screen.BOTTOM,
     ),
-    FOLDER("Video folder", "Library", null, "The folder the library is read from, usually on the SD card. A picks a different one."),
+    PREVIEWS(
+        "Previews", "Browsing", null,
+        "A or ◀ ▶ turns it on or off. Rest on a movie or episode for a second and moments of it play behind its details on " +
+            "the top screen, a new one every 12 seconds, never from the ending. Uses more battery while browsing.",
+        toggle = true,
+    ),
+    PREVIEW_SOUND(
+        "Preview sound", "Browsing", null,
+        "A or ◀ ▶ turns it on or off. Off, previews play silently.",
+        toggle = true,
+    ),
+    LIBRARIES(
+        "Libraries", "Library", null,
+        "One library for films, another for work… Each reads its own folders and keeps its own titles and Continue watching. " +
+            "A opens them: add a library, name it, give it folders. L2 on Browsing switches between them.",
+    ),
     ABOUT(
         "About", "About", null,
         "Exo Player, a personal video player for the AYN Thor. Licence GPL-3.0. " +
@@ -68,11 +88,13 @@ data class SettingsUi(
 class SettingsModel(
     private val secrets: Secrets,
     private val displayPrefs: DisplayPrefs,
+    private val previewPrefs: PreviewPrefs,
     /** The refresh rates a screen offers, or null when that screen isn't there. */
     private val rates: (Screen) -> List<Float>?,
-    private val folder: () -> Uri?,
+    /** "Entertainment · 3 libraries": the library shown, and how many there are. */
+    private val libraries: () -> String,
     private val readClipboard: () -> String?,
-    private val onChooseFolder: () -> Unit,
+    private val onOpenLibraries: () -> Unit,
     private val onNotice: (String) -> Unit,
 ) {
     private val _ui = MutableStateFlow(SettingsUi())
@@ -86,8 +108,10 @@ class SettingsModel(
     }
 
     private fun summary(row: SettingRow): String = when (row) {
-        SettingRow.FOLDER -> folder()?.let(::folderName) ?: "Not chosen"
+        SettingRow.LIBRARIES -> libraries()
         SettingRow.ABOUT -> ""
+        SettingRow.PREVIEWS -> if (previewPrefs.enabled.value) "On" else "Off"
+        SettingRow.PREVIEW_SOUND -> if (previewPrefs.sound.value) "On" else "Off"
         SettingRow.OPENSUBTITLES_USER -> secrets[Secret.OPENSUBTITLES_USER] ?: "Not set"
         SettingRow.OPENSUBTITLES_PASSWORD -> if (secrets[Secret.OPENSUBTITLES_PASSWORD] != null) "Set" else "Not set"
         SettingRow.TOP_RATE, SettingRow.BOTTOM_RATE ->
@@ -107,8 +131,11 @@ class SettingsModel(
             PadAction.X -> clear(SettingRow.entries[_ui.value.focus])
             PadAction.LEFT, PadAction.RIGHT -> {
                 val row = SettingRow.entries[_ui.value.focus]
-                if (row.screen == null) return false
-                stepRate(row, if (action == PadAction.RIGHT) 1 else -1)
+                when {
+                    row.toggle -> flip(row)
+                    row.screen != null -> stepRate(row, if (action == PadAction.RIGHT) 1 else -1)
+                    else -> return false
+                }
             }
             else -> return false
         }
@@ -136,8 +163,18 @@ class SettingsModel(
                 _ui.update { it.copy(editing = SettingsUi.Editing(row, KeyboardState(text = start), reveal = false)) }
             }
             row.screen != null -> stepRate(row, 1)
-            row == SettingRow.FOLDER -> onChooseFolder()
+            row.toggle -> flip(row)
+            row == SettingRow.LIBRARIES -> onOpenLibraries()
         }
+    }
+
+    private fun flip(row: SettingRow) {
+        when (row) {
+            SettingRow.PREVIEWS -> previewPrefs.setEnabled(!previewPrefs.enabled.value)
+            SettingRow.PREVIEW_SOUND -> previewPrefs.setSound(!previewPrefs.sound.value)
+            else -> return
+        }
+        refresh()
     }
 
     /** Steps through Auto and each rate the screen offers, round in a circle. */

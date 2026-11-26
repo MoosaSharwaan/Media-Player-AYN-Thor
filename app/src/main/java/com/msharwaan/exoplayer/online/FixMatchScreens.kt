@@ -67,7 +67,7 @@ fun FixMatchBottom(model: FixMatchModel) {
             Text("SEARCH TMDB FOR A", color = Palette.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace, letterSpacing = 1.sp)
             TypeChip("Movie", ui.type == Tmdb.MOVIE) { if (ui.type != Tmdb.MOVIE) model.toggleType() }
             TypeChip("Series", ui.type == Tmdb.TV) { if (ui.type != Tmdb.TV) model.toggleType() }
-            Text("L2 / R2", color = Palette.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+            Text("L1 / R1", color = Palette.Muted, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
         }
         when (ui.phase) {
             FixMatchUi.Phase.TYPING -> {
@@ -100,7 +100,7 @@ fun FixMatchBottom(model: FixMatchModel) {
                         }
                     }
                 }
-                Legend("A" to "This one", "L2" to "Movie / Series", "B" to "Edit search")
+                Legend("A" to "This one", "L1" to "Movie / Series", "B" to "Edit search")
             }
         }
     }

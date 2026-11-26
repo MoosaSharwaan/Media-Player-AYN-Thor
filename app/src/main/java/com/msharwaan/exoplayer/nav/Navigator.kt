@@ -17,6 +17,8 @@ sealed interface Route {
     data object Search : Route
     /** The folder browser at [path] (folders from the library root, joined with '/'). */
     data class Folders(val path: String) : Route
+    /** Settings › Libraries (D52). */
+    data object Libraries : Route
 }
 
 /** The back stack. Browse is always at the bottom. */

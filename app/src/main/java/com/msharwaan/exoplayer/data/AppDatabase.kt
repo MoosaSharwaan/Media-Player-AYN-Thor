@@ -7,6 +7,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room.migration.Migration
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -19,6 +21,17 @@ interface LibraryDao {
 
     @Query("SELECT * FROM media_file")
     suspend fun allFiles(): List<MediaFile>
+
+    /** One library's files (D52). */
+    @Query("SELECT * FROM media_file WHERE libraryId = :libraryId")
+    fun observeFilesIn(libraryId: Long): Flow<List<MediaFile>>
+
+    @Query("SELECT * FROM media_file WHERE libraryId = :libraryId")
+    suspend fun filesIn(libraryId: Long): List<MediaFile>
+
+    /** A deleted library's files leave the database (never the card). */
+    @Query("DELETE FROM media_file WHERE libraryId = :libraryId")
+    suspend fun deleteFilesIn(libraryId: Long)
 
     @Query("SELECT * FROM media_file WHERE id = :id")
     suspend fun file(id: Long): MediaFile?
@@ -132,7 +145,7 @@ interface LibraryDao {
         MediaFile::class, SubtitleFile::class, TitleInfo::class, SeasonInfo::class, EpisodeInfo::class,
         PlaybackState::class, WatchSession::class, MatchOverride::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -140,6 +153,14 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         fun create(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "library.db").build()
+            Room.databaseBuilder(context, AppDatabase::class.java, "library.db").addMigrations(MIGRATION_1_2).build()
+
+        /** Libraries (D52): every file so far belongs to library 1. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE media_file ADD COLUMN libraryId INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_media_file_libraryId ON media_file (libraryId)")
+            }
+        }
     }
 }

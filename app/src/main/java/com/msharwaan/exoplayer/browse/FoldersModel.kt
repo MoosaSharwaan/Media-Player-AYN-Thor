@@ -5,6 +5,8 @@ import com.msharwaan.exoplayer.data.MediaFile
 import com.msharwaan.exoplayer.data.PlaybackState
 import com.msharwaan.exoplayer.input.PadAction
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,11 +31,13 @@ data class FolderEntry(
  * The folder browser (R1 on Browsing): your video folder as it is on the SD card, folders
  * first, then videos. Built from the library, so it needs no extra scan.
  */
-class FoldersModel(scope: CoroutineScope, db: AppDatabase) {
+@OptIn(ExperimentalCoroutinesApi::class)
+class FoldersModel(scope: CoroutineScope, db: AppDatabase, libraryId: StateFlow<Long>) {
 
     /** Every file and where you stopped in each; the screens watch this. */
     val files: StateFlow<Pair<List<MediaFile>, Map<Long, PlaybackState>>> =
-        combine(db.library().observeFiles(), db.library().observePlayback()) { f, p -> f to p.associateBy { it.mediaFileId } }
+        // The active library's files only (D52).
+        libraryId.flatMapLatest { id -> combine(db.library().observeFilesIn(id), db.library().observePlayback()) { f, p -> f to p.associateBy { it.mediaFileId } } }
             .stateIn(scope, SharingStarted.Eagerly, emptyList<MediaFile>() to emptyMap())
 
     /** Focus per folder, so going back up lands where you were. */

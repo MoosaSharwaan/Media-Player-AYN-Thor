@@ -70,7 +70,6 @@ class FindSubtitlesModel(
     private val scope: CoroutineScope,
     private val db: AppDatabase,
     private val online: Online,
-    private val libraryFolder: () -> Uri?,
     private val onNotice: (String) -> Unit,
     private val onAdded: (SubtitleFile) -> Unit,
     private val onDone: () -> Unit,
@@ -173,8 +172,10 @@ class FindSubtitlesModel(
 
     /** Saves "Name.en.srt" in the video's own folder, through the folder access you gave (D37). */
     private fun saveNextToVideo(f: MediaFile, lang: String, bytes: ByteArray): Uri? = runCatching {
-        val tree = libraryFolder() ?: return null
-        val docId = DocumentsContract.getDocumentId(Uri.parse(f.uri))
+        // The video's own address carries the folder access it was found through (any library, D52).
+        val video = Uri.parse(f.uri)
+        val tree = DocumentsContract.buildTreeDocumentUri(video.authority, DocumentsContract.getTreeDocumentId(video))
+        val docId = DocumentsContract.getDocumentId(video)
         val parentId = docId.substringBeforeLast('/', "").ifEmpty { DocumentsContract.getTreeDocumentId(tree) }
         val parent = DocumentsContract.buildDocumentUriUsingTree(tree, parentId)
         val name = f.fileName.substringBeforeLast('.') + ".$lang.srt"

@@ -1,11 +1,12 @@
 package com.msharwaan.exoplayer.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /** One video file on the SD card. Size and modified time detect changes between scans. */
-@Entity(tableName = "media_file", indices = [Index(value = ["uri"], unique = true), Index("groupKey")])
+@Entity(tableName = "media_file", indices = [Index(value = ["uri"], unique = true), Index("groupKey"), Index("libraryId")])
 data class MediaFile(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val uri: String,
@@ -24,6 +25,8 @@ data class MediaFile(
     val episode: Int?,
     val anime: Boolean,
     val durationMs: Long = 0,
+    /** The library this file was found in (D52); 1 for everything from before libraries. */
+    @ColumnInfo(defaultValue = "1") val libraryId: Long = 1,
 )
 
 /** A subtitle file next to a video, matched by name (loaded automatically, v1). */

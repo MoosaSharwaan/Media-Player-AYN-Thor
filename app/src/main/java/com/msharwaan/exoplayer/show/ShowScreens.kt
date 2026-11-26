@@ -1,5 +1,7 @@
 package com.msharwaan.exoplayer.show
 
+import com.msharwaan.exoplayer.player.PreviewVideo
+import com.msharwaan.exoplayer.player.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -52,7 +54,7 @@ import com.msharwaan.exoplayer.ui.theme.Palette
  * an episode is focused.
  */
 @Composable
-fun ShowTop(model: ShowModel) {
+fun ShowTop(model: ShowModel, preview: Preview? = null) {
     val data by model.data.collectAsStateWithLifecycle()
     val view by model.view.collectAsStateWithLifecycle()
     val d = data ?: return
@@ -66,6 +68,9 @@ fun ShowTop(model: ShowModel) {
     when {
         episode != null -> Details(
             art = episode.stillPath ?: title.backdropPath ?: title.posterPath,
+            // The episode itself, playing behind its details (D51).
+            preview = preview,
+            previewFileId = episode.fileId,
             key = title.groupKey,
             heading = episode.title,
             meta = listOfNotNull(
@@ -129,9 +134,12 @@ private fun Details(
     meta: String,
     overview: String?,
     posterBackground: Boolean = false,
+    preview: Preview? = null,
+    previewFileId: Long? = null,
     extra: @Composable () -> Unit = {},
 ) {
     Box(Modifier.fillMaxSize().background(Palette.Black)) {
+        val artAlpha = PreviewVideo(preview, previewFileId)
         if (posterBackground) {
             Artwork(art, key, Modifier.fillMaxSize().blur(40.dp))
             Box(Modifier.fillMaxSize().background(Color(0x8C000000)))
@@ -146,7 +154,7 @@ private fun Details(
                     },
             )
         } else {
-            Artwork(art, key, Modifier.fillMaxSize())
+            Artwork(art, key, Modifier.fillMaxSize().graphicsLayer { alpha = artAlpha })
         }
         Box(
             Modifier.fillMaxSize().background(

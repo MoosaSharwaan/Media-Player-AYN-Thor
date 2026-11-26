@@ -108,7 +108,7 @@ class BrowseScreenshotTest {
 
     @Test
     fun folders() {
-        val folders = com.msharwaan.exoplayer.browse.FoldersModel(MainScope(), db)
+        val folders = com.msharwaan.exoplayer.browse.FoldersModel(MainScope(), db, kotlinx.coroutines.flow.MutableStateFlow(1L))
         Screens.waitFor { folders.files.value.first.isNotEmpty() }
         Screens.shoot(rule, "folders_bottom", Panel.BOTTOM) { com.msharwaan.exoplayer.browse.FoldersBottom(folders, "") {} }
     }
